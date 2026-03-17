@@ -32,16 +32,24 @@ def parse_args():
     parser.add_argument(
         "--output-dir",
         type=Path,
-        default=PROJECT_ROOT / "outputs" / "benchmark_8variant_econml_mild_shrink_12case",
     )
     parser.add_argument("--num-trees-b2", type=int, default=200)
+    parser.add_argument("--target", choices=["RMST", "survival.probability"], default="RMST")
+    parser.add_argument("--horizon-quantile", type=float, default=0.60)
     parser.add_argument("--case-ids", nargs="*", type=int, help="Optional subset of case ids.")
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
-    output_dir = args.output_dir.resolve()
+    if args.output_dir is None:
+        if args.target == "RMST":
+            output_dir = PROJECT_ROOT / "outputs" / "benchmark_8variant_econml_mild_shrink_12case"
+        else:
+            output_dir = PROJECT_ROOT / "outputs" / "benchmark_8variant_econml_mild_shrink_12case_survival_probability"
+    else:
+        output_dir = args.output_dir
+    output_dir = output_dir.resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
 
     selected_ids = set(args.case_ids) if args.case_ids else None
@@ -52,8 +60,15 @@ def main() -> int:
         print("=" * 100)
         print(f"Running case {case['case_id']:02d}")
         print(case["title"])
+        print(f"target={args.target}, horizon_quantile={args.horizon_quantile:.2f}")
         print("=" * 100)
-        case_df = run_case_benchmark(case, num_trees_b2=args.num_trees_b2, verbose=True)
+        case_df = run_case_benchmark(
+            case,
+            num_trees_b2=args.num_trees_b2,
+            verbose=True,
+            target=args.target,
+            horizon_quantile=args.horizon_quantile,
+        )
         case_frames.append(case_df)
 
         base_name = f"case_{case['case_id']:02d}_{case['slug']}"
@@ -104,6 +119,8 @@ def main() -> int:
             "Time",
         ],
         "num_cases": int(len(selected_cases)),
+        "target": args.target,
+        "horizon_quantile": float(args.horizon_quantile),
     }
     audit_path = output_dir / "implementation_audit.json"
     audit_path.write_text(json.dumps(audit, indent=2), encoding="utf-8")

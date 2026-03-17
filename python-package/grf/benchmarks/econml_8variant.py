@@ -19,7 +19,11 @@ from grf.methods.econml_mild_shrink import (
     _clip_quantile,
     _compute_ipcw_3term_y_res,
     _compute_ipcw_pseudo_outcome,
+    _compute_survival_probability_q_from_s,
+    _compute_target_ipcw_3term_y_res,
+    _compute_target_pseudo_outcome,
     _compute_q_from_s,
+    _prepare_target_inputs,
     _ensure_2d,
     _fit_event_cox,
     _fit_kaplan_meier_censoring,
@@ -190,6 +194,11 @@ def _weibull_scale(lam: float, k: float, eta: np.ndarray) -> np.ndarray:
 def mean_survival_given_eta(eta: np.ndarray, cfg: SynthConfig) -> np.ndarray:
     scale = _weibull_scale(cfg.lam_t, cfg.k_t, np.asarray(eta, dtype=float))
     return scale * math.gamma(1.0 + 1.0 / cfg.k_t)
+
+
+def survival_probability_given_eta(eta: np.ndarray, horizon: float, cfg: SynthConfig) -> np.ndarray:
+    scale = _weibull_scale(cfg.lam_t, cfg.k_t, np.asarray(eta, dtype=float))
+    return np.exp(-((float(horizon) / scale) ** cfg.k_t))
 
 
 def recover_dgp_internals(cfg: SynthConfig) -> dict[str, np.ndarray | float | None]:
@@ -373,13 +382,35 @@ def true_propensity_nc(Z: np.ndarray, X: np.ndarray, dgp: dict[str, np.ndarray |
     )
 
 
-def true_outcome_oracle(X: np.ndarray, U: np.ndarray, cfg: SynthConfig, dgp: dict[str, np.ndarray | float | None]):
+def true_outcome_oracle(
+    X: np.ndarray,
+    U: np.ndarray,
+    cfg: SynthConfig,
+    dgp: dict[str, np.ndarray | float | None],
+    *,
+    target: str = "RMST",
+    horizon: float | None = None,
+):
+    if target == "survival.probability":
+        if horizon is None:
+            raise ValueError("horizon is required for target='survival.probability'.")
+        h0 = survival_probability_given_eta(_event_eta(X, U, np.zeros(X.shape[0]), cfg, dgp), horizon, cfg)
+        h1 = survival_probability_given_eta(_event_eta(X, U, np.ones(X.shape[0]), cfg, dgp), horizon, cfg)
+        return h0, h1
     h0 = mean_survival_given_eta(_event_eta(X, U, np.zeros(X.shape[0]), cfg, dgp), cfg)
     h1 = mean_survival_given_eta(_event_eta(X, U, np.ones(X.shape[0]), cfg, dgp), cfg)
     return h0, h1
 
 
-def true_outcome_nc(W: np.ndarray, X: np.ndarray, cfg: SynthConfig, dgp: dict[str, np.ndarray | float | None]):
+def true_outcome_nc(
+    W: np.ndarray,
+    X: np.ndarray,
+    cfg: SynthConfig,
+    dgp: dict[str, np.ndarray | float | None],
+    *,
+    target: str = "RMST",
+    horizon: float | None = None,
+):
     posterior_mean, posterior_var = _posterior_u_given_proxy(
         W,
         X,
@@ -387,6 +418,28 @@ def true_outcome_nc(W: np.ndarray, X: np.ndarray, cfg: SynthConfig, dgp: dict[st
         cfg.aW,
         cfg.sigma_w,
     )
+    if target == "survival.probability":
+        if horizon is None:
+            raise ValueError("horizon is required for target='survival.probability'.")
+        h0 = _gauss_hermite_expectation(
+            posterior_mean,
+            posterior_var,
+            lambda u_draws: survival_probability_given_eta(
+                _event_eta(X, u_draws, np.zeros(X.shape[0]), cfg, dgp),
+                horizon,
+                cfg,
+            ),
+        )
+        h1 = _gauss_hermite_expectation(
+            posterior_mean,
+            posterior_var,
+            lambda u_draws: survival_probability_given_eta(
+                _event_eta(X, u_draws, np.ones(X.shape[0]), cfg, dgp),
+                horizon,
+                cfg,
+            ),
+        )
+        return h0, h1
     h0 = _gauss_hermite_expectation(
         posterior_mean,
         posterior_var,
@@ -408,16 +461,25 @@ def _cap_time_grid(time_values):
     return grid
 
 
-def _build_true_y_tilde(x_base, u_vec, y_time, delta, cfg, dgp):
+def _build_true_y_tilde(x_base, u_vec, y_time, delta, cfg, dgp, *, target="RMST", horizon=None):
+    if target == "survival.probability":
+        if horizon is None:
+            raise ValueError("horizon is required for target='survival.probability'.")
+        eval_time = np.minimum(np.asarray(y_time, dtype=float), float(horizon))
+        dummy_grid = np.array([float(np.max(eval_time))], dtype=float)
+        _, _, sc_at_y = true_censoring_on_grid(x_base, u_vec, eval_time, dummy_grid, cfg, dgp["beta_c"], dgp["lam_c"])
+        sc_at_y = np.maximum(sc_at_y, SURV_FLOOR)
+        return (np.asarray(y_time, dtype=float) > float(horizon)).astype(float) / sc_at_y
+
     dummy_grid = np.array([np.max(y_time)], dtype=float)
     _, _, sc_at_y = true_censoring_on_grid(x_base, u_vec, y_time, dummy_grid, cfg, dgp["beta_c"], dgp["lam_c"])
     sc_at_y = np.maximum(sc_at_y, SURV_FLOOR)
     return y_time * delta / sc_at_y
 
 
-def _true_survival_components(x_base, u_vec, y_time, cfg, dgp):
-    t_grid = _cap_time_grid(y_time)
-    surv_c, hazard_c, sc_at_y = true_censoring_on_grid(x_base, u_vec, y_time, t_grid, cfg, dgp["beta_c"], dgp["lam_c"])
+def _true_survival_components(x_base, u_vec, eval_time, grid_time, cfg, dgp):
+    t_grid = _cap_time_grid(grid_time)
+    surv_c, hazard_c, sc_at_y = true_censoring_on_grid(x_base, u_vec, eval_time, t_grid, cfg, dgp["beta_c"], dgp["lam_c"])
     surv_c = np.maximum(surv_c, SURV_FLOOR)
     sc_at_y = np.maximum(sc_at_y, SURV_FLOOR)
     return t_grid, surv_c, hazard_c, sc_at_y
@@ -441,14 +503,62 @@ def _compute_true_ipcw_3term_y_res(y_time, delta, m_pred, q_hat, t_grid, surv_c,
     return np.clip(y_res, lo, hi)
 
 
+def _compute_true_target_ipcw_3term_y_res(
+    f_y,
+    eval_time,
+    eval_delta,
+    m_pred,
+    q_hat,
+    t_grid,
+    surv_c,
+    hazard_c,
+    sc_at_eval,
+    *,
+    clip_percentiles,
+):
+    n, grid_size = q_hat.shape
+    y_idx = np.searchsorted(t_grid, eval_time, side="right") - 1
+    y_idx = np.clip(y_idx, 0, grid_size - 1)
+    q_at_y = q_hat[np.arange(n), y_idx]
+
+    term1 = (eval_delta * (f_y - m_pred) + (1.0 - eval_delta) * (q_at_y - m_pred)) / np.maximum(sc_at_eval, 1e-10)
+
+    grid_weight = hazard_c / np.maximum(surv_c, 1e-10)
+    integrand = grid_weight * (q_hat - m_pred[:, None])
+    mask = np.arange(grid_size)[None, :] <= y_idx[:, None]
+    term2 = (integrand * mask).sum(axis=1)
+
+    y_res = term1 - term2
+    lo, hi = np.percentile(y_res, clip_percentiles)
+    return np.clip(y_res, lo, hi)
+
+
 class _BenchmarkNCSurvivalNuisance:
-    def __init__(self, cfg, dgp, p_x, z_proxy_dim, q_model, h_model, *, true_surv, true_qh, q_clip, y_tilde_clip_quantile, y_res_clip_percentiles):
+    def __init__(
+        self,
+        cfg,
+        dgp,
+        p_x,
+        z_proxy_dim,
+        q_model,
+        h_model,
+        *,
+        true_surv,
+        true_qh,
+        target,
+        horizon,
+        q_clip,
+        y_tilde_clip_quantile,
+        y_res_clip_percentiles,
+    ):
         self._cfg = cfg
         self._dgp = dgp
         self._p_x = p_x
         self._z_proxy_dim = z_proxy_dim
         self._true_surv = true_surv
         self._true_qh = true_qh
+        self._target = target
+        self._horizon = horizon
         self._q_model_template = q_model
         self._h_model_template = h_model
         self._q_clip = q_clip
@@ -485,14 +595,41 @@ class _BenchmarkNCSurvivalNuisance:
         y_time, delta = self._unpack_y(y)
         a = np.asarray(t).ravel()
         x_full, x_base, w_proxy, z_proxy, u_vec = self._split_inputs(X, W, Z)
+        target_inputs = _prepare_target_inputs(
+            y_time,
+            delta,
+            target=self._target,
+            horizon=self._horizon,
+        )
 
         if self._true_surv:
             if u_vec is None:
                 raise ValueError("True survival nuisances require U in the Z bundle.")
-            y_tilde = _build_true_y_tilde(x_base, u_vec, y_time, delta, self._cfg, self._dgp)
+            y_tilde = _build_true_y_tilde(
+                x_base,
+                u_vec,
+                y_time,
+                delta,
+                self._cfg,
+                self._dgp,
+                target=self._target,
+                horizon=self._horizon,
+            )
         else:
-            self._km_times, self._km_surv = _fit_kaplan_meier_censoring(y_time, delta)
-            y_tilde = _compute_ipcw_pseudo_outcome(y_time, delta, self._km_times, self._km_surv)
+            self._km_times, self._km_surv = _fit_kaplan_meier_censoring(
+                target_inputs["nuisance_time"],
+                target_inputs["nuisance_delta"],
+            )
+            y_tilde = _compute_target_pseudo_outcome(
+                y_time=y_time,
+                delta=delta,
+                target=self._target,
+                horizon=self._horizon,
+                nuisance_time=target_inputs["nuisance_time"],
+                nuisance_delta=target_inputs["nuisance_delta"],
+                km_times=self._km_times,
+                km_surv=self._km_surv,
+            )
         y_tilde = _clip_quantile(y_tilde, self._y_tilde_clip_quantile)
 
         if not self._true_qh:
@@ -515,9 +652,17 @@ class _BenchmarkNCSurvivalNuisance:
             surv_features = np.column_stack([x_full, w_proxy, z_proxy])
             treated_mask = a == 1
             control_mask = a == 0
-            self._event_cox_1, self._cox_col_names = _fit_event_cox(y_time[treated_mask], delta[treated_mask], surv_features[treated_mask])
-            self._event_cox_0, _ = _fit_event_cox(y_time[control_mask], delta[control_mask], surv_features[control_mask])
-            self._t_grid = _cap_time_grid(y_time)
+            self._event_cox_1, self._cox_col_names = _fit_event_cox(
+                target_inputs["nuisance_time"][treated_mask],
+                target_inputs["nuisance_delta"][treated_mask],
+                surv_features[treated_mask],
+            )
+            self._event_cox_0, _ = _fit_event_cox(
+                target_inputs["nuisance_time"][control_mask],
+                target_inputs["nuisance_delta"][control_mask],
+                surv_features[control_mask],
+            )
+            self._t_grid = _cap_time_grid(target_inputs["grid_time"])
 
         return self
 
@@ -525,10 +670,23 @@ class _BenchmarkNCSurvivalNuisance:
         y_time, delta = self._unpack_y(y)
         a = np.asarray(t).ravel()
         x_full, x_base, w_proxy, z_proxy, u_vec = self._split_inputs(X, W, Z)
+        target_inputs = _prepare_target_inputs(
+            y_time,
+            delta,
+            target=self._target,
+            horizon=self._horizon,
+        )
 
         if self._true_qh:
             q_pred = true_propensity_nc(z_proxy, x_base, self._dgp, self._cfg)
-            h0_pred, h1_pred = true_outcome_nc(w_proxy, x_base, self._cfg, self._dgp)
+            h0_pred, h1_pred = true_outcome_nc(
+                w_proxy,
+                x_base,
+                self._cfg,
+                self._dgp,
+                target=self._target,
+                horizon=self._horizon,
+            )
         else:
             xz = np.column_stack([x_full, z_proxy])
             xw = np.column_stack([x_full, w_proxy])
@@ -542,33 +700,111 @@ class _BenchmarkNCSurvivalNuisance:
         if self._true_surv:
             if u_vec is None:
                 raise ValueError("True survival nuisances require bundled U.")
-            t_grid, surv_c, hazard_c, sc_at_y = _true_survival_components(x_base, u_vec, y_time, self._cfg, self._dgp)
+            t_grid, surv_c, hazard_c, sc_at_y = _true_survival_components(
+                x_base,
+                u_vec,
+                target_inputs["eval_time"],
+                target_inputs["grid_time"],
+                self._cfg,
+                self._dgp,
+            )
             s_hat_1 = true_event_surv_on_grid(x_base, u_vec, np.ones_like(a), t_grid, self._cfg, self._dgp)
             s_hat_0 = true_event_surv_on_grid(x_base, u_vec, np.zeros_like(a), t_grid, self._cfg, self._dgp)
-            q_hat_1 = _compute_q_from_s(s_hat_1, t_grid)
-            q_hat_0 = _compute_q_from_s(s_hat_0, t_grid)
+            if self._target == "survival.probability":
+                q_hat_1 = _compute_survival_probability_q_from_s(s_hat_1, t_grid, self._horizon)
+                q_hat_0 = _compute_survival_probability_q_from_s(s_hat_0, t_grid, self._horizon)
+            else:
+                q_hat_1 = _compute_q_from_s(s_hat_1, t_grid)
+                q_hat_0 = _compute_q_from_s(s_hat_0, t_grid)
             q_hat = np.where((a == 1)[:, None], q_hat_1, q_hat_0)
-            y_res = _compute_true_ipcw_3term_y_res(y_time, delta, m_pred, q_hat, t_grid, surv_c, hazard_c, sc_at_y, clip_percentiles=self._y_res_clip_percentiles)
+            if self._target == "RMST" and self._horizon is None:
+                y_res = _compute_true_ipcw_3term_y_res(
+                    y_time,
+                    delta,
+                    m_pred,
+                    q_hat,
+                    t_grid,
+                    surv_c,
+                    hazard_c,
+                    sc_at_y,
+                    clip_percentiles=self._y_res_clip_percentiles,
+                )
+            else:
+                y_res = _compute_true_target_ipcw_3term_y_res(
+                    target_inputs["f_y"],
+                    target_inputs["eval_time"],
+                    target_inputs["eval_delta"],
+                    m_pred,
+                    q_hat,
+                    t_grid,
+                    surv_c,
+                    hazard_c,
+                    sc_at_y,
+                    clip_percentiles=self._y_res_clip_percentiles,
+                )
         else:
             surv_features = np.column_stack([x_full, w_proxy, z_proxy])
             s_hat_1 = _predict_s_on_grid(self._event_cox_1, self._cox_col_names, surv_features, self._t_grid)
             s_hat_0 = _predict_s_on_grid(self._event_cox_0, self._cox_col_names, surv_features, self._t_grid)
-            q_hat_1 = _compute_q_from_s(s_hat_1, self._t_grid)
-            q_hat_0 = _compute_q_from_s(s_hat_0, self._t_grid)
+            if self._target == "survival.probability":
+                q_hat_1 = _compute_survival_probability_q_from_s(s_hat_1, self._t_grid, self._horizon)
+                q_hat_0 = _compute_survival_probability_q_from_s(s_hat_0, self._t_grid, self._horizon)
+            else:
+                q_hat_1 = _compute_q_from_s(s_hat_1, self._t_grid)
+                q_hat_0 = _compute_q_from_s(s_hat_0, self._t_grid)
             q_hat = np.where((a == 1)[:, None], q_hat_1, q_hat_0)
-            y_res = _compute_ipcw_3term_y_res(y_time, delta, m_pred, q_hat, self._t_grid, self._km_times, self._km_surv, clip_percentiles=self._y_res_clip_percentiles)
+            if self._target == "RMST" and self._horizon is None:
+                y_res = _compute_ipcw_3term_y_res(
+                    y_time,
+                    delta,
+                    m_pred,
+                    q_hat,
+                    self._t_grid,
+                    self._km_times,
+                    self._km_surv,
+                    clip_percentiles=self._y_res_clip_percentiles,
+                )
+            else:
+                y_res = _compute_target_ipcw_3term_y_res(
+                    target_inputs["f_y"],
+                    target_inputs["eval_time"],
+                    target_inputs["eval_delta"],
+                    m_pred,
+                    q_hat,
+                    self._t_grid,
+                    self._km_times,
+                    self._km_surv,
+                    clip_percentiles=self._y_res_clip_percentiles,
+                )
 
         a_res = (a - q_pred).reshape(-1, 1)
         return y_res, a_res
 
 
 class _BenchmarkOracleSurvivalNuisance:
-    def __init__(self, cfg, dgp, p_x, q_model, h_model, *, true_surv, true_qh, q_clip, y_tilde_clip_quantile, y_res_clip_percentiles):
+    def __init__(
+        self,
+        cfg,
+        dgp,
+        p_x,
+        q_model,
+        h_model,
+        *,
+        true_surv,
+        true_qh,
+        target,
+        horizon,
+        q_clip,
+        y_tilde_clip_quantile,
+        y_res_clip_percentiles,
+    ):
         self._cfg = cfg
         self._dgp = dgp
         self._p_x = p_x
         self._true_surv = true_surv
         self._true_qh = true_qh
+        self._target = target
+        self._horizon = horizon
         self._q_model_template = q_model
         self._h_model_template = h_model
         self._q_clip = q_clip
@@ -601,12 +837,39 @@ class _BenchmarkOracleSurvivalNuisance:
         y_time, delta = self._unpack_y(y)
         a = np.asarray(t).ravel()
         x_final, x_base, u_vec = self._split_inputs(X, W)
+        target_inputs = _prepare_target_inputs(
+            y_time,
+            delta,
+            target=self._target,
+            horizon=self._horizon,
+        )
 
         if self._true_surv:
-            y_tilde = _build_true_y_tilde(x_base, u_vec, y_time, delta, self._cfg, self._dgp)
+            y_tilde = _build_true_y_tilde(
+                x_base,
+                u_vec,
+                y_time,
+                delta,
+                self._cfg,
+                self._dgp,
+                target=self._target,
+                horizon=self._horizon,
+            )
         else:
-            self._km_times, self._km_surv = _fit_kaplan_meier_censoring(y_time, delta)
-            y_tilde = _compute_ipcw_pseudo_outcome(y_time, delta, self._km_times, self._km_surv)
+            self._km_times, self._km_surv = _fit_kaplan_meier_censoring(
+                target_inputs["nuisance_time"],
+                target_inputs["nuisance_delta"],
+            )
+            y_tilde = _compute_target_pseudo_outcome(
+                y_time=y_time,
+                delta=delta,
+                target=self._target,
+                horizon=self._horizon,
+                nuisance_time=target_inputs["nuisance_time"],
+                nuisance_delta=target_inputs["nuisance_delta"],
+                km_times=self._km_times,
+                km_surv=self._km_surv,
+            )
         y_tilde = _clip_quantile(y_tilde, self._y_tilde_clip_quantile)
 
         if not self._true_qh:
@@ -626,9 +889,17 @@ class _BenchmarkOracleSurvivalNuisance:
         if not self._true_surv:
             treated_mask = a == 1
             control_mask = a == 0
-            self._event_cox_1, self._cox_col_names = _fit_event_cox(y_time[treated_mask], delta[treated_mask], x_final[treated_mask])
-            self._event_cox_0, _ = _fit_event_cox(y_time[control_mask], delta[control_mask], x_final[control_mask])
-            self._t_grid = _cap_time_grid(y_time)
+            self._event_cox_1, self._cox_col_names = _fit_event_cox(
+                target_inputs["nuisance_time"][treated_mask],
+                target_inputs["nuisance_delta"][treated_mask],
+                x_final[treated_mask],
+            )
+            self._event_cox_0, _ = _fit_event_cox(
+                target_inputs["nuisance_time"][control_mask],
+                target_inputs["nuisance_delta"][control_mask],
+                x_final[control_mask],
+            )
+            self._t_grid = _cap_time_grid(target_inputs["grid_time"])
 
         return self
 
@@ -636,10 +907,23 @@ class _BenchmarkOracleSurvivalNuisance:
         y_time, delta = self._unpack_y(y)
         a = np.asarray(t).ravel()
         x_final, x_base, u_vec = self._split_inputs(X, W)
+        target_inputs = _prepare_target_inputs(
+            y_time,
+            delta,
+            target=self._target,
+            horizon=self._horizon,
+        )
 
         if self._true_qh:
             q_pred = true_propensity_oracle(x_base, u_vec, self._dgp, self._cfg)
-            h0_pred, h1_pred = true_outcome_oracle(x_base, u_vec, self._cfg, self._dgp)
+            h0_pred, h1_pred = true_outcome_oracle(
+                x_base,
+                u_vec,
+                self._cfg,
+                self._dgp,
+                target=self._target,
+                horizon=self._horizon,
+            )
         else:
             q_pred = self._q_model.predict_proba(x_final)[:, 1]
             h1_pred = self._h1_model.predict(x_final)
@@ -649,20 +933,81 @@ class _BenchmarkOracleSurvivalNuisance:
         m_pred = q_pred * h1_pred + (1.0 - q_pred) * h0_pred
 
         if self._true_surv:
-            t_grid, surv_c, hazard_c, sc_at_y = _true_survival_components(x_base, u_vec, y_time, self._cfg, self._dgp)
+            t_grid, surv_c, hazard_c, sc_at_y = _true_survival_components(
+                x_base,
+                u_vec,
+                target_inputs["eval_time"],
+                target_inputs["grid_time"],
+                self._cfg,
+                self._dgp,
+            )
             s_hat_1 = true_event_surv_on_grid(x_base, u_vec, np.ones_like(a), t_grid, self._cfg, self._dgp)
             s_hat_0 = true_event_surv_on_grid(x_base, u_vec, np.zeros_like(a), t_grid, self._cfg, self._dgp)
-            q_hat_1 = _compute_q_from_s(s_hat_1, t_grid)
-            q_hat_0 = _compute_q_from_s(s_hat_0, t_grid)
+            if self._target == "survival.probability":
+                q_hat_1 = _compute_survival_probability_q_from_s(s_hat_1, t_grid, self._horizon)
+                q_hat_0 = _compute_survival_probability_q_from_s(s_hat_0, t_grid, self._horizon)
+            else:
+                q_hat_1 = _compute_q_from_s(s_hat_1, t_grid)
+                q_hat_0 = _compute_q_from_s(s_hat_0, t_grid)
             q_hat = np.where((a == 1)[:, None], q_hat_1, q_hat_0)
-            y_res = _compute_true_ipcw_3term_y_res(y_time, delta, m_pred, q_hat, t_grid, surv_c, hazard_c, sc_at_y, clip_percentiles=self._y_res_clip_percentiles)
+            if self._target == "RMST" and self._horizon is None:
+                y_res = _compute_true_ipcw_3term_y_res(
+                    y_time,
+                    delta,
+                    m_pred,
+                    q_hat,
+                    t_grid,
+                    surv_c,
+                    hazard_c,
+                    sc_at_y,
+                    clip_percentiles=self._y_res_clip_percentiles,
+                )
+            else:
+                y_res = _compute_true_target_ipcw_3term_y_res(
+                    target_inputs["f_y"],
+                    target_inputs["eval_time"],
+                    target_inputs["eval_delta"],
+                    m_pred,
+                    q_hat,
+                    t_grid,
+                    surv_c,
+                    hazard_c,
+                    sc_at_y,
+                    clip_percentiles=self._y_res_clip_percentiles,
+                )
         else:
             s_hat_1 = _predict_s_on_grid(self._event_cox_1, self._cox_col_names, x_final, self._t_grid)
             s_hat_0 = _predict_s_on_grid(self._event_cox_0, self._cox_col_names, x_final, self._t_grid)
-            q_hat_1 = _compute_q_from_s(s_hat_1, self._t_grid)
-            q_hat_0 = _compute_q_from_s(s_hat_0, self._t_grid)
+            if self._target == "survival.probability":
+                q_hat_1 = _compute_survival_probability_q_from_s(s_hat_1, self._t_grid, self._horizon)
+                q_hat_0 = _compute_survival_probability_q_from_s(s_hat_0, self._t_grid, self._horizon)
+            else:
+                q_hat_1 = _compute_q_from_s(s_hat_1, self._t_grid)
+                q_hat_0 = _compute_q_from_s(s_hat_0, self._t_grid)
             q_hat = np.where((a == 1)[:, None], q_hat_1, q_hat_0)
-            y_res = _compute_ipcw_3term_y_res(y_time, delta, m_pred, q_hat, self._t_grid, self._km_times, self._km_surv, clip_percentiles=self._y_res_clip_percentiles)
+            if self._target == "RMST" and self._horizon is None:
+                y_res = _compute_ipcw_3term_y_res(
+                    y_time,
+                    delta,
+                    m_pred,
+                    q_hat,
+                    self._t_grid,
+                    self._km_times,
+                    self._km_surv,
+                    clip_percentiles=self._y_res_clip_percentiles,
+                )
+            else:
+                y_res = _compute_target_ipcw_3term_y_res(
+                    target_inputs["f_y"],
+                    target_inputs["eval_time"],
+                    target_inputs["eval_delta"],
+                    m_pred,
+                    q_hat,
+                    self._t_grid,
+                    self._km_times,
+                    self._km_surv,
+                    clip_percentiles=self._y_res_clip_percentiles,
+                )
 
         a_res = (a - q_pred).reshape(-1, 1)
         return y_res, a_res
@@ -688,6 +1033,8 @@ class BenchmarkNCSurvivalForestDML(EconmlMildShrinkNCSurvivalForest):
             h_model=self._h_model_template,
             true_surv=self._benchmark_true_surv,
             true_qh=self._benchmark_true_qh,
+            target=self._target,
+            horizon=self._horizon,
             q_clip=self._custom_q_clip,
             y_tilde_clip_quantile=self._custom_y_tilde_clip_quantile,
             y_res_clip_percentiles=self._custom_y_res_clip_percentiles,
@@ -712,6 +1059,8 @@ class BenchmarkOracleSurvivalForestDML(EconmlMildShrinkNCSurvivalForest):
             h_model=self._h_model_template,
             true_surv=self._benchmark_true_surv,
             true_qh=self._benchmark_true_qh,
+            target=self._target,
+            horizon=self._horizon,
             q_clip=self._custom_q_clip,
             y_tilde_clip_quantile=self._custom_y_tilde_clip_quantile,
             y_res_clip_percentiles=self._custom_y_res_clip_percentiles,
@@ -736,7 +1085,12 @@ def _make_forest_kwargs():
     )
 
 
-def prepare_case(case_spec: dict[str, object]) -> CaseData:
+def prepare_case(
+    case_spec: dict[str, object],
+    *,
+    target: str = "RMST",
+    horizon_quantile: float = 0.60,
+) -> CaseData:
     cfg = build_case_cfg(case_spec)
     obs_df, truth_df, params = generate_synthetic_nc_cox(cfg)
     obs_df, truth_df = add_ground_truth_cate(obs_df, truth_df, cfg, params)
@@ -749,8 +1103,14 @@ def prepare_case(case_spec: dict[str, object]) -> CaseData:
     Y = obs_df["time"].to_numpy()
     delta = obs_df["event"].to_numpy()
     U = truth_df["U"].to_numpy()
-    true_cate = truth_df["CATE_XU_eq7"].to_numpy()
-    horizon = float(np.max(Y))
+    if target == "survival.probability":
+        horizon = float(np.quantile(Y, horizon_quantile))
+        eta0 = _event_eta(X, U, np.zeros(X.shape[0]), cfg, dgp)
+        eta1 = _event_eta(X, U, np.ones(X.shape[0]), cfg, dgp)
+        true_cate = survival_probability_given_eta(eta1, horizon, cfg) - survival_probability_given_eta(eta0, horizon, cfg)
+    else:
+        true_cate = truth_df["CATE_XU_eq7"].to_numpy()
+        horizon = float(np.max(Y))
     return CaseData(cfg, dgp, obs_df, truth_df, x_cols, X, W, Z, A, Y, delta, U, true_cate, horizon)
 
 
@@ -774,7 +1134,7 @@ def _evaluate_predictions(name, preds, true_cate, elapsed, backend):
     )
 
 
-def evaluate_r_csf_variant(name, obs_df, feature_cols, true_cate, horizon, num_trees=200):
+def evaluate_r_csf_variant(name, obs_df, feature_cols, true_cate, horizon, num_trees=200, *, target="RMST"):
     (PROJECT_ROOT / "outputs").mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(dir=PROJECT_ROOT / "outputs", prefix="benchmark8_r_") as tmp_dir:
         tmp_dir = Path(tmp_dir)
@@ -789,6 +1149,7 @@ def evaluate_r_csf_variant(name, obs_df, feature_cols, true_cate, horizon, num_t
             str(horizon),
             str(num_trees),
             str(output_path),
+            str(target),
         ]
         t0 = time.time()
         proc = subprocess.run(cmd, cwd=PROJECT_ROOT, text=True, capture_output=True, check=False)
@@ -799,7 +1160,7 @@ def evaluate_r_csf_variant(name, obs_df, feature_cols, true_cate, horizon, num_t
     return _evaluate_predictions(name, preds, true_cate, elapsed, backend="installed R grf")
 
 
-def _evaluate_oracle_variant(name, case: CaseData, *, true_surv: bool, true_qh: bool):
+def _evaluate_oracle_variant(name, case: CaseData, *, true_surv: bool, true_qh: bool, target: str):
     x_oracle = np.column_stack([case.X, case.U])
     model = BenchmarkOracleSurvivalForestDML(
         cfg=case.cfg,
@@ -807,6 +1168,8 @@ def _evaluate_oracle_variant(name, case: CaseData, *, true_surv: bool, true_qh: 
         p_x=case.X.shape[1],
         true_surv=true_surv,
         true_qh=true_qh,
+        target=target,
+        horizon=case.horizon,
         **_make_forest_kwargs(),
     )
     t0 = time.time()
@@ -816,7 +1179,7 @@ def _evaluate_oracle_variant(name, case: CaseData, *, true_surv: bool, true_qh: 
     return _evaluate_predictions(name, preds, case.true_cate, elapsed, backend="econml mild shrink")
 
 
-def _evaluate_nc_variant(name, case: CaseData, *, true_surv: bool, true_qh: bool):
+def _evaluate_nc_variant(name, case: CaseData, *, true_surv: bool, true_qh: bool, target: str):
     x_full = np.hstack([case.X, case.W, case.Z])
     z_bundle = np.hstack([case.Z, _ensure_2d(case.U)])
     model = BenchmarkNCSurvivalForestDML(
@@ -826,6 +1189,8 @@ def _evaluate_nc_variant(name, case: CaseData, *, true_surv: bool, true_qh: bool
         z_proxy_dim=case.Z.shape[1],
         true_surv=true_surv,
         true_qh=true_qh,
+        target=target,
+        horizon=case.horizon,
         **_make_forest_kwargs(),
     )
     t0 = time.time()
@@ -835,20 +1200,43 @@ def _evaluate_nc_variant(name, case: CaseData, *, true_surv: bool, true_qh: bool
     return _evaluate_predictions(name, preds, case.true_cate, elapsed, backend="econml mild shrink")
 
 
-def run_case_benchmark(case_spec: dict[str, object], *, num_trees_b2: int = 200, verbose: bool = False) -> pd.DataFrame:
-    case = prepare_case(case_spec)
+def run_case_benchmark(
+    case_spec: dict[str, object],
+    *,
+    num_trees_b2: int = 200,
+    verbose: bool = False,
+    target: str = "RMST",
+    horizon_quantile: float = 0.60,
+) -> pd.DataFrame:
+    case = prepare_case(case_spec, target=target, horizon_quantile=horizon_quantile)
     rows: list[dict[str, object]] = []
     for name, kind, kwargs in EIGHT_VARIANT_SPECS:
         if verbose:
             print(f"  - {name}", flush=True)
         if kind == "oracle":
-            row = _evaluate_oracle_variant(name, case, **kwargs)
+            row = _evaluate_oracle_variant(name, case, target=target, **kwargs)
         elif kind == "nc":
-            row = _evaluate_nc_variant(name, case, **kwargs)
+            row = _evaluate_nc_variant(name, case, target=target, **kwargs)
         elif kind == "b1":
-            row = evaluate_r_csf_variant(name, case.obs_df, case.x_cols, case.true_cate, case.horizon, num_trees_b2)
+            row = evaluate_r_csf_variant(
+                name,
+                case.obs_df,
+                case.x_cols,
+                case.true_cate,
+                case.horizon,
+                num_trees_b2,
+                target=target,
+            )
         elif kind == "b2":
-            row = evaluate_r_csf_variant(name, case.obs_df, case.x_cols + ["W", "Z"], case.true_cate, case.horizon, num_trees_b2)
+            row = evaluate_r_csf_variant(
+                name,
+                case.obs_df,
+                case.x_cols + ["W", "Z"],
+                case.true_cate,
+                case.horizon,
+                num_trees_b2,
+                target=target,
+            )
         else:
             raise ValueError(f"Unknown variant kind: {kind}")
 
@@ -859,6 +1247,9 @@ def run_case_benchmark(case_spec: dict[str, object], *, num_trees_b2: int = 200,
             n=case.cfg.n,
             p_x=case.cfg.p_x,
             seed=case.cfg.seed,
+            target=target,
+            estimand_horizon=float(case.horizon),
+            horizon_quantile=float(horizon_quantile) if target == "survival.probability" else None,
             target_censor_rate=case.cfg.target_censor_rate,
             actual_censor_rate=float(1.0 - case.delta.mean()),
             linear_treatment=case.cfg.linear_treatment,

@@ -82,7 +82,22 @@ def main() -> int:
     parser.add_argument("--min-samples-leaf", type=int, default=20, help="Final causal forest leaf size.")
     parser.add_argument("--cv", type=int, default=3, help="Cross-fitting folds.")
     parser.add_argument("--random-state", type=int, default=42, help="Random seed.")
+    parser.add_argument(
+        "--target",
+        choices=["RMST", "survival.probability"],
+        default="RMST",
+        help="Target estimand. RMST without horizon keeps the legacy default behavior.",
+    )
+    parser.add_argument(
+        "--horizon",
+        type=float,
+        default=None,
+        help="Optional target horizon. Required for survival.probability.",
+    )
     args = parser.parse_args()
+
+    if args.target == "survival.probability" and args.horizon is None:
+        raise ValueError("--horizon is required when --target=survival.probability")
 
     output_dir = args.output_dir.resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -123,6 +138,8 @@ def main() -> int:
     z_pred = _extract_features(predict_df, args.z_cols)
 
     model = EconmlMildShrinkNCSurvivalForest(
+        target=args.target,
+        horizon=args.horizon,
         n_estimators=args.n_estimators,
         min_samples_leaf=args.min_samples_leaf,
         cv=args.cv,
@@ -158,6 +175,8 @@ def main() -> int:
         "min_samples_leaf": args.min_samples_leaf,
         "cv": args.cv,
         "random_state": args.random_state,
+        "target": args.target,
+        "horizon": args.horizon,
         "q_model": "logit",
         "h_model": "random_forest",
         "q_clip": 0.02,

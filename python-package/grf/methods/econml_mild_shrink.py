@@ -38,6 +38,24 @@ def _compute_ipcw_pseudo_outcome(y_time, delta, km_times, km_surv):
     return np.asarray(y_time, dtype=float) * np.asarray(delta, dtype=float) / np.maximum(sc, 1e-10)
 
 
+def _compute_target_pseudo_outcome(
+    *,
+    y_time,
+    delta,
+    target,
+    horizon,
+    nuisance_time,
+    nuisance_delta,
+    km_times,
+    km_surv,
+):
+    if target == "survival.probability":
+        eval_time = np.minimum(np.asarray(y_time, dtype=float), float(horizon))
+        sc = _evaluate_sc(eval_time, km_times, km_surv)
+        return (np.asarray(y_time, dtype=float) > float(horizon)).astype(float) / np.maximum(sc, 1e-10)
+    return _compute_ipcw_pseudo_outcome(nuisance_time, nuisance_delta, km_times, km_surv)
+
+
 def _compute_q_from_s(s_hat, t_grid):
     n, g = s_hat.shape
     if g < 2:
@@ -53,6 +71,16 @@ def _compute_q_from_s(s_hat, t_grid):
 
     q_hat = t_grid[None, :] + cum / np.maximum(s_hat, 1e-10)
     q_hat[:, -1] = t_grid[-1]
+    return q_hat
+
+
+def _compute_survival_probability_q_from_s(s_hat, t_grid, horizon):
+    t_grid = np.asarray(t_grid, dtype=float)
+    horizon_index = np.searchsorted(t_grid, float(horizon), side="right")
+    if horizon_index == 0:
+        raise ValueError("horizon cannot be before the first event.")
+    q_hat = s_hat[:, [horizon_index - 1]] / np.maximum(s_hat, 1e-10)
+    q_hat[:, horizon_index - 1 :] = 1.0
     return q_hat
 
 
@@ -115,6 +143,84 @@ def _compute_ipcw_3term_y_res(
     return np.clip(y_res, lo, hi)
 
 
+def _compute_target_ipcw_3term_y_res(
+    f_y,
+    y_time,
+    delta,
+    m_pred,
+    q_hat,
+    t_grid,
+    km_times,
+    km_surv,
+    *,
+    clip_percentiles,
+):
+    n = len(y_time)
+    g = len(t_grid)
+    sc_at_y = _evaluate_sc(y_time, km_times, km_surv)
+    sc_grid = _evaluate_sc(t_grid, km_times, km_surv)
+
+    y_idx = np.searchsorted(t_grid, y_time, side="right") - 1
+    y_idx = np.clip(y_idx, 0, g - 1)
+    q_at_y = q_hat[np.arange(n), y_idx]
+
+    term1 = (delta * (f_y - m_pred) + (1.0 - delta) * (q_at_y - m_pred)) / np.maximum(sc_at_y, 1e-10)
+
+    log_sc = -np.log(np.maximum(sc_grid, 1e-10))
+    d_lambda_c = np.diff(np.concatenate([[0.0], log_sc]))
+    grid_weight = d_lambda_c / np.maximum(sc_grid, 1e-10)
+    integrand = grid_weight[None, :] * (q_hat - m_pred[:, None])
+    mask = np.arange(g)[None, :] <= y_idx[:, None]
+    term2 = (integrand * mask).sum(axis=1)
+
+    y_res = term1 - term2
+    lo, hi = np.percentile(y_res, clip_percentiles)
+    return np.clip(y_res, lo, hi)
+
+
+def _prepare_target_inputs(y_time, delta, *, target, horizon):
+    y_time = np.asarray(y_time, dtype=float)
+    delta = np.asarray(delta, dtype=float)
+
+    if target not in {"RMST", "survival.probability"}:
+        raise ValueError("target must be one of {'RMST', 'survival.probability'}.")
+
+    if target == "survival.probability":
+        if horizon is None:
+            raise ValueError("horizon is required when target='survival.probability'.")
+        nuisance_time = y_time
+        nuisance_delta = delta
+        eval_time = np.minimum(y_time, float(horizon))
+        eval_delta = delta.copy()
+        eval_delta[y_time > float(horizon)] = 1.0
+        f_y = (y_time > float(horizon)).astype(float)
+        grid_time = y_time
+    elif horizon is None:
+        nuisance_time = y_time
+        nuisance_delta = delta
+        eval_time = y_time
+        eval_delta = delta
+        f_y = y_time
+        grid_time = y_time
+    else:
+        nuisance_time = np.minimum(y_time, float(horizon))
+        nuisance_delta = delta.copy()
+        nuisance_delta[y_time >= float(horizon)] = 1.0
+        eval_time = nuisance_time
+        eval_delta = nuisance_delta
+        f_y = nuisance_time
+        grid_time = nuisance_time
+
+    return {
+        "nuisance_time": nuisance_time,
+        "nuisance_delta": nuisance_delta,
+        "eval_time": eval_time,
+        "eval_delta": eval_delta,
+        "f_y": f_y,
+        "grid_time": grid_time,
+    }
+
+
 class _MildShrinkNCSurvivalNuisance:
     max_grid = 500
 
@@ -123,12 +229,16 @@ class _MildShrinkNCSurvivalNuisance:
         q_model,
         h_model,
         *,
+        target,
+        horizon,
         q_clip,
         y_tilde_clip_quantile,
         y_res_clip_percentiles,
     ):
         self._q_model_template = q_model
         self._h_model_template = h_model
+        self._target = target
+        self._horizon = horizon
         self._q_clip = q_clip
         self._y_tilde_clip_quantile = y_tilde_clip_quantile
         self._y_res_clip_percentiles = y_res_clip_percentiles
@@ -152,14 +262,32 @@ class _MildShrinkNCSurvivalNuisance:
     def train(self, is_selecting, folds, Y, T, X=None, W=None, Z=None, sample_weight=None, groups=None):
         y_time, delta = self._unpack_y(Y)
         a = np.asarray(T).ravel()
+        target_inputs = _prepare_target_inputs(
+            y_time,
+            delta,
+            target=self._target,
+            horizon=self._horizon,
+        )
 
         w = _ensure_2d(W)
         z = _ensure_2d(Z)
         xz = np.column_stack([X, z])
         xw = np.column_stack([X, w])
 
-        self._km_times, self._km_surv = _fit_kaplan_meier_censoring(y_time, delta)
-        y_tilde = _compute_ipcw_pseudo_outcome(y_time, delta, self._km_times, self._km_surv)
+        self._km_times, self._km_surv = _fit_kaplan_meier_censoring(
+            target_inputs["nuisance_time"],
+            target_inputs["nuisance_delta"],
+        )
+        y_tilde = _compute_target_pseudo_outcome(
+            y_time=y_time,
+            delta=delta,
+            target=self._target,
+            horizon=self._horizon,
+            nuisance_time=target_inputs["nuisance_time"],
+            nuisance_delta=target_inputs["nuisance_delta"],
+            km_times=self._km_times,
+            km_surv=self._km_surv,
+        )
         y_tilde = _clip_quantile(y_tilde, self._y_tilde_clip_quantile)
 
         self._q_model = clone(self._q_model_template)
@@ -186,17 +314,17 @@ class _MildShrinkNCSurvivalNuisance:
 
         surv_features = np.column_stack([X, w, z])
         self._event_cox_1, self._cox_col_names = _fit_event_cox(
-            y_time[treated_mask],
-            delta[treated_mask],
+            target_inputs["nuisance_time"][treated_mask],
+            target_inputs["nuisance_delta"][treated_mask],
             surv_features[treated_mask],
         )
         self._event_cox_0, _ = _fit_event_cox(
-            y_time[control_mask],
-            delta[control_mask],
+            target_inputs["nuisance_time"][control_mask],
+            target_inputs["nuisance_delta"][control_mask],
             surv_features[control_mask],
         )
 
-        all_times = np.sort(np.unique(y_time))
+        all_times = np.sort(np.unique(target_inputs["grid_time"]))
         if len(all_times) > self.max_grid:
             idx = np.linspace(0, len(all_times) - 1, self.max_grid, dtype=int)
             all_times = all_times[idx]
@@ -206,6 +334,12 @@ class _MildShrinkNCSurvivalNuisance:
     def predict(self, Y, T, X=None, W=None, Z=None, sample_weight=None, groups=None):
         y_time, delta = self._unpack_y(Y)
         a = np.asarray(T).ravel()
+        target_inputs = _prepare_target_inputs(
+            y_time,
+            delta,
+            target=self._target,
+            horizon=self._horizon,
+        )
 
         w = _ensure_2d(W)
         z = _ensure_2d(Z)
@@ -221,20 +355,37 @@ class _MildShrinkNCSurvivalNuisance:
         surv_features = np.column_stack([X, w, z])
         s_hat_1 = _predict_s_on_grid(self._event_cox_1, self._cox_col_names, surv_features, self._t_grid)
         s_hat_0 = _predict_s_on_grid(self._event_cox_0, self._cox_col_names, surv_features, self._t_grid)
-        q_hat_1 = _compute_q_from_s(s_hat_1, self._t_grid)
-        q_hat_0 = _compute_q_from_s(s_hat_0, self._t_grid)
+        if self._target == "survival.probability":
+            q_hat_1 = _compute_survival_probability_q_from_s(s_hat_1, self._t_grid, self._horizon)
+            q_hat_0 = _compute_survival_probability_q_from_s(s_hat_0, self._t_grid, self._horizon)
+        else:
+            q_hat_1 = _compute_q_from_s(s_hat_1, self._t_grid)
+            q_hat_0 = _compute_q_from_s(s_hat_0, self._t_grid)
         q_hat = np.where((a == 1)[:, None], q_hat_1, q_hat_0)
 
-        y_res = _compute_ipcw_3term_y_res(
-            y_time,
-            delta,
-            m_pred,
-            q_hat,
-            self._t_grid,
-            self._km_times,
-            self._km_surv,
-            clip_percentiles=self._y_res_clip_percentiles,
-        )
+        if self._target == "RMST" and self._horizon is None:
+            y_res = _compute_ipcw_3term_y_res(
+                y_time,
+                delta,
+                m_pred,
+                q_hat,
+                self._t_grid,
+                self._km_times,
+                self._km_surv,
+                clip_percentiles=self._y_res_clip_percentiles,
+            )
+        else:
+            y_res = _compute_target_ipcw_3term_y_res(
+                target_inputs["f_y"],
+                target_inputs["eval_time"],
+                target_inputs["eval_delta"],
+                m_pred,
+                q_hat,
+                self._t_grid,
+                self._km_times,
+                self._km_surv,
+                clip_percentiles=self._y_res_clip_percentiles,
+            )
         a_res = (a - q_pred).reshape(-1, 1)
         return y_res, a_res
 
@@ -252,6 +403,8 @@ class EconmlMildShrinkNCSurvivalForest(CausalForestDML):
     def __init__(
         self,
         *,
+        target="RMST",
+        horizon=None,
         n_estimators=200,
         min_samples_leaf=20,
         cv=3,
@@ -271,6 +424,8 @@ class EconmlMildShrinkNCSurvivalForest(CausalForestDML):
             random_state=random_state,
             n_jobs=n_jobs,
         )
+        self._target = target
+        self._horizon = horizon
         self._custom_q_clip = q_clip
         self._custom_y_tilde_clip_quantile = y_tilde_clip_quantile
         self._custom_y_res_clip_percentiles = y_res_clip_percentiles
@@ -292,6 +447,8 @@ class EconmlMildShrinkNCSurvivalForest(CausalForestDML):
         return _MildShrinkNCSurvivalNuisance(
             q_model=self._q_model_template,
             h_model=self._h_model_template,
+            target=self._target,
+            horizon=self._horizon,
             q_clip=self._custom_q_clip,
             y_tilde_clip_quantile=self._custom_y_tilde_clip_quantile,
             y_res_clip_percentiles=self._custom_y_res_clip_percentiles,

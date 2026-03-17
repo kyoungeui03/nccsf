@@ -3,9 +3,9 @@
 suppressPackageStartupMessages(library(grf))
 
 args <- commandArgs(trailingOnly = TRUE)
-if (length(args) != 5) {
+if (!(length(args) %in% c(5, 6))) {
   stop(
-    "Usage: run_grf_csf_baseline.R <input_csv> <feature_cols_csv> <horizon> <num_trees> <output_csv>",
+    "Usage: run_grf_csf_baseline.R <input_csv> <feature_cols_csv> <horizon> <num_trees> <output_csv> [target]",
     call. = FALSE
   )
 }
@@ -15,6 +15,7 @@ feature_cols <- strsplit(args[[2]], ",", fixed = TRUE)[[1]]
 horizon <- as.numeric(args[[3]])
 num_trees <- as.integer(args[[4]])
 output_path <- args[[5]]
+target <- if (length(args) >= 6) args[[6]] else "RMST"
 
 obs_df <- read.csv(input_path, check.names = FALSE)
 
@@ -36,7 +37,7 @@ forest <- causal_survival_forest(
   Y = Y,
   W = A,
   D = delta,
-  target = "RMST",
+  target = target,
   horizon = horizon,
   num.trees = num_trees,
   num.threads = 1,
