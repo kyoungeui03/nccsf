@@ -9,4 +9,4 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 
 if __name__ == "__main__":
-    runpy.run_path(str(PROJECT_ROOT / "scripts" / "run_12case_bestcurve_8variant_benchmark.py"), run_name="__main__")
+    runpy.run_path(str(PROJECT_ROOT / "scripts" / "run_rhc_b2_vs_best_curve.py"), run_name="__main__")

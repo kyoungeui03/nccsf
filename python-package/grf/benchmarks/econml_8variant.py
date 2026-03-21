@@ -207,10 +207,10 @@ def recover_dgp_internals(cfg: SynthConfig) -> dict[str, np.ndarray | float | No
 
     X = rng.normal(size=(n, p))
     U = rng.normal(size=n)
-    b_z = rng.normal(scale=0.3, size=p)
-    b_w = rng.normal(scale=0.3, size=p)
-    rng.normal(scale=cfg.sigma_z, size=n)
-    rng.normal(scale=cfg.sigma_w, size=n)
+    b_z = rng.normal(scale=0.3, size=(p, cfg.p_z))
+    b_w = rng.normal(scale=0.3, size=(p, cfg.p_w))
+    rng.normal(scale=cfg.sigma_z, size=(n, cfg.p_z))
+    rng.normal(scale=cfg.sigma_w, size=(n, cfg.p_w))
 
     alpha = rng.normal(scale=0.5, size=p)
     alpha_nonlinear = None
@@ -327,11 +327,17 @@ def _event_eta(X: np.ndarray, U: np.ndarray, A: np.ndarray | float, cfg: SynthCo
 
 
 def _posterior_u_given_proxy(proxy: np.ndarray, X: np.ndarray, beta_proxy: np.ndarray, proxy_loading: float, noise_scale: float):
-    proxy = np.asarray(proxy, dtype=float).reshape(-1)
+    proxy = np.asarray(proxy, dtype=float)
+    if proxy.ndim == 1:
+        proxy = proxy.reshape(-1, 1)
+    beta_proxy = np.asarray(beta_proxy, dtype=float)
+    if beta_proxy.ndim == 1:
+        beta_proxy = beta_proxy.reshape(-1, 1)
+    if proxy.shape[1] != beta_proxy.shape[1]:
+        raise ValueError("proxy and beta_proxy dimensions do not match.")
     sigma2 = noise_scale**2
-    a2 = proxy_loading**2
-    posterior_var = sigma2 / (sigma2 + a2)
-    posterior_mean = proxy_loading * (proxy - X @ beta_proxy) / (sigma2 + a2)
+    posterior_var = 1.0 / (1.0 + proxy.shape[1] * (proxy_loading**2) / sigma2)
+    posterior_mean = posterior_var * (proxy_loading / sigma2) * np.sum(proxy - X @ beta_proxy, axis=1)
     return posterior_mean, posterior_var
 
 
@@ -571,7 +577,10 @@ class _BenchmarkNCSurvivalNuisance:
         self._km_surv = None
         self._event_cox_1 = None
         self._event_cox_0 = None
-        self._cox_col_names = None
+        self._cox_col_names_1 = None
+        self._cox_col_names_0 = None
+        self._cox_keep_mask_1 = None
+        self._cox_keep_mask_0 = None
         self._t_grid = None
 
     @staticmethod
@@ -652,12 +661,12 @@ class _BenchmarkNCSurvivalNuisance:
             surv_features = np.column_stack([x_full, w_proxy, z_proxy])
             treated_mask = a == 1
             control_mask = a == 0
-            self._event_cox_1, self._cox_col_names = _fit_event_cox(
+            self._event_cox_1, self._cox_col_names_1, self._cox_keep_mask_1 = _fit_event_cox(
                 target_inputs["nuisance_time"][treated_mask],
                 target_inputs["nuisance_delta"][treated_mask],
                 surv_features[treated_mask],
             )
-            self._event_cox_0, _ = _fit_event_cox(
+            self._event_cox_0, self._cox_col_names_0, self._cox_keep_mask_0 = _fit_event_cox(
                 target_inputs["nuisance_time"][control_mask],
                 target_inputs["nuisance_delta"][control_mask],
                 surv_features[control_mask],
@@ -744,8 +753,20 @@ class _BenchmarkNCSurvivalNuisance:
                 )
         else:
             surv_features = np.column_stack([x_full, w_proxy, z_proxy])
-            s_hat_1 = _predict_s_on_grid(self._event_cox_1, self._cox_col_names, surv_features, self._t_grid)
-            s_hat_0 = _predict_s_on_grid(self._event_cox_0, self._cox_col_names, surv_features, self._t_grid)
+            s_hat_1 = _predict_s_on_grid(
+                self._event_cox_1,
+                self._cox_col_names_1,
+                surv_features,
+                self._t_grid,
+                self._cox_keep_mask_1,
+            )
+            s_hat_0 = _predict_s_on_grid(
+                self._event_cox_0,
+                self._cox_col_names_0,
+                surv_features,
+                self._t_grid,
+                self._cox_keep_mask_0,
+            )
             if self._target == "survival.probability":
                 q_hat_1 = _compute_survival_probability_q_from_s(s_hat_1, self._t_grid, self._horizon)
                 q_hat_0 = _compute_survival_probability_q_from_s(s_hat_0, self._t_grid, self._horizon)
@@ -817,7 +838,10 @@ class _BenchmarkOracleSurvivalNuisance:
         self._km_surv = None
         self._event_cox_1 = None
         self._event_cox_0 = None
-        self._cox_col_names = None
+        self._cox_col_names_1 = None
+        self._cox_col_names_0 = None
+        self._cox_keep_mask_1 = None
+        self._cox_keep_mask_0 = None
         self._t_grid = None
 
     @staticmethod
@@ -889,12 +913,12 @@ class _BenchmarkOracleSurvivalNuisance:
         if not self._true_surv:
             treated_mask = a == 1
             control_mask = a == 0
-            self._event_cox_1, self._cox_col_names = _fit_event_cox(
+            self._event_cox_1, self._cox_col_names_1, self._cox_keep_mask_1 = _fit_event_cox(
                 target_inputs["nuisance_time"][treated_mask],
                 target_inputs["nuisance_delta"][treated_mask],
                 x_final[treated_mask],
             )
-            self._event_cox_0, _ = _fit_event_cox(
+            self._event_cox_0, self._cox_col_names_0, self._cox_keep_mask_0 = _fit_event_cox(
                 target_inputs["nuisance_time"][control_mask],
                 target_inputs["nuisance_delta"][control_mask],
                 x_final[control_mask],
@@ -976,8 +1000,20 @@ class _BenchmarkOracleSurvivalNuisance:
                     clip_percentiles=self._y_res_clip_percentiles,
                 )
         else:
-            s_hat_1 = _predict_s_on_grid(self._event_cox_1, self._cox_col_names, x_final, self._t_grid)
-            s_hat_0 = _predict_s_on_grid(self._event_cox_0, self._cox_col_names, x_final, self._t_grid)
+            s_hat_1 = _predict_s_on_grid(
+                self._event_cox_1,
+                self._cox_col_names_1,
+                x_final,
+                self._t_grid,
+                self._cox_keep_mask_1,
+            )
+            s_hat_0 = _predict_s_on_grid(
+                self._event_cox_0,
+                self._cox_col_names_0,
+                x_final,
+                self._t_grid,
+                self._cox_keep_mask_0,
+            )
             if self._target == "survival.probability":
                 q_hat_1 = _compute_survival_probability_q_from_s(s_hat_1, self._t_grid, self._horizon)
                 q_hat_0 = _compute_survival_probability_q_from_s(s_hat_0, self._t_grid, self._horizon)
@@ -1096,9 +1132,11 @@ def prepare_case(
     obs_df, truth_df = add_ground_truth_cate(obs_df, truth_df, cfg, params)
     dgp = recover_dgp_internals(cfg)
     x_cols = [f"X{j}" for j in range(cfg.p_x)]
+    w_cols = ["W"] if "W" in obs_df.columns else sorted(col for col in obs_df.columns if col.startswith("W"))
+    z_cols = ["Z"] if "Z" in obs_df.columns else sorted(col for col in obs_df.columns if col.startswith("Z"))
     X = obs_df[x_cols].to_numpy()
-    W = obs_df[["W"]].to_numpy()
-    Z = obs_df[["Z"]].to_numpy()
+    W = obs_df[w_cols].to_numpy()
+    Z = obs_df[z_cols].to_numpy()
     A = obs_df["A"].to_numpy()
     Y = obs_df["time"].to_numpy()
     delta = obs_df["event"].to_numpy()

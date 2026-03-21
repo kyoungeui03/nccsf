@@ -38,6 +38,8 @@ def weibull_ph_time_paper(u01: np.ndarray, k: float, lam: float, eta: np.ndarray
 class SynthConfig:
     n: int = 200
     p_x: int = 5
+    p_w: int = 1
+    p_z: int = 1
     seed: int = 42
     a_prevalence: float = 0.5
     gamma_u_in_a: float = 1.0
@@ -77,11 +79,11 @@ def generate_synthetic_nc_cox(cfg: SynthConfig) -> tuple[pd.DataFrame, pd.DataFr
     X = rng.normal(size=(n, p))
     U = rng.normal(size=n)
 
-    b_z = rng.normal(scale=0.3, size=p)
-    b_w = rng.normal(scale=0.3, size=p)
+    b_z = rng.normal(scale=0.3, size=(p, cfg.p_z))
+    b_w = rng.normal(scale=0.3, size=(p, cfg.p_w))
 
-    Z = cfg.aZ * U + X @ b_z + rng.normal(scale=cfg.sigma_z, size=n)
-    W_nc = cfg.aW * U + X @ b_w + rng.normal(scale=cfg.sigma_w, size=n)
+    Z = cfg.aZ * U[:, np.newaxis] + X @ b_z + rng.normal(scale=cfg.sigma_z, size=(n, cfg.p_z))
+    W_nc = cfg.aW * U[:, np.newaxis] + X @ b_w + rng.normal(scale=cfg.sigma_w, size=(n, cfg.p_w))
 
     alpha = rng.normal(scale=0.5, size=p)
     if cfg.linear_treatment:
@@ -151,13 +153,21 @@ def generate_synthetic_nc_cox(cfg: SynthConfig) -> tuple[pd.DataFrame, pd.DataFr
         event = np.where(cens_by_admin, 0, event).astype(int)
 
     x_cols = {f"X{j}": X[:, j] for j in range(p)}
+    if cfg.p_w == 1:
+        w_cols = {"W": W_nc[:, 0]}
+    else:
+        w_cols = {f"W{j}": W_nc[:, j] for j in range(cfg.p_w)}
+    if cfg.p_z == 1:
+        z_cols = {"Z": Z[:, 0]}
+    else:
+        z_cols = {f"Z{j}": Z[:, j] for j in range(cfg.p_z)}
     observed_df = pd.DataFrame(
         {
             "time": time,
             "event": event,
             "A": A,
-            "W": W_nc,
-            "Z": Z,
+            **w_cols,
+            **z_cols,
             **x_cols,
         }
     )
