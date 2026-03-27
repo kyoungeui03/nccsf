@@ -35,3 +35,24 @@ class EconmlMildShrinkObservedSurvivalForest(EconmlMildShrinkNCSurvivalForest):
     def effect_from_components(self, X, W, Z):
         x_full = self.stack_final_features(X, W, Z, mode=self._final_feature_mode)
         return self.effect(x_full)
+
+
+class EconmlMildShrinkObservedSurvivalForestMatched(EconmlMildShrinkNCSurvivalForest):
+    """
+    Matched no-PCI version of the legacy censored C3.
+
+    This keeps the exact same final-stage learner and the same nuisance
+    hyperparameters as ``EconmlMildShrinkNCSurvivalForest`` (Old C3), but
+    removes proxy information only from the nuisance layer by passing zero proxy
+    blocks into q, h, and survival nuisance estimation.
+    """
+
+    def fit_components(self, X, A, time, event, Z, W, **kwargs):
+        x_full = self.stack_final_features(X, W, Z, mode=self._final_feature_mode)
+        w_dummy = np.zeros_like(_ensure_2d(W), dtype=float)
+        z_dummy = np.zeros_like(_ensure_2d(Z), dtype=float)
+        return self.fit_survival(x_full, A, time, event, z_dummy, w_dummy, **kwargs)
+
+    def effect_from_components(self, X, W, Z):
+        x_full = self.stack_final_features(X, W, Z, mode=self._final_feature_mode)
+        return self.effect(x_full)

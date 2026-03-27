@@ -27,6 +27,9 @@ def parse_args():
         "--case-ids",
         help="Optional comma-separated subset of case IDs, e.g. 1,3,12",
     )
+    parser.add_argument("--n", type=int, default=2000)
+    parser.add_argument("--p-w", type=int, default=1)
+    parser.add_argument("--p-z", type=int, default=1)
     return parser.parse_args()
 
 
@@ -37,7 +40,7 @@ def main():
     case_ids = None
     if args.case_ids:
         case_ids = [int(part.strip()) for part in args.case_ids.split(",") if part.strip()]
-    run_all_12case_benchmarks(output_dir, case_ids=case_ids)
+    run_all_12case_benchmarks(output_dir, case_ids=case_ids, n=args.n, p_w=args.p_w, p_z=args.p_z)
 
 
 if __name__ == "__main__":

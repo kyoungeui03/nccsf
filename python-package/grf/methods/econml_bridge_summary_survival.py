@@ -62,6 +62,43 @@ def _block_summary_stats(block):
     return np.hstack([mean, std, span, slope, energy, last])
 
 
+def _proxy_summary_block(proxy):
+    proxy = _ensure_2d(proxy).astype(float)
+    if proxy.shape[1] == 0:
+        return np.zeros((proxy.shape[0], 6), dtype=float)
+    mean = np.mean(proxy, axis=1, keepdims=True)
+    std = np.std(proxy, axis=1, keepdims=True)
+    mean_abs = np.mean(np.abs(proxy), axis=1, keepdims=True)
+    l2 = np.sqrt(np.mean(np.square(proxy), axis=1, keepdims=True))
+    max_abs = np.max(np.abs(proxy), axis=1, keepdims=True)
+    disp = (
+        np.mean(np.abs(np.diff(proxy, axis=1)), axis=1, keepdims=True)
+        if proxy.shape[1] >= 2
+        else np.zeros_like(mean)
+    )
+    return np.hstack([mean, std, mean_abs, l2, max_abs, disp])
+
+
+def _joint_proxy_summary_block(w_proxy, z_proxy):
+    w_proxy = _ensure_2d(w_proxy).astype(float)
+    z_proxy = _ensure_2d(z_proxy).astype(float)
+    cols = min(w_proxy.shape[1], z_proxy.shape[1])
+    if cols <= 0:
+        return np.zeros((w_proxy.shape[0], 4), dtype=float)
+    w_sub = w_proxy[:, :cols]
+    z_sub = z_proxy[:, :cols]
+    aligned = np.mean(w_sub * z_sub, axis=1, keepdims=True)
+    centered = np.mean(
+        (w_sub - np.mean(w_sub, axis=1, keepdims=True))
+        * (z_sub - np.mean(z_sub, axis=1, keepdims=True)),
+        axis=1,
+        keepdims=True,
+    )
+    mean_gap = np.mean(w_sub, axis=1, keepdims=True) - np.mean(z_sub, axis=1, keepdims=True)
+    abs_gap = np.mean(np.abs(w_sub - z_sub), axis=1, keepdims=True)
+    return np.hstack([aligned, centered, mean_gap, abs_gap])
+
+
 def _curve_rmst_basis_stats(block, *, n_segments=3):
     block = np.asarray(block, dtype=float)
     if block.ndim != 2:
@@ -325,6 +362,67 @@ def _build_summary_features(X, bridge, mode="basic", *, n_curve_knots=5):
         curve_block = np.hstack([q_curve_mean, q_curve_diff, s_curve_mean, s_curve_diff])
         parts.append(curve_block)
         parts.append(_pairwise_products(x, np.hstack([q_curve_diff, s_curve_diff])))
+    elif mode == "curve_proxy_compact_x_interact":
+        surv1_pred = np.asarray(bridge["surv1_pred"], dtype=float).reshape(-1, 1)
+        surv0_pred = np.asarray(bridge["surv0_pred"], dtype=float).reshape(-1, 1)
+        surv_diff = np.asarray(bridge["surv_diff_pred"], dtype=float).reshape(-1, 1)
+        q_margin = np.abs(q_pred - 0.5)
+        balance = 4.0 * q_pred * (1.0 - q_pred)
+
+        q_curve_1 = _select_curve_knots(bridge["qhat1_curve"], drop_last=True, n_knots=n_curve_knots)
+        q_curve_0 = _select_curve_knots(bridge["qhat0_curve"], drop_last=True, n_knots=n_curve_knots)
+        q_curve_diff = q_curve_1 - q_curve_0
+        q_curve_mean = 0.5 * (q_curve_1 + q_curve_0)
+
+        s_curve_1 = _select_curve_knots(bridge["s1_curve"], drop_last=True, n_knots=n_curve_knots)
+        s_curve_0 = _select_curve_knots(bridge["s0_curve"], drop_last=True, n_knots=n_curve_knots)
+        s_curve_diff = s_curve_1 - s_curve_0
+        s_curve_mean = 0.5 * (s_curve_1 + s_curve_0)
+
+        w_proxy = np.asarray(bridge["w_raw"], dtype=float)
+        z_proxy = np.asarray(bridge["z_raw"], dtype=float)
+        proxy_block = np.hstack(
+            [
+                _proxy_summary_block(w_proxy),
+                _proxy_summary_block(z_proxy),
+                _joint_proxy_summary_block(w_proxy, z_proxy),
+            ]
+        )
+        regime = _build_regime_descriptors(bridge, n_curve_knots=n_curve_knots)
+        regime_core = regime[:, [11, 12, 13, 15, 16, 18]]
+        compact_curve = np.hstack(
+            [
+                _block_summary_stats(q_curve_mean),
+                _block_summary_stats(q_curve_diff),
+                _block_summary_stats(s_curve_mean),
+                _block_summary_stats(s_curve_diff),
+            ]
+        )
+        interact_base = np.hstack(
+            [
+                q_pred,
+                h_diff,
+                m_pred,
+                surv_diff,
+                q_margin,
+                balance,
+                proxy_block[:, [0, 2, 6, 8, 12, 15]],
+                regime_core[:, [1, 3, 4]],
+            ]
+        )
+        parts.extend(
+            [
+                surv1_pred,
+                surv0_pred,
+                surv_diff,
+                q_margin,
+                balance,
+                compact_curve,
+                proxy_block,
+                regime_core,
+                _pairwise_products(x, interact_base),
+            ]
+        )
     elif mode == "curve_compact_x_interact":
         q_curve_1 = _select_curve_knots(bridge["qhat1_curve"], drop_last=True, n_knots=n_curve_knots)
         q_curve_0 = _select_curve_knots(bridge["qhat0_curve"], drop_last=True, n_knots=n_curve_knots)
@@ -668,6 +766,8 @@ def _crossfit_summary_arrays(owner, X, A, y_packed, W, Z, *, return_regime_meta=
             W=w_nuis[test_idx],
             Z=z_nuis[test_idx],
         )
+        bridge["w_raw"] = w_nuis[test_idx]
+        bridge["z_raw"] = z_nuis[test_idx]
         y_res[test_idx] = y_fold
         a_res[test_idx] = a_fold.ravel()
         x_final_fold = _build_summary_features(
@@ -817,6 +917,8 @@ class _BaseTwoStageSummarySurvivalForest:
             W=w_nuis,
             Z=z_nuis,
         )
+        bridge["w_raw"] = w_nuis
+        bridge["z_raw"] = z_nuis
         x_final = _build_summary_features(
             x,
             bridge,
@@ -2084,5 +2186,28 @@ class BestCurveLocalObservedCensoredSurvivalForest(TwoStageObservedSummarySurviv
         kwargs.setdefault("nuisance_feature_mode", "interact")
         kwargs.setdefault("n_estimators", 400)
         kwargs.setdefault("min_samples_leaf", 30)
+        kwargs.setdefault("summary_curve_knots", 8)
+        super().__init__(*args, **kwargs)
+
+
+class HybridProxyCensoredPCISurvivalForest(TwoStageBridgeSummarySurvivalForest):
+    """
+    BestCurveLocal-style censored PCI model with compact retained proxy summaries.
+    """
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("target", "RMST")
+        kwargs.setdefault("horizon", None)
+        kwargs.setdefault("cv", 3)
+        kwargs.setdefault("random_state", 42)
+        kwargs.setdefault("censoring_estimator", "cox")
+        kwargs.setdefault("q_kind", "logit")
+        kwargs.setdefault("h_kind", "extra")
+        kwargs.setdefault("h_n_estimators", 800)
+        kwargs.setdefault("h_min_samples_leaf", 5)
+        kwargs.setdefault("summary_feature_mode", "curve_proxy_compact_x_interact")
+        kwargs.setdefault("nuisance_feature_mode", "interact")
+        kwargs.setdefault("n_estimators", 400)
+        kwargs.setdefault("min_samples_leaf", 40)
         kwargs.setdefault("summary_curve_knots", 8)
         super().__init__(*args, **kwargs)

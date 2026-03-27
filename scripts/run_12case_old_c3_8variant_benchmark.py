@@ -37,7 +37,23 @@ def parse_args():
     parser.add_argument("--target", choices=["RMST", "survival.probability"], default="RMST")
     parser.add_argument("--horizon-quantile", type=float, default=0.60)
     parser.add_argument("--case-ids", nargs="*", type=int, help="Optional subset of case ids.")
+    parser.add_argument("--n", type=int, default=2000)
+    parser.add_argument("--p-w", type=int, default=1)
+    parser.add_argument("--p-z", type=int, default=1)
     return parser.parse_args()
+
+
+def _case_with_overrides(case_spec, *, n=None, p_w=None, p_z=None):
+    case_copy = dict(case_spec)
+    cfg_updates = dict(case_spec["cfg"])
+    if n is not None:
+        cfg_updates["n"] = int(n)
+    if p_w is not None:
+        cfg_updates["p_w"] = int(p_w)
+    if p_z is not None:
+        cfg_updates["p_z"] = int(p_z)
+    case_copy["cfg"] = cfg_updates
+    return case_copy
 
 
 def main() -> int:
@@ -53,7 +69,11 @@ def main() -> int:
     output_dir.mkdir(parents=True, exist_ok=True)
 
     selected_ids = set(args.case_ids) if args.case_ids else None
-    selected_cases = [case for case in CASE_SPECS if selected_ids is None or case["case_id"] in selected_ids]
+    selected_cases = [
+        _case_with_overrides(case, n=args.n, p_w=args.p_w, p_z=args.p_z)
+        for case in CASE_SPECS
+        if selected_ids is None or case["case_id"] in selected_ids
+    ]
 
     case_frames = []
     for case in selected_cases:

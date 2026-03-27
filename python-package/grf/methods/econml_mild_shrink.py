@@ -45,6 +45,36 @@ def _recover_raw_x(final_x, w, z, final_feature_mode):
         if p_raw <= 0:
             raise ValueError("Could not recover raw X from final X under final_feature_mode='xwz'.")
         return final_x[:, :p_raw]
+    if final_feature_mode == "summary_minimal":
+        p_raw = final_x.shape[1] - 4
+        if p_raw <= 0:
+            raise ValueError("Could not recover raw X from final X under final_feature_mode='summary_minimal'.")
+        return final_x[:, :p_raw]
+    if final_feature_mode == "summary_surv":
+        p_raw = final_x.shape[1] - 7
+        if p_raw <= 0:
+            raise ValueError("Could not recover raw X from final X under final_feature_mode='summary_surv'.")
+        return final_x[:, :p_raw]
+    if final_feature_mode == "summary_surv_pair":
+        p_raw = final_x.shape[1] - 6
+        if p_raw <= 0:
+            raise ValueError("Could not recover raw X from final X under final_feature_mode='summary_surv_pair'.")
+        return final_x[:, :p_raw]
+    if final_feature_mode == "augmented_minimal":
+        p_raw = final_x.shape[1] - w.shape[1] - z.shape[1] - 4
+        if p_raw <= 0:
+            raise ValueError("Could not recover raw X from final X under final_feature_mode='augmented_minimal'.")
+        return final_x[:, :p_raw]
+    if final_feature_mode == "augmented_surv":
+        p_raw = final_x.shape[1] - w.shape[1] - z.shape[1] - 7
+        if p_raw <= 0:
+            raise ValueError("Could not recover raw X from final X under final_feature_mode='augmented_surv'.")
+        return final_x[:, :p_raw]
+    if final_feature_mode == "augmented_surv_pair":
+        p_raw = final_x.shape[1] - w.shape[1] - z.shape[1] - 6
+        if p_raw <= 0:
+            raise ValueError("Could not recover raw X from final X under final_feature_mode='augmented_surv_pair'.")
+        return final_x[:, :p_raw]
     raise ValueError(f"Unsupported final_feature_mode: {final_feature_mode}")
 
 
@@ -66,7 +96,7 @@ def _build_nuisance_features(raw_x, w, z, feature_mode):
         q_features = np.column_stack([q_features, extra])
         h_features = np.column_stack([h_features, extra])
         surv_features = np.column_stack([surv_features, extra])
-    elif feature_mode != "dup":
+    elif feature_mode not in {"dup", "broad_dup"}:
         raise ValueError(f"Unsupported nuisance feature mode: {feature_mode}")
 
     return q_features, h_features, surv_features, base
@@ -775,6 +805,43 @@ class _MildShrinkNCSurvivalNuisance:
             "s0_curve": s_hat_0,
             "c_curve": c_curve,
         }
+
+    def predict_target_pseudo_outcome(self, Y, X=None, W=None, Z=None):
+        y_time, delta = self._unpack_y(Y)
+        target_inputs = _prepare_target_inputs(
+            y_time,
+            delta,
+            target=self._target,
+            horizon=self._horizon,
+        )
+        w = _ensure_2d(W)
+        z = _ensure_2d(Z)
+        raw_x = _recover_raw_x(X, w, z, self._final_feature_mode)
+        _, _, _, censor_features = _build_nuisance_features(
+            raw_x,
+            w,
+            z,
+            self._nuisance_feature_mode,
+        )
+        y_tilde_eval_time = (
+            target_inputs["eval_time"]
+            if self._target == "survival.probability"
+            else target_inputs["nuisance_time"]
+        )
+        sc_for_y_tilde = _predict_censoring_survival_at_values(
+            self._censor_model,
+            censor_features,
+            y_tilde_eval_time,
+        )
+        y_tilde = _compute_target_pseudo_outcome_from_sc(
+            y_time=y_time,
+            target=self._target,
+            horizon=self._horizon,
+            nuisance_time=target_inputs["nuisance_time"],
+            nuisance_delta=target_inputs["nuisance_delta"],
+            sc_at_eval=sc_for_y_tilde,
+        )
+        return _clip_quantile(y_tilde, self._y_tilde_clip_quantile)
 
 
 class EconmlMildShrinkNCSurvivalForest(CausalForestDML):

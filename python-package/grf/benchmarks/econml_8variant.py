@@ -150,7 +150,7 @@ EIGHT_VARIANT_SPECS = [
     ("A2  Oracle (true surv, est q/h)", "oracle", dict(true_surv=True, true_qh=False)),
     ("A3  Oracle (all estimated)", "oracle", dict(true_surv=False, true_qh=False)),
     ("B1  R-CSF baseline (X only)", "b1", {}),
-    ("B2  R-CSF baseline (X+W+Z)", "b2", {}),
+    ("R-CSF Baseline", "b2", {}),
     ("C1  NC-CSF (all true)", "nc", dict(true_surv=True, true_qh=True)),
     ("C2  NC-CSF (true surv, est q/h)", "nc", dict(true_surv=True, true_qh=False)),
     ("C3  NC-CSF (all estimated)", "nc", dict(true_surv=False, true_qh=False)),
@@ -170,6 +170,8 @@ class CaseData:
     obs_df: pd.DataFrame
     truth_df: pd.DataFrame
     x_cols: list[str]
+    w_cols: list[str]
+    z_cols: list[str]
     X: np.ndarray
     W: np.ndarray
     Z: np.ndarray
@@ -1149,7 +1151,7 @@ def prepare_case(
     else:
         true_cate = truth_df["CATE_XU_eq7"].to_numpy()
         horizon = float(np.max(Y))
-    return CaseData(cfg, dgp, obs_df, truth_df, x_cols, X, W, Z, A, Y, delta, U, true_cate, horizon)
+    return CaseData(cfg, dgp, obs_df, truth_df, x_cols, w_cols, z_cols, X, W, Z, A, Y, delta, U, true_cate, horizon)
 
 
 def _evaluate_predictions(name, preds, true_cate, elapsed, backend):
@@ -1269,7 +1271,7 @@ def run_case_benchmark(
             row = evaluate_r_csf_variant(
                 name,
                 case.obs_df,
-                case.x_cols + ["W", "Z"],
+                case.x_cols + case.w_cols + case.z_cols,
                 case.true_cate,
                 case.horizon,
                 num_trees_b2,
@@ -1284,6 +1286,8 @@ def run_case_benchmark(
             case_title=case_spec["title"],
             n=case.cfg.n,
             p_x=case.cfg.p_x,
+            p_w=case.cfg.p_w,
+            p_z=case.cfg.p_z,
             seed=case.cfg.seed,
             target=target,
             estimand_horizon=float(case.horizon),
@@ -1455,7 +1459,7 @@ def render_top5_png(top5_df: pd.DataFrame, output_path: Path):
 
 
 def render_b2_vs_c3_png(combined_df: pd.DataFrame, output_path: Path):
-    subset = combined_df[combined_df["name"].isin(["B2  R-CSF baseline (X+W+Z)", "C3  NC-CSF (all estimated)"])].copy()
+    subset = combined_df[combined_df["name"].isin(["R-CSF Baseline", "C3  NC-CSF (all estimated)"])].copy()
     order = combined_df.drop_duplicates("case_id").sort_values("case_id")[["case_id", "case_slug"]]
     case_labels = {
         1: "lin / lin / info / strong / bene / large",
@@ -1472,7 +1476,7 @@ def render_b2_vs_c3_png(combined_df: pd.DataFrame, output_path: Path):
         12: "nonlin / nonlin / weakproxy / weak / near0 / harm",
     }
 
-    b2 = subset[subset["name"] == "B2  R-CSF baseline (X+W+Z)"].sort_values("case_id")
+    b2 = subset[subset["name"] == "R-CSF Baseline"].sort_values("case_id")
     c3 = subset[subset["name"] == "C3  NC-CSF (all estimated)"].sort_values("case_id")
     c3_wins = int((c3["pehe"].to_numpy() < b2["pehe"].to_numpy()).sum())
     b2_wins = int((b2["pehe"].to_numpy() < c3["pehe"].to_numpy()).sum())
@@ -1485,7 +1489,7 @@ def render_b2_vs_c3_png(combined_df: pd.DataFrame, output_path: Path):
     y = np.arange(len(order))
     height = 0.34
     ax.barh(y - height / 2, c3["pehe"], height=height, color="#2ca89b", label="C3  NC-CSF (all estimated)")
-    ax.barh(y + height / 2, b2["pehe"], height=height, color="#e76f51", label="B2  R-CSF baseline (X+W+Z)")
+    ax.barh(y + height / 2, b2["pehe"], height=height, color="#e76f51", label="R-CSF Baseline")
     ax.set_yticks(y)
     ax.set_yticklabels([case_labels[i] for i in order["case_id"]], fontsize=12)
     ax.invert_yaxis()

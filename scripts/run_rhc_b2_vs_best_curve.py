@@ -260,7 +260,7 @@ def main() -> int:
 
         model_rows = []
         for model_name, preds, elapsed, backend in [
-            ("B2  R-CSF baseline (X+W+Z)", b2_pred, b2_time, "installed R grf"),
+            ("R-CSF Baseline", b2_pred, b2_time, "installed R grf"),
             ("BestCurveLocal  PCI curve-summary forest", best_pred, best_time, "econml.grf"),
         ]:
             metrics = policy_metrics(preds, psi1, psi0)

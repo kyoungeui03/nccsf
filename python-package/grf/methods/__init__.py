@@ -6,14 +6,85 @@ from .econml_bridge_summary_survival import (
     TwoStageObservedSummarySurvivalForest,
 )
 from .econml_mild_shrink import EconmlMildShrinkNCSurvivalForest
-from .econml_observed_survival import EconmlMildShrinkObservedSurvivalForest
-from .negative_control import OracleNCNuisanceInputs, nc_causal_survival_forest, nc_oracle_causal_survival_forest
+from .econml_oldc3_ablation_survival import (
+    B2SummaryCensoredSurvivalForest,
+    B2SummaryBaselineDMLCensoredSurvivalForest,
+    B2SummaryDMLCensoredSurvivalForest,
+    B2SummaryDMLObservedCensoredSurvivalForest,
+    B2SummaryObservedCensoredSurvivalForest,
+    FinalModelCensoredSurvivalForest,
+    UnifiedB2SumBaselineCensoredSurvivalForest,
+    UnifiedB2SumMildShrinkCensoredSurvivalForest,
+    BroadAugDMLCensoredSurvivalForest,
+    BroadAugDMLObservedCensoredSurvivalForest,
+    BroadAugSPCensoredSurvivalForest,
+    BroadAugSPObservedCensoredSurvivalForest,
+    UnifiedBroadAugSPBaselineCensoredSurvivalForest,
+    UnifiedBroadAugSPMildShrinkCensoredSurvivalForest,
+    OldC3AugmentedMinimalDMLCensoredSurvivalForest,
+    OldC3AugmentedMinimalGRFCensoredSurvivalForest,
+    OldC3AugmentedMinimalObservedDMLCensoredSurvivalForest,
+    OldC3AugmentedMinimalObservedGRFCensoredSurvivalForest,
+    OldC3AugmentedSurvDMLCensoredSurvivalForest,
+    OldC3AugmentedSurvGRFCensoredSurvivalForest,
+    OldC3AugmentedSurvObservedDMLCensoredSurvivalForest,
+    OldC3AugmentedSurvObservedGRFCensoredSurvivalForest,
+    OldC3SummaryMinimalDMLCensoredSurvivalForest,
+    OldC3SummaryMinimalGRFCensoredSurvivalForest,
+    OldC3SummaryMinimalObservedDMLCensoredSurvivalForest,
+    OldC3SummaryMinimalObservedGRFCensoredSurvivalForest,
+    OldC3SummarySurvDMLCensoredSurvivalForest,
+    OldC3SummarySurvGRFCensoredSurvivalForest,
+    OldC3SummarySurvObservedDMLCensoredSurvivalForest,
+    OldC3SummarySurvObservedGRFCensoredSurvivalForest,
+)
+from .econml_observed_survival import (
+    EconmlMildShrinkObservedSurvivalForest,
+    EconmlMildShrinkObservedSurvivalForestMatched,
+)
+try:
+    from .negative_control import OracleNCNuisanceInputs, nc_causal_survival_forest, nc_oracle_causal_survival_forest
+except ModuleNotFoundError:
+    OracleNCNuisanceInputs = None
+    nc_causal_survival_forest = None
+    nc_oracle_causal_survival_forest = None
 
 __all__ = [
+    "B2SummaryCensoredSurvivalForest",
+    "B2SummaryBaselineDMLCensoredSurvivalForest",
+    "B2SummaryDMLCensoredSurvivalForest",
+    "B2SummaryDMLObservedCensoredSurvivalForest",
+    "B2SummaryObservedCensoredSurvivalForest",
+    "FinalModelCensoredSurvivalForest",
+    "UnifiedB2SumBaselineCensoredSurvivalForest",
+    "UnifiedB2SumMildShrinkCensoredSurvivalForest",
     "BestCurveLocalCensoredPCISurvivalForest",
     "BestCurveLocalObservedCensoredSurvivalForest",
+    "BroadAugDMLCensoredSurvivalForest",
+    "BroadAugDMLObservedCensoredSurvivalForest",
+    "BroadAugSPCensoredSurvivalForest",
+    "BroadAugSPObservedCensoredSurvivalForest",
+    "UnifiedBroadAugSPBaselineCensoredSurvivalForest",
+    "UnifiedBroadAugSPMildShrinkCensoredSurvivalForest",
     "EconmlMildShrinkNCSurvivalForest",
     "EconmlMildShrinkObservedSurvivalForest",
+    "EconmlMildShrinkObservedSurvivalForestMatched",
+    "OldC3AugmentedMinimalDMLCensoredSurvivalForest",
+    "OldC3AugmentedMinimalGRFCensoredSurvivalForest",
+    "OldC3AugmentedMinimalObservedDMLCensoredSurvivalForest",
+    "OldC3AugmentedMinimalObservedGRFCensoredSurvivalForest",
+    "OldC3AugmentedSurvDMLCensoredSurvivalForest",
+    "OldC3AugmentedSurvGRFCensoredSurvivalForest",
+    "OldC3AugmentedSurvObservedDMLCensoredSurvivalForest",
+    "OldC3AugmentedSurvObservedGRFCensoredSurvivalForest",
+    "OldC3SummaryMinimalDMLCensoredSurvivalForest",
+    "OldC3SummaryMinimalGRFCensoredSurvivalForest",
+    "OldC3SummaryMinimalObservedDMLCensoredSurvivalForest",
+    "OldC3SummaryMinimalObservedGRFCensoredSurvivalForest",
+    "OldC3SummarySurvDMLCensoredSurvivalForest",
+    "OldC3SummarySurvGRFCensoredSurvivalForest",
+    "OldC3SummarySurvObservedDMLCensoredSurvivalForest",
+    "OldC3SummarySurvObservedGRFCensoredSurvivalForest",
     "OracleNCNuisanceInputs",
     "TwoStageBridgeSummarySurvivalForest",
     "TwoStageObservedSummarySurvivalForest",

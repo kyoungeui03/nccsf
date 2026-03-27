@@ -180,7 +180,7 @@ VARIANT_SPECS = [
     {"name": "A2  Oracle (true q, est h)", "kind": "oracle", "use_true_q": True, "use_true_h": False},
     {"name": "A3  Oracle (all estimated q/h)", "kind": "oracle", "use_true_q": False, "use_true_h": False},
     {"name": "B1  EconML baseline (X only)", "kind": "baseline_x"},
-    {"name": "B2  EconML baseline (X+W+Z)", "kind": "baseline_xwz"},
+    {"name": "EconML Baseline", "kind": "baseline_xwz"},
     {"name": "C1  NC-CSF (all true q/h)", "kind": "nc", "use_true_q": True, "use_true_h": True},
     {"name": "C2  NC-CSF (true q, est h)", "kind": "nc", "use_true_q": True, "use_true_h": False},
     {"name": "C3  NC-CSF (all estimated q/h)", "kind": "nc", "use_true_q": False, "use_true_h": False},
@@ -537,7 +537,7 @@ def _render_table_png(title, rows, output_path, columns, keys, *, dark=False, me
 
 
 def _render_b2_c3_plot(case_df, summary_df, output_path):
-    b2 = case_df[case_df["name"] == "B2  EconML baseline (X+W+Z)"].sort_values("case_id")
+    b2 = case_df[case_df["name"] == "EconML Baseline"].sort_values("case_id")
     c3 = case_df[case_df["name"] == "C3  NC-CSF (all estimated q/h)"].sort_values("case_id")
 
     labels = []
@@ -572,7 +572,7 @@ def _render_b2_c3_plot(case_df, summary_df, output_path):
         ax_right.text(x, val + 0.2, str(val), ha="center", va="bottom", fontsize=16, weight="bold")
 
     c3_summary = summary_df[summary_df["name"] == "C3  NC-CSF (all estimated q/h)"].iloc[0]
-    b2_summary = summary_df[summary_df["name"] == "B2  EconML baseline (X+W+Z)"].iloc[0]
+    b2_summary = summary_df[summary_df["name"] == "EconML Baseline"].iloc[0]
     note = (
         f"Primary criterion: sqrt-PEHE\n"
         f"C3 avg sqrt-PEHE {c3_summary['avg_pehe']:.4f}\n"
@@ -619,6 +619,19 @@ def _make_cfg(case_spec):
     cfg_kwargs = dict(BASE_CONFIG)
     cfg_kwargs.update(case_spec["cfg"])
     return SynthConfig(**cfg_kwargs)
+
+
+def _case_with_overrides(case_spec, *, n=None, p_w=None, p_z=None):
+    case_copy = dict(case_spec)
+    cfg_updates = dict(case_spec["cfg"])
+    if n is not None:
+        cfg_updates["n"] = int(n)
+    if p_w is not None:
+        cfg_updates["p_w"] = int(p_w)
+    if p_z is not None:
+        cfg_updates["p_z"] = int(p_z)
+    case_copy["cfg"] = cfg_updates
+    return case_copy
 
 
 def _evaluate_case_variant(case, variant, seed):
@@ -725,7 +738,7 @@ def run_b2_vs_c3_12case_comparison(output_dir: Path, case_ids=None):
         selected = [case_spec for case_spec in CASE_SPECS if case_spec["case_id"] in case_id_set]
 
     selected_variants = [
-        next(v for v in VARIANT_SPECS if v["name"] == "B2  EconML baseline (X+W+Z)"),
+        next(v for v in VARIANT_SPECS if v["name"] == "EconML Baseline"),
         next(v for v in VARIANT_SPECS if v["name"] == "C3  NC-CSF (all estimated q/h)"),
     ]
 
@@ -792,12 +805,13 @@ def write_implementation_audit(output_dir: Path):
     (output_dir / "implementation_audit.json").write_text(json.dumps(audit, indent=2))
 
 
-def run_all_12case_benchmarks(output_dir: Path, case_ids=None):
+def run_all_12case_benchmarks(output_dir: Path, case_ids=None, *, n=None, p_w=None, p_z=None):
     output_dir.mkdir(parents=True, exist_ok=True)
     selected = CASE_SPECS
     if case_ids:
         case_id_set = set(case_ids)
         selected = [case_spec for case_spec in CASE_SPECS if case_spec["case_id"] in case_id_set]
+    selected = [_case_with_overrides(case_spec, n=n, p_w=p_w, p_z=p_z) for case_spec in selected]
 
     all_rows = []
     for case_spec in selected:
@@ -807,8 +821,10 @@ def run_all_12case_benchmarks(output_dir: Path, case_ids=None):
         print("=" * 100)
         case_df = run_case_benchmark(case_spec, output_dir)
         all_rows.append(case_df)
-        print(f"Saved {output_dir / f'case_{case_spec['case_id']:02d}_{case_spec['slug']}.csv'}")
-        print(f"Saved {output_dir / f'case_{case_spec['case_id']:02d}_{case_spec['slug']}.png'}")
+        case_csv = output_dir / f"case_{case_spec['case_id']:02d}_{case_spec['slug']}.csv"
+        case_png = output_dir / f"case_{case_spec['case_id']:02d}_{case_spec['slug']}.png"
+        print(f"Saved {case_csv}")
+        print(f"Saved {case_png}")
 
     all_results = pd.concat(all_rows, ignore_index=True)
     summary = summarize_results(all_results)

@@ -221,7 +221,7 @@ def main():
 
     rows = []
     for model_name, pred in [
-        ("B2  EconML baseline (X+W+Z)", pred_b2),
+        ("EconML Baseline", pred_b2),
         ("BestCurveLocal  PCI curve-summary forest", pred_best),
     ]:
         metrics = policy_metrics(pred, psi1, psi0)
@@ -233,7 +233,7 @@ def main():
     curve_frames = []
     quantiles = [0.1, 0.2, 0.3, 0.4, 0.5]
     for model_name, pred in [
-        ("B2  EconML baseline (X+W+Z)", pred_b2),
+        ("EconML Baseline", pred_b2),
         ("BestCurveLocal  PCI curve-summary forest", pred_best),
     ]:
         curve = subgroup_curve(pred, tau_dr, quantiles)

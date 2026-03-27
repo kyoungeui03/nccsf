@@ -44,7 +44,7 @@ VARIANT_SPECS = [
     {"name": "A1  Oracle BestCurve (all true q/h)", "kind": "oracle", "use_true_q": True, "use_true_h": True},
     {"name": "A2  Oracle BestCurve (true q, est h)", "kind": "oracle", "use_true_q": True, "use_true_h": False},
     {"name": "A3  Oracle BestCurve (all estimated q/h)", "kind": "oracle", "use_true_q": False, "use_true_h": False},
-    {"name": "B2  EconML baseline (X+W+Z)", "kind": "baseline_xwz"},
+    {"name": "EconML Baseline", "kind": "baseline_xwz"},
     {"name": "C1  BestCurve NC-CSF (all true q/h)", "kind": "nc", "use_true_q": True, "use_true_h": True},
     {"name": "C2  BestCurve NC-CSF (true q, est h)", "kind": "nc", "use_true_q": True, "use_true_h": False},
     {"name": "C3  BestCurve NC-CSF (all estimated q/h)", "kind": "nc", "use_true_q": False, "use_true_h": False},
@@ -57,7 +57,7 @@ MODEL_COLORS = {
     "A1  Oracle BestCurve (all true q/h)": "#264653",
     "A2  Oracle BestCurve (true q, est h)": "#287271",
     "A3  Oracle BestCurve (all estimated q/h)": "#2a9d8f",
-    "B2  EconML baseline (X+W+Z)": "#e76f51",
+    "EconML Baseline": "#e76f51",
     "C1  BestCurve NC-CSF (all true q/h)": "#7b61ff",
     "C2  BestCurve NC-CSF (true q, est h)": "#6d597a",
     "C3  BestCurve NC-CSF (all estimated q/h)": "#355070",
@@ -131,7 +131,7 @@ def _evaluate_b2(case):
     model = BaselineCausalForestDML(n_estimators=200, min_samples_leaf=20, cv=5, random_state=42)
     model.fit_baseline(x_full, case["A"], case["Y"])
     preds = model.effect(x_full).ravel()
-    return _metric_row("B2  EconML baseline (X+W+Z)", preds, case["true_cate"], time.time() - start)
+    return _metric_row("EconML Baseline", preds, case["true_cate"], time.time() - start)
 
 
 def _evaluate_oracle(case, spec):
