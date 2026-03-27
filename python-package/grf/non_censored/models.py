@@ -225,6 +225,8 @@ def _build_single_pass_nc_features(
     q_centered = q_pred - 0.5
     agreement = (2.0 * q_pred - 1.0) * h_diff
 
+    if mode == "raw":
+        return np.hstack([x, w_raw, z_raw])
     if mode == "aug_full":
         return np.hstack([x, w_raw, z_raw, q_pred, h1_pred, h0_pred, m_pred])
     if mode == "aug_compact":
@@ -2063,6 +2065,52 @@ class FinalModelNCCausalForest(_BaseSinglePassBridgeFeatureNCCausalForest):
 
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("final_feature_mode", "aug_full")
+        kwargs.setdefault("prediction_nuisance_mode", "full_refit")
+        kwargs.setdefault("observed_only", False)
+        kwargs.setdefault("cv", 5)
+        kwargs.setdefault("random_state", 42)
+        kwargs.setdefault("q_kind", "logit")
+        kwargs.setdefault("h_kind", "extra")
+        kwargs.setdefault("h_n_estimators", 600)
+        kwargs.setdefault("h_min_samples_leaf", 5)
+        kwargs.setdefault("q_clip", 0.02)
+        kwargs.setdefault("y_clip_quantile", 0.99)
+        kwargs.setdefault("y_res_clip_percentiles", (1.0, 99.0))
+        kwargs.setdefault("n_estimators", 200)
+        kwargs.setdefault("min_samples_leaf", 20)
+        kwargs.setdefault("nuisance_feature_mode", "broad_dup")
+        kwargs.setdefault("n_jobs", 1)
+        super().__init__(*args, **kwargs)
+
+
+class FinalModelNoPCINCCausalForest(_BaseSinglePassBridgeFeatureNCCausalForest):
+    """Finalized non-censored model with proxy information removed from nuisance fitting."""
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("final_feature_mode", "aug_full")
+        kwargs.setdefault("prediction_nuisance_mode", "full_refit")
+        kwargs.setdefault("observed_only", True)
+        kwargs.setdefault("cv", 5)
+        kwargs.setdefault("random_state", 42)
+        kwargs.setdefault("q_kind", "logit")
+        kwargs.setdefault("h_kind", "extra")
+        kwargs.setdefault("h_n_estimators", 600)
+        kwargs.setdefault("h_min_samples_leaf", 5)
+        kwargs.setdefault("q_clip", 0.02)
+        kwargs.setdefault("y_clip_quantile", 0.99)
+        kwargs.setdefault("y_res_clip_percentiles", (1.0, 99.0))
+        kwargs.setdefault("n_estimators", 200)
+        kwargs.setdefault("min_samples_leaf", 20)
+        kwargs.setdefault("nuisance_feature_mode", "broad_dup")
+        kwargs.setdefault("n_jobs", 1)
+        super().__init__(*args, **kwargs)
+
+
+class FinalModelRawNCCausalForest(_BaseSinglePassBridgeFeatureNCCausalForest):
+    """Finalized non-censored model with raw final-stage features only."""
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("final_feature_mode", "raw")
         kwargs.setdefault("prediction_nuisance_mode", "full_refit")
         kwargs.setdefault("observed_only", False)
         kwargs.setdefault("cv", 5)

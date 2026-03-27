@@ -32,7 +32,7 @@ from .econml_mild_shrink import (
 def _resolve_surv_scalar_mode(include_surv_scalar: bool, surv_scalar_mode: str | None) -> str:
     if surv_scalar_mode is None:
         return "full" if include_surv_scalar else "none"
-    if surv_scalar_mode not in {"none", "pair", "full"}:
+    if surv_scalar_mode not in {"none", "pair", "full", "raw"}:
         raise ValueError(f"Unsupported surv_scalar_mode: {surv_scalar_mode}")
     return surv_scalar_mode
 
@@ -50,6 +50,8 @@ def _build_oldc3_survival_ablation_features(
     parts = [x]
     if include_raw_proxy:
         parts.extend([_ensure_2d(W_raw).astype(float), _ensure_2d(Z_raw).astype(float)])
+    if surv_scalar_mode == "raw":
+        return np.hstack(parts)
     parts.extend(
         [
             np.asarray(bridge["q_pred"], dtype=float).reshape(-1, 1),
@@ -71,6 +73,8 @@ def _build_oldc3_survival_ablation_features(
 
 
 def _oldc3_ablation_feature_mode(*, include_raw_proxy: bool, surv_scalar_mode: str) -> str:
+    if surv_scalar_mode == "raw":
+        return "xwz" if include_raw_proxy else "x_only"
     if include_raw_proxy and surv_scalar_mode == "full":
         return "augmented_surv"
     if include_raw_proxy and surv_scalar_mode == "pair":
@@ -171,7 +175,7 @@ class _BaseOldC3FeatureGRFCensoredSurvivalForest:
     ):
         self._include_raw_proxy = bool(include_raw_proxy)
         self._surv_scalar_mode = _resolve_surv_scalar_mode(include_surv_scalar, surv_scalar_mode)
-        self._include_surv_scalar = self._surv_scalar_mode != "none"
+        self._include_surv_scalar = self._surv_scalar_mode in {"pair", "full"}
         self._observed_only = bool(observed_only)
         self._target = target
         self._horizon = horizon
@@ -329,7 +333,7 @@ class _BaseOldC3FeatureDMLCensoredSurvivalForest:
     ):
         self._include_raw_proxy = bool(include_raw_proxy)
         self._surv_scalar_mode = _resolve_surv_scalar_mode(include_surv_scalar, surv_scalar_mode)
-        self._include_surv_scalar = self._surv_scalar_mode != "none"
+        self._include_surv_scalar = self._surv_scalar_mode in {"pair", "full"}
         self._observed_only = bool(observed_only)
         self._target = target
         self._horizon = horizon
@@ -510,7 +514,7 @@ class _BridgeFeatureSurvivalModelFinal:
         self._base_model_final = base_model_final
         self._include_raw_proxy = bool(include_raw_proxy)
         self._surv_scalar_mode = _resolve_surv_scalar_mode(include_surv_scalar, surv_scalar_mode)
-        self._include_surv_scalar = self._surv_scalar_mode != "none"
+        self._include_surv_scalar = self._surv_scalar_mode in {"pair", "full"}
         self._raw_proxy_supplier = raw_proxy_supplier
         self._train_x_final = None
 
@@ -607,7 +611,7 @@ class SinglePassBridgeFeatureCensoredSurvivalForest(EconmlMildShrinkNCSurvivalFo
     def __init__(self, *, include_raw_proxy: bool, include_surv_scalar: bool, surv_scalar_mode: str | None = None, **kwargs):
         self._include_raw_proxy = bool(include_raw_proxy)
         self._surv_scalar_mode = _resolve_surv_scalar_mode(include_surv_scalar, surv_scalar_mode)
-        self._include_surv_scalar = self._surv_scalar_mode != "none"
+        self._include_surv_scalar = self._surv_scalar_mode in {"pair", "full"}
         self._raw_w_for_final = None
         self._raw_z_for_final = None
         kwargs.setdefault(
@@ -689,7 +693,7 @@ class _BaseSinglePassBridgeFeatureCensoredSurvivalForest:
     ):
         self._include_raw_proxy = bool(include_raw_proxy)
         self._surv_scalar_mode = _resolve_surv_scalar_mode(include_surv_scalar, surv_scalar_mode)
-        self._include_surv_scalar = self._surv_scalar_mode != "none"
+        self._include_surv_scalar = self._surv_scalar_mode in {"pair", "full"}
         self._observed_only = bool(observed_only)
         self._target = target
         self._horizon = horizon
@@ -1504,6 +1508,62 @@ class FinalModelCensoredSurvivalForest(_BaseSinglePassBridgeFeatureCensoredSurvi
         kwargs.setdefault("include_raw_proxy", True)
         kwargs.setdefault("include_surv_scalar", True)
         kwargs.setdefault("surv_scalar_mode", "pair")
+        kwargs.setdefault("prediction_nuisance_mode", "full_refit")
+        kwargs.setdefault("observed_only", False)
+        kwargs.setdefault("target", "RMST")
+        kwargs.setdefault("horizon", None)
+        kwargs.setdefault("cv", 5)
+        kwargs.setdefault("random_state", 42)
+        kwargs.setdefault("q_kind", "logit")
+        kwargs.setdefault("h_kind", "extra")
+        kwargs.setdefault("h_n_estimators", 600)
+        kwargs.setdefault("h_min_samples_leaf", 5)
+        kwargs.setdefault("q_clip", 0.03)
+        kwargs.setdefault("y_tilde_clip_quantile", 0.98)
+        kwargs.setdefault("y_res_clip_percentiles", (2.0, 98.0))
+        kwargs.setdefault("n_estimators", 200)
+        kwargs.setdefault("min_samples_leaf", 20)
+        kwargs.setdefault("censoring_estimator", "nelson-aalen")
+        kwargs.setdefault("nuisance_feature_mode", "broad_dup")
+        kwargs.setdefault("n_jobs", 1)
+        super().__init__(*args, **kwargs)
+
+
+class FinalModelNoPCICensoredSurvivalForest(_BaseSinglePassBridgeFeatureCensoredSurvivalForest):
+    """Finalized censored model with proxy information removed from nuisance fitting."""
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("include_raw_proxy", True)
+        kwargs.setdefault("include_surv_scalar", True)
+        kwargs.setdefault("surv_scalar_mode", "pair")
+        kwargs.setdefault("prediction_nuisance_mode", "full_refit")
+        kwargs.setdefault("observed_only", True)
+        kwargs.setdefault("target", "RMST")
+        kwargs.setdefault("horizon", None)
+        kwargs.setdefault("cv", 5)
+        kwargs.setdefault("random_state", 42)
+        kwargs.setdefault("q_kind", "logit")
+        kwargs.setdefault("h_kind", "extra")
+        kwargs.setdefault("h_n_estimators", 600)
+        kwargs.setdefault("h_min_samples_leaf", 5)
+        kwargs.setdefault("q_clip", 0.03)
+        kwargs.setdefault("y_tilde_clip_quantile", 0.98)
+        kwargs.setdefault("y_res_clip_percentiles", (2.0, 98.0))
+        kwargs.setdefault("n_estimators", 200)
+        kwargs.setdefault("min_samples_leaf", 20)
+        kwargs.setdefault("censoring_estimator", "nelson-aalen")
+        kwargs.setdefault("nuisance_feature_mode", "broad_dup")
+        kwargs.setdefault("n_jobs", 1)
+        super().__init__(*args, **kwargs)
+
+
+class FinalModelRawCensoredSurvivalForest(_BaseSinglePassBridgeFeatureCensoredSurvivalForest):
+    """Finalized censored model with raw final-stage features only."""
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("include_raw_proxy", True)
+        kwargs.setdefault("include_surv_scalar", False)
+        kwargs.setdefault("surv_scalar_mode", "raw")
         kwargs.setdefault("prediction_nuisance_mode", "full_refit")
         kwargs.setdefault("observed_only", False)
         kwargs.setdefault("target", "RMST")

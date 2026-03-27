@@ -1,0 +1,36 @@
+{
+  "non_censored": [
+    {
+      "name": "Final Model",
+      "avg_rmse": 0.1287568416578088,
+      "avg_mae": 0.08277222018712015,
+      "avg_pearson": 0.5288613510332589
+    },
+    {
+      "name": "R-CF Baseline",
+      "avg_rmse": 0.13944963683158632,
+      "avg_mae": 0.0947202407403781,
+      "avg_pearson": 0.4812795102819007
+    },
+    {
+      "name": "EconML Baseline",
+      "avg_rmse": 0.14743242241204005,
+      "avg_mae": 0.10014297656943777,
+      "avg_pearson": 0.4767163734538387
+    }
+  ],
+  "censored": [
+    {
+      "name": "Final Model",
+      "avg_rmse": 0.1304627277409573,
+      "avg_mae": 0.08367793650121408,
+      "avg_pearson": 0.4696470039292673
+    },
+    {
+      "name": "R-CSF Baseline",
+      "avg_rmse": 0.2456461967502601,
+      "avg_mae": 0.15249626487424056,
+      "avg_pearson": 0.287080299413135
+    }
+  ]
+}
