@@ -2,7 +2,9 @@
 from __future__ import annotations
 
 import argparse
+import subprocess
 import sys
+import tempfile
 import time
 from functools import partial
 from pathlib import Path
@@ -37,17 +39,17 @@ from grf.non_censored.models import (  # noqa: E402
     BaselineCausalForestDML,
     SinglePassBridgeFeatureNCCausalForestDML,
 )
+from grf.r_runtime import resolve_rscript  # noqa: E402
 
 matplotlib.use("Agg")
 
 
 VARIANT_SPECS = [
     {"name": "A1  Final Model Oracle (all true q/h)", "kind": "oracle", "use_true_q": True, "use_true_h": True},
-    {"name": "A2  Final Model Oracle (true q, est h)", "kind": "oracle", "use_true_q": True, "use_true_h": False},
     {"name": "A3  Final Model Oracle (all estimated q/h)", "kind": "oracle", "use_true_q": False, "use_true_h": False},
     {"name": "EconML Baseline", "kind": "baseline"},
+    {"name": "R-CF Baseline", "kind": "baseline_r"},
     {"name": "C1  Final Model (all true q/h)", "kind": "proxy", "use_true_q": True, "use_true_h": True},
-    {"name": "C2  Final Model (true q, est h)", "kind": "proxy", "use_true_q": True, "use_true_h": False},
     {"name": "C3  Final Model (all estimated q/h)", "kind": "proxy", "use_true_q": False, "use_true_h": False},
 ]
 
@@ -67,6 +69,7 @@ SETTINGS = [
     {"setting_id": "S13", "n": 2000, "p_x": 10, "p_w": 10, "p_z": 10},
     {"setting_id": "S14", "n": 4000, "p_x": 20, "p_w": 10, "p_z": 10},
 ]
+R_CF_SCRIPT = PROJECT_ROOT / "scripts" / "run_grf_cf_baseline.R"
 
 
 def parse_args():
@@ -193,6 +196,47 @@ def _evaluate_baseline(case):
     return _metric_row("EconML Baseline", preds, case["true_cate"], time.time() - start)
 
 
+def _run_r_cf_baseline(obs_df: pd.DataFrame, feature_cols: list[str], *, num_trees: int, seed: int) -> tuple[np.ndarray, float]:
+    with tempfile.TemporaryDirectory(prefix="r_cf_variant_") as tmp_dir:
+        tmp_dir_path = Path(tmp_dir)
+        input_path = tmp_dir_path / "input.csv"
+        output_path = tmp_dir_path / "predictions.csv"
+        obs_df.to_csv(input_path, index=False)
+        cmd = [
+            resolve_rscript(),
+            str(R_CF_SCRIPT),
+            str(input_path),
+            ",".join(feature_cols),
+            str(int(num_trees)),
+            str(output_path),
+            str(int(seed)),
+        ]
+        start = time.time()
+        proc = subprocess.run(cmd, cwd=PROJECT_ROOT, text=True, capture_output=True, check=False)
+        elapsed = time.time() - start
+        if proc.returncode != 0:
+            raise RuntimeError(
+                "R causal_forest baseline failed.\n"
+                f"stdout:\n{proc.stdout}\n"
+                f"stderr:\n{proc.stderr}"
+            )
+        preds = pd.read_csv(output_path)["pred"].to_numpy(dtype=float)
+    return preds, elapsed
+
+
+def _evaluate_r_cf_baseline(case):
+    feature_cols = [*case["x_cols"], *case["w_cols"], *case["z_cols"]]
+    obs_df = case["obs_df"].loc[:, [*feature_cols, "A"]].copy()
+    obs_df["Y"] = case["Y"]
+    preds, elapsed = _run_r_cf_baseline(
+        obs_df,
+        feature_cols,
+        num_trees=200,
+        seed=int(case["cfg"].seed),
+    )
+    return _metric_row("R-CF Baseline", preds, case["true_cate"], elapsed)
+
+
 def _evaluate_oracle_final_model(case, variant):
     x = np.asarray(case["X"], dtype=float)
     u = np.asarray(case["U"], dtype=float).reshape(-1, 1)
@@ -242,6 +286,8 @@ def _evaluate_proxy_final_model(case, variant):
 def _evaluate_variant(case, variant):
     if variant["kind"] == "baseline":
         return _evaluate_baseline(case)
+    if variant["kind"] == "baseline_r":
+        return _evaluate_r_cf_baseline(case)
     if variant["kind"] == "oracle":
         return _evaluate_oracle_final_model(case, variant)
     if variant["kind"] == "proxy":
@@ -290,7 +336,7 @@ def _run_basic12(case_specs: list[dict[str, object]], output_dir: Path) -> None:
         SUMMARY_COLUMNS,
         SUMMARY_KEYS,
         dark=True,
-        meta="A1/A2/A3 + baseline + C1/C2/C3",
+        meta="A1/A3 + EconML/R-CF baselines + C1/C3",
         col_widths=[90, 520, 150, 150, 120, 140, 140, 120, 150, 120],
     )
     _render_table_png(

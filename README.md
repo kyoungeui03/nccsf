@@ -77,6 +77,23 @@ Read [non_censored/README.md](/Users/kyoungeuihong/Desktop/csf_grf_new/non_censo
 
 ## Maintenance
 
+### Direct R baselines
+
+`R-CF Baseline` and `R-CSF Baseline` require:
+
+- an R installation with `Rscript`
+- the R package `grf`
+
+Setup guide:
+
+- [docs/R_BASELINE_SETUP.md](/Users/kyoungeuihong/Desktop/csf_grf_new/docs/R_BASELINE_SETUP.md)
+
+If `Rscript` is not on `PATH`, set:
+
+```bash
+export RSCRIPT=/absolute/path/to/Rscript
+```
+
 ### Baseline parity check
 
 ```bash

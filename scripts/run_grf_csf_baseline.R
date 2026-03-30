@@ -1,6 +1,20 @@
 #!/usr/bin/env Rscript
 
+if (!requireNamespace("grf", quietly = TRUE)) {
+  stop(
+    "R package 'grf' is required for the R-CSF Baseline. Install it with install.packages('grf').",
+    call. = FALSE
+  )
+}
+
 suppressPackageStartupMessages(library(grf))
+
+if (!("causal_survival_forest" %in% getNamespaceExports("grf"))) {
+  stop(
+    "Your installed R package 'grf' does not export causal_survival_forest(). Install a recent version of grf.",
+    call. = FALSE
+  )
+}
 
 args <- commandArgs(trailingOnly = TRUE)
 if (!(length(args) %in% c(5, 6))) {

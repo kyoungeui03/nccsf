@@ -36,6 +36,7 @@ from grf.non_censored.benchmarks import (  # noqa: E402
     _make_cfg,
     _metric_row,
 )
+from grf.r_runtime import resolve_rscript  # noqa: E402
 from preprocess_rhc import build_cleaned_rhc  # noqa: E402
 
 
@@ -202,7 +203,7 @@ def _run_r_cf_baseline(
         output_path = tmp_dir_path / "predictions.csv"
         obs_df.to_csv(input_path, index=False)
         cmd = [
-            "Rscript",
+            resolve_rscript(),
             str(R_CF_SCRIPT),
             str(input_path),
             ",".join(feature_cols),
@@ -594,7 +595,7 @@ def _run_r_csf_baseline_direct(
         output_path = tmp_dir_path / "predictions.csv"
         obs_df.loc[:, ["time", "event", "A", *feature_cols]].to_csv(input_path, index=False)
         cmd = [
-            "Rscript",
+            resolve_rscript(),
             str(PROJECT_ROOT / "scripts" / "run_grf_csf_baseline.R"),
             str(input_path),
             ",".join(feature_cols),

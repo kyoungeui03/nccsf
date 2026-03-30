@@ -37,6 +37,11 @@ ABLATION_SPECS = [
     ("Final Model (No PCI)", FinalModelNoPCICensoredSurvivalForest),
     ("Final Model (Raw)", FinalModelRawCensoredSurvivalForest),
 ]
+ABLATION_KEY_MAP = {
+    "pci": ABLATION_SPECS[0],
+    "no_pci": ABLATION_SPECS[1],
+    "raw": ABLATION_SPECS[2],
+}
 
 SETTINGS = [
     {"setting_id": "S01", "n": 1000, "p_x": 5, "p_w": 1, "p_z": 1},
@@ -68,6 +73,13 @@ def parse_args():
     parser.add_argument("--p-x", type=int, default=None)
     parser.add_argument("--p-w", type=int, default=1)
     parser.add_argument("--p-z", type=int, default=1)
+    parser.add_argument(
+        "--models",
+        nargs="*",
+        choices=sorted(ABLATION_KEY_MAP),
+        default=None,
+        help="Subset of ablation models to run. Default runs pci, no_pci, and raw.",
+    )
     parser.add_argument("--skip-existing", action="store_true", default=True)
     parser.add_argument("--no-skip-existing", dest="skip_existing", action="store_false")
     return parser.parse_args()
@@ -136,14 +148,14 @@ def _consolidate_structured_outputs(output_dir: Path) -> None:
     top5_df.to_csv(output_dir / "all_settings_top5.csv", index=False)
 
 
-def _run_basic12(case_specs: list[dict[str, object]], output_dir: Path) -> None:
+def _run_basic12(case_specs: list[dict[str, object]], output_dir: Path, ablation_specs) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
     case_frames = []
     for case_spec in case_specs:
         case = prepare_case(case_spec, target="RMST", horizon_quantile=0.60)
         case_title = _format_case_title(case_spec, case.cfg)
         rows = []
-        for name, model_cls in ABLATION_SPECS:
+        for name, model_cls in ablation_specs:
             row = _evaluate_case_model(case, name, model_cls)
             row["case_id"] = case_spec["case_id"]
             row["case_slug"] = case_spec["slug"]
@@ -172,6 +184,7 @@ def _run_structured14(
     case_ids: set[int] | None,
     output_dir: Path,
     skip_existing: bool,
+    ablation_specs,
 ) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
     for setting in settings:
@@ -196,7 +209,7 @@ def _run_structured14(
             case = prepare_case(case_spec, target="RMST", horizon_quantile=0.60)
             case_title = _format_case_title(case_spec, case.cfg)
             rows = []
-            for name, model_cls in ABLATION_SPECS:
+            for name, model_cls in ablation_specs:
                 row = _evaluate_case_model(case, name, model_cls)
                 row["setting_id"] = str(setting["setting_id"])
                 row["setting_slug_full"] = _setting_slug(setting)
@@ -224,6 +237,7 @@ def main() -> int:
     args = parse_args()
     output_dir = _resolve_output_dir(args)
     selected_case_ids = set(args.case_ids) if args.case_ids else None
+    ablation_specs = [ABLATION_KEY_MAP[k] for k in (args.models or ["pci", "no_pci", "raw"])]
 
     if args.suite == "basic12":
         case_specs = [
@@ -231,12 +245,18 @@ def main() -> int:
             for case in CASE_SPECS
             if selected_case_ids is None or int(case["case_id"]) in selected_case_ids
         ]
-        _run_basic12(case_specs, output_dir)
+        _run_basic12(case_specs, output_dir, ablation_specs)
         return 0
 
     selected_setting_ids = set(args.setting_ids) if args.setting_ids else None
     settings = [s for s in SETTINGS if selected_setting_ids is None or s["setting_id"] in selected_setting_ids]
-    _run_structured14(settings, case_ids=selected_case_ids, output_dir=output_dir, skip_existing=args.skip_existing)
+    _run_structured14(
+        settings,
+        case_ids=selected_case_ids,
+        output_dir=output_dir,
+        skip_existing=args.skip_existing,
+        ablation_specs=ablation_specs,
+    )
     return 0
 
 

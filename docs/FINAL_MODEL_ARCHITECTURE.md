@@ -21,7 +21,7 @@ Supports:
 - `structured14`
 - `rhc`
 
-### Final 7-variant benchmark
+### Final variant benchmark
 
 - non-censored: `non_censored/scripts/run_final_model_variant_benchmark.py`
 - censored: `scripts/run_final_model_variant_benchmark.py`
@@ -86,6 +86,7 @@ Primary exported classes:
 
 - `scripts/run_grf_cf_baseline.R`
 - `scripts/run_grf_csf_baseline.R`
+- setup guide: `docs/R_BASELINE_SETUP.md`
 
 ## Validation Contract
 

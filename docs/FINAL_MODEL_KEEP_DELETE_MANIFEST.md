@@ -15,7 +15,7 @@ Preserve only the code and data required to:
   - `Final Model (PCI)`
   - `Final Model (No PCI)`
   - `Final Model (Raw)`
-- run the finalized `Final Model` 7-variant benchmark
+- run the finalized `Final Model` variant benchmark
 - preserve synthetic dataset testing infrastructure
 - preserve reproducibility of the final basic runners
 

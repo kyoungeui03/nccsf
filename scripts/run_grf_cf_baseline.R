@@ -1,5 +1,12 @@
 #!/usr/bin/env Rscript
 
+if (!requireNamespace("grf", quietly = TRUE)) {
+  stop(
+    "R package 'grf' is required for the R-CF Baseline. Install it with install.packages('grf').",
+    call. = FALSE
+  )
+}
+
 suppressPackageStartupMessages(library(grf))
 
 args <- commandArgs(trailingOnly = TRUE)

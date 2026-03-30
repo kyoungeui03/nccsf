@@ -29,6 +29,7 @@ from grf.methods.econml_mild_shrink import (
     _fit_kaplan_meier_censoring,
     _predict_s_on_grid,
 )
+from grf.r_runtime import resolve_rscript
 from grf.synthetic import (
     SynthConfig,
     add_ground_truth_cate,
@@ -1182,7 +1183,7 @@ def evaluate_r_csf_variant(name, obs_df, feature_cols, true_cate, horizon, num_t
         output_path = tmp_dir / "predictions.csv"
         obs_df.loc[:, ["time", "event", "A", *feature_cols]].to_csv(input_path, index=False)
         cmd = [
-            "Rscript",
+            resolve_rscript(),
             str(R_CSF_SCRIPT),
             str(input_path),
             ",".join(feature_cols),
