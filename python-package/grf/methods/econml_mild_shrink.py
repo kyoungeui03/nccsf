@@ -84,9 +84,17 @@ def _build_nuisance_features(raw_x, w, z, feature_mode):
     z = _ensure_2d(z)
     base = np.column_stack([raw_x, w, z])
 
-    q_features = np.column_stack([base, z])
-    h_features = np.column_stack([base, w])
-    surv_features = np.column_stack([base, w, z])
+    if feature_mode == "broad_dup":
+        # Mirror the non-censored broad-dup logic:
+        # build a shared proxy-aware base [X, W, Z], then duplicate the
+        # branch-specific proxy block one more time for q / h / survival.
+        q_features = np.column_stack([base, z])
+        h_features = np.column_stack([base, w])
+        surv_features = np.column_stack([base, w, z])
+    else:
+        q_features = np.column_stack([raw_x, z])
+        h_features = np.column_stack([raw_x, w])
+        surv_features = np.column_stack([raw_x, w, z])
 
     if feature_mode == "interact":
         xw = _pairwise_products(raw_x, w)
