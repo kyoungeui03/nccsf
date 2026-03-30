@@ -1,0 +1,19 @@
+# Core Python runtime dependencies for this repository.
+# Python 3.10+ is required.
+#
+# Install from the repo root with:
+#   python -m pip install -r requirements.txt
+#
+# Direct R baselines (`R-CF Baseline`, `R-CSF Baseline`) also require:
+# - an R installation with `Rscript`
+# - the R package `grf`
+# See: docs/R_BASELINE_SETUP.md
+
+econml
+lifelines
+matplotlib
+numpy
+pandas
+scikit-learn
+scikit-survival
+scipy

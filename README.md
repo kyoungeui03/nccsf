@@ -2,6 +2,19 @@
 
 Integrated research workspace for the finalized PCI+CSF pipelines.
 
+## Setup
+
+Install the Python dependencies from the repo root:
+
+```bash
+python -m pip install -r requirements.txt
+```
+
+Direct R baselines also need an R installation and the R package `grf`.
+Setup guide:
+
+- [docs/R_BASELINE_SETUP.md](/Users/kyoungeuihong/Desktop/csf_grf_new/docs/R_BASELINE_SETUP.md)
+
 The codebase now has a simple rule:
 
 - **Default `C3` = New C3**
