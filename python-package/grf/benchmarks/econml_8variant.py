@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 from econml._ortho_learner import _OrthoLearner
 from econml.utilities import filter_none_kwargs
+from scipy.special import gammainc
 from sklearn.base import clone
 
 from grf.methods import EconmlMildShrinkNCSurvivalForest
@@ -197,6 +198,12 @@ def _weibull_scale(lam: float, k: float, eta: np.ndarray) -> np.ndarray:
 def mean_survival_given_eta(eta: np.ndarray, cfg: SynthConfig) -> np.ndarray:
     scale = _weibull_scale(cfg.lam_t, cfg.k_t, np.asarray(eta, dtype=float))
     return scale * math.gamma(1.0 + 1.0 / cfg.k_t)
+
+
+def restricted_mean_survival_given_eta(eta: np.ndarray, horizon: float, cfg: SynthConfig) -> np.ndarray:
+    scale = _weibull_scale(cfg.lam_t, cfg.k_t, np.asarray(eta, dtype=float))
+    upper = (float(horizon) / np.maximum(scale, 1e-12)) ** cfg.k_t
+    return scale * math.gamma(1.0 + 1.0 / cfg.k_t) * gammainc(1.0 / cfg.k_t, upper)
 
 
 def survival_probability_given_eta(eta: np.ndarray, horizon: float, cfg: SynthConfig) -> np.ndarray:
@@ -406,8 +413,20 @@ def true_outcome_oracle(
         h0 = survival_probability_given_eta(_event_eta(X, U, np.zeros(X.shape[0]), cfg, dgp), horizon, cfg)
         h1 = survival_probability_given_eta(_event_eta(X, U, np.ones(X.shape[0]), cfg, dgp), horizon, cfg)
         return h0, h1
-    h0 = mean_survival_given_eta(_event_eta(X, U, np.zeros(X.shape[0]), cfg, dgp), cfg)
-    h1 = mean_survival_given_eta(_event_eta(X, U, np.ones(X.shape[0]), cfg, dgp), cfg)
+    if horizon is None:
+        h0 = mean_survival_given_eta(_event_eta(X, U, np.zeros(X.shape[0]), cfg, dgp), cfg)
+        h1 = mean_survival_given_eta(_event_eta(X, U, np.ones(X.shape[0]), cfg, dgp), cfg)
+    else:
+        h0 = restricted_mean_survival_given_eta(
+            _event_eta(X, U, np.zeros(X.shape[0]), cfg, dgp),
+            horizon,
+            cfg,
+        )
+        h1 = restricted_mean_survival_given_eta(
+            _event_eta(X, U, np.ones(X.shape[0]), cfg, dgp),
+            horizon,
+            cfg,
+        )
     return h0, h1
 
 
@@ -449,16 +468,36 @@ def true_outcome_nc(
             ),
         )
         return h0, h1
-    h0 = _gauss_hermite_expectation(
-        posterior_mean,
-        posterior_var,
-        lambda u_draws: mean_survival_given_eta(_event_eta(X, u_draws, np.zeros(X.shape[0]), cfg, dgp), cfg),
-    )
-    h1 = _gauss_hermite_expectation(
-        posterior_mean,
-        posterior_var,
-        lambda u_draws: mean_survival_given_eta(_event_eta(X, u_draws, np.ones(X.shape[0]), cfg, dgp), cfg),
-    )
+    if horizon is None:
+        h0 = _gauss_hermite_expectation(
+            posterior_mean,
+            posterior_var,
+            lambda u_draws: mean_survival_given_eta(_event_eta(X, u_draws, np.zeros(X.shape[0]), cfg, dgp), cfg),
+        )
+        h1 = _gauss_hermite_expectation(
+            posterior_mean,
+            posterior_var,
+            lambda u_draws: mean_survival_given_eta(_event_eta(X, u_draws, np.ones(X.shape[0]), cfg, dgp), cfg),
+        )
+    else:
+        h0 = _gauss_hermite_expectation(
+            posterior_mean,
+            posterior_var,
+            lambda u_draws: restricted_mean_survival_given_eta(
+                _event_eta(X, u_draws, np.zeros(X.shape[0]), cfg, dgp),
+                horizon,
+                cfg,
+            ),
+        )
+        h1 = _gauss_hermite_expectation(
+            posterior_mean,
+            posterior_var,
+            lambda u_draws: restricted_mean_survival_given_eta(
+                _event_eta(X, u_draws, np.ones(X.shape[0]), cfg, dgp),
+                horizon,
+                cfg,
+            ),
+        )
     return h0, h1
 
 
@@ -480,10 +519,27 @@ def _build_true_y_tilde(x_base, u_vec, y_time, delta, cfg, dgp, *, target="RMST"
         sc_at_y = np.maximum(sc_at_y, SURV_FLOOR)
         return (np.asarray(y_time, dtype=float) > float(horizon)).astype(float) / sc_at_y
 
-    dummy_grid = np.array([np.max(y_time)], dtype=float)
-    _, _, sc_at_y = true_censoring_on_grid(x_base, u_vec, y_time, dummy_grid, cfg, dgp["beta_c"], dgp["lam_c"])
-    sc_at_y = np.maximum(sc_at_y, SURV_FLOOR)
-    return y_time * delta / sc_at_y
+    if horizon is None:
+        dummy_grid = np.array([np.max(y_time)], dtype=float)
+        _, _, sc_at_y = true_censoring_on_grid(x_base, u_vec, y_time, dummy_grid, cfg, dgp["beta_c"], dgp["lam_c"])
+        sc_at_y = np.maximum(sc_at_y, SURV_FLOOR)
+        return y_time * delta / sc_at_y
+
+    nuisance_time = np.minimum(np.asarray(y_time, dtype=float), float(horizon))
+    nuisance_delta = np.asarray(delta, dtype=float).copy()
+    nuisance_delta[np.asarray(y_time, dtype=float) >= float(horizon)] = 1.0
+    dummy_grid = np.array([float(np.max(nuisance_time))], dtype=float)
+    _, _, sc_at_eval = true_censoring_on_grid(
+        x_base,
+        u_vec,
+        nuisance_time,
+        dummy_grid,
+        cfg,
+        dgp["beta_c"],
+        dgp["lam_c"],
+    )
+    sc_at_eval = np.maximum(sc_at_eval, SURV_FLOOR)
+    return nuisance_time * nuisance_delta / sc_at_eval
 
 
 def _true_survival_components(x_base, u_vec, eval_time, grid_time, cfg, dgp):
@@ -1150,8 +1206,10 @@ def prepare_case(
         eta1 = _event_eta(X, U, np.ones(X.shape[0]), cfg, dgp)
         true_cate = survival_probability_given_eta(eta1, horizon, cfg) - survival_probability_given_eta(eta0, horizon, cfg)
     else:
-        true_cate = truth_df["CATE_XU_eq7"].to_numpy()
         horizon = float(np.max(Y))
+        eta0 = _event_eta(X, U, np.zeros(X.shape[0]), cfg, dgp)
+        eta1 = _event_eta(X, U, np.ones(X.shape[0]), cfg, dgp)
+        true_cate = restricted_mean_survival_given_eta(eta1, horizon, cfg) - restricted_mean_survival_given_eta(eta0, horizon, cfg)
     return CaseData(cfg, dgp, obs_df, truth_df, x_cols, w_cols, z_cols, X, W, Z, A, Y, delta, U, true_cate, horizon)
 
 

@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+import subprocess
+import tempfile
+from pathlib import Path
 from typing import Callable
 
 import numpy as np
+import pandas as pd
 from econml._ortho_learner import _OrthoLearner
 from econml.dml import CausalForestDML
 from econml.grf import CausalForest
@@ -14,8 +18,12 @@ from sklearn.model_selection import KFold
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import PolynomialFeatures
 
+from grf.r_runtime import resolve_rscript
+
 
 ArrayLike = np.ndarray
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
+R_CF_FINAL_FOREST_SCRIPT = PROJECT_ROOT / "scripts" / "run_grf_cf_final_forest.R"
 
 
 def _ensure_2d(array: ArrayLike | None) -> ArrayLike | None:
@@ -244,6 +252,101 @@ def _build_single_pass_nc_features(
     if mode == "summary_compact_qcenter_agreement":
         return np.hstack([x, q_pred, m_pred, h_diff, q_centered, agreement])
     raise ValueError(f"Unsupported single-pass non-censored feature mode: {mode}")
+
+
+def _rcf_final_feature_columns(x_final: ArrayLike) -> list[str]:
+    return [f"f{j}" for j in range(np.asarray(x_final, dtype=float).shape[1])]
+
+
+def _train_r_cf_final_forest(
+    x_final: ArrayLike,
+    y: ArrayLike,
+    a: ArrayLike,
+    y_hat: ArrayLike,
+    w_hat: ArrayLike,
+    *,
+    num_trees: int,
+    min_node_size: int,
+    seed: int,
+):
+    feature_cols = _rcf_final_feature_columns(x_final)
+    tempdir = tempfile.TemporaryDirectory(prefix="r_cf_final_forest_")
+    tempdir_path = Path(tempdir.name)
+    train_path = tempdir_path / "train.csv"
+    model_path = tempdir_path / "forest.rds"
+
+    train_df = pd.DataFrame(np.asarray(x_final, dtype=float), columns=feature_cols)
+    train_df["Y"] = np.asarray(y, dtype=float).ravel()
+    train_df["A"] = np.asarray(a, dtype=float).ravel()
+    train_df["Y_hat"] = np.asarray(y_hat, dtype=float).ravel()
+    train_df["W_hat"] = np.asarray(w_hat, dtype=float).ravel()
+    train_df.to_csv(train_path, index=False)
+
+    cmd = [
+        resolve_rscript(),
+        str(R_CF_FINAL_FOREST_SCRIPT),
+        "train",
+        str(train_path),
+        ",".join(feature_cols),
+        str(int(num_trees)),
+        str(int(min_node_size)),
+        str(model_path),
+        str(int(seed)),
+    ]
+    proc = subprocess.run(
+        cmd,
+        cwd=PROJECT_ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    if proc.returncode != 0:
+        tempdir.cleanup()
+        raise RuntimeError(
+            "R causal_forest final-stage training failed.\n"
+            f"stdout:\n{proc.stdout}\n"
+            f"stderr:\n{proc.stderr}"
+        )
+    return tempdir, model_path, feature_cols
+
+
+def _predict_r_cf_final_forest(
+    model_path: Path,
+    x_final: ArrayLike,
+    *,
+    feature_cols: list[str],
+) -> ArrayLike:
+    with tempfile.TemporaryDirectory(prefix="r_cf_final_predict_") as tmp_dir:
+        tmp_dir_path = Path(tmp_dir)
+        predict_path = tmp_dir_path / "predict.csv"
+        output_path = tmp_dir_path / "predictions.csv"
+        pd.DataFrame(np.asarray(x_final, dtype=float), columns=feature_cols).to_csv(
+            predict_path,
+            index=False,
+        )
+        cmd = [
+            resolve_rscript(),
+            str(R_CF_FINAL_FOREST_SCRIPT),
+            "predict",
+            str(model_path),
+            str(predict_path),
+            ",".join(feature_cols),
+            str(output_path),
+        ]
+        proc = subprocess.run(
+            cmd,
+            cwd=PROJECT_ROOT,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        if proc.returncode != 0:
+            raise RuntimeError(
+                "R causal_forest final-stage prediction failed.\n"
+                f"stdout:\n{proc.stdout}\n"
+                f"stderr:\n{proc.stderr}"
+            )
+        return pd.read_csv(output_path)["pred"].to_numpy(dtype=float)
 
 
 def make_q_model(
@@ -2081,6 +2184,126 @@ class FinalModelNCCausalForest(_BaseSinglePassBridgeFeatureNCCausalForest):
         kwargs.setdefault("nuisance_feature_mode", "broad_dup")
         kwargs.setdefault("n_jobs", 1)
         super().__init__(*args, **kwargs)
+
+
+class FinalModelRCFNCCausalForest(_BaseSinglePassBridgeFeatureNCCausalForest):
+    """Finalized non-censored model with an R grf::causal_forest final stage."""
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("final_feature_mode", "aug_full")
+        kwargs.setdefault("prediction_nuisance_mode", "full_refit")
+        kwargs.setdefault("observed_only", False)
+        kwargs.setdefault("cv", 5)
+        kwargs.setdefault("random_state", 42)
+        kwargs.setdefault("q_kind", "logit")
+        kwargs.setdefault("h_kind", "extra")
+        kwargs.setdefault("h_n_estimators", 600)
+        kwargs.setdefault("h_min_samples_leaf", 5)
+        kwargs.setdefault("q_clip", 0.02)
+        kwargs.setdefault("y_clip_quantile", 0.99)
+        kwargs.setdefault("y_res_clip_percentiles", (1.0, 99.0))
+        kwargs.setdefault("n_estimators", 200)
+        kwargs.setdefault("min_samples_leaf", 20)
+        kwargs.setdefault("nuisance_feature_mode", "broad_dup")
+        kwargs.setdefault("n_jobs", 1)
+        super().__init__(*args, **kwargs)
+        self._include_raw_proxy = True
+        self._include_bridge_stats = False
+        self._extra_bridge_features = ()
+        self._r_forest_tempdir = None
+        self._r_forest_model_path = None
+        self._r_forest_feature_cols = None
+
+    def _cleanup_r_forest(self):
+        if self._r_forest_tempdir is not None:
+            try:
+                self._r_forest_tempdir.cleanup()
+            finally:
+                self._r_forest_tempdir = None
+                self._r_forest_model_path = None
+                self._r_forest_feature_cols = None
+
+    def __del__(self):
+        self._cleanup_r_forest()
+
+    def fit_components(self, X, A, Y, Z, W):
+        if self._final_feature_mode != "aug_full":
+            raise ValueError("FinalModelRCFNCCausalForest currently supports final_feature_mode='aug_full' only.")
+        if self._prediction_nuisance_mode != "full_refit":
+            raise ValueError(
+                "FinalModelRCFNCCausalForest currently supports prediction_nuisance_mode='full_refit' only."
+            )
+
+        x = _ensure_2d(X).astype(float)
+        self._x_core_dim = int(x.shape[1])
+        x, raw_w, raw_z, w_nuis, z_nuis, x_final, y_res, a_res = _crossfit_oldc3_ablation_arrays_nc(
+            self,
+            x,
+            A,
+            Y,
+            W,
+            Z,
+        )
+        a = np.asarray(A, dtype=float).ravel()
+        y = np.asarray(Y, dtype=float).ravel()
+
+        # Reconstruct orthogonal nuisances from the same OOF signals used to
+        # train the finalized DML forest. This keeps the nuisance path fixed
+        # and swaps only the final forest implementation.
+        w_hat_oof = a - np.asarray(a_res, dtype=float).ravel()
+        y_hat_oof = y - np.asarray(y_res, dtype=float).ravel()
+
+        self._cleanup_r_forest()
+        self._r_forest_tempdir, self._r_forest_model_path, self._r_forest_feature_cols = _train_r_cf_final_forest(
+            x_final,
+            y,
+            a,
+            y_hat_oof,
+            w_hat_oof,
+            num_trees=self._n_estimators,
+            min_node_size=self._min_samples_leaf,
+            seed=self._random_state,
+        )
+
+        self._train_x = np.asarray(x, dtype=float).copy()
+        self._train_w = np.asarray(raw_w, dtype=float).copy()
+        self._train_z = np.asarray(raw_z, dtype=float).copy()
+        self._train_x_final = np.asarray(x_final, dtype=float).copy()
+
+        self._feature_nuisance = self._make_nuisance()
+        self._feature_nuisance.train(
+            False,
+            None,
+            np.asarray(Y, dtype=float).ravel(),
+            np.asarray(A, dtype=float).ravel(),
+            X=x,
+            W=w_nuis,
+            Z=z_nuis,
+        )
+        return self
+
+    def effect_from_components(self, X, W, Z):
+        if self._feature_nuisance is None or self._r_forest_model_path is None or self._r_forest_feature_cols is None:
+            raise RuntimeError("Model must be fit before calling effect_from_components.")
+
+        x = _ensure_2d(X).astype(float)
+        raw_w = _ensure_2d(W).astype(float)
+        raw_z = _ensure_2d(Z).astype(float)
+        w_nuis, z_nuis = self._prepare_nuisance_inputs(W, Z)
+        bridge = self._feature_nuisance.predict_bridge_outputs(X=x, W=w_nuis, Z=z_nuis)
+        x_final = _build_single_pass_nc_features(
+            x,
+            raw_w,
+            raw_z,
+            bridge,
+            mode=self._final_feature_mode,
+        )
+        preds = _predict_r_cf_final_forest(
+            self._r_forest_model_path,
+            x_final,
+            feature_cols=self._r_forest_feature_cols,
+        )
+        return np.asarray(preds, dtype=float).reshape(-1, 1)
 
 
 class FinalModelNoPCINCCausalForest(_BaseSinglePassBridgeFeatureNCCausalForest):

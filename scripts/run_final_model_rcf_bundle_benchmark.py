@@ -25,9 +25,13 @@ from grf.benchmarks.econml_8variant import (  # noqa: E402
     evaluate_r_csf_variant,
     prepare_case,
 )
-from grf.censored import FinalModelCensoredSurvivalForest  # noqa: E402
+from grf.censored import (  # noqa: E402
+    FinalModelCensoredSurvivalForest,
+    FinalModelRCSFCensoredSurvivalForest,
+)
 from grf.non_censored import (  # noqa: E402
     FinalModelNCCausalForest,
+    FinalModelRCFNCCausalForest,
     StrictEconmlXWZNCCausalForest,
 )
 from grf.non_censored.benchmarks import (  # noqa: E402
@@ -63,8 +67,8 @@ R_CF_SCRIPT = PROJECT_ROOT / "scripts" / "run_grf_cf_baseline.R"
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
-            "Run the finalized models and direct baselines on a selected dataset. "
-            "Synthetic datasets get truth-based metrics; RHC gets prediction/time summaries."
+            "Run the finalized-model benchmark with the NC R grf final-forest variant "
+            "and the censored fair-horizon R grf final-forest variant."
         )
     )
     parser.add_argument("--dataset", choices=["basic12", "structured14", "rhc"], required=True)
@@ -77,7 +81,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--p-w", type=int, default=1)
     parser.add_argument("--p-z", type=int, default=1)
     parser.add_argument("--input-csv", type=Path, default=PROJECT_ROOT / "data" / "rhc" / "raw_rhc.csv")
-    parser.add_argument("--target", default="RMST")
+    parser.add_argument("--target", choices=["RMST", "survival.probability"], default="RMST")
     parser.add_argument("--horizon-quantile", type=float, default=0.60)
     parser.add_argument("--rhc-horizon", type=float, default=30.0)
     parser.add_argument("--num-trees-r", type=int, default=200)
@@ -90,7 +94,7 @@ def parse_args() -> argparse.Namespace:
 def _resolve_output_dir(args: argparse.Namespace) -> Path:
     if args.output_dir is not None:
         return args.output_dir.resolve()
-    return (PROJECT_ROOT / "outputs" / f"benchmark_final_model_bundle_{args.dataset}").resolve()
+    return (PROJECT_ROOT / "outputs" / f"benchmark_final_model_rcf_bundle_{args.dataset}").resolve()
 
 
 def _case_with_overrides(case_spec, *, n=None, p_x=None, p_w=None, p_z=None):
@@ -154,7 +158,7 @@ def _metric_summary_by_setting(df: pd.DataFrame, *, time_col: str) -> pd.DataFra
 
 def _prediction_summary(rows: list[dict[str, object]]) -> pd.DataFrame:
     df = pd.DataFrame(rows)
-    summary = (
+    return (
         df.groupby(["domain", "name"], as_index=False)
         .agg(
             n_obs=("n_obs", "max"),
@@ -169,7 +173,6 @@ def _prediction_summary(rows: list[dict[str, object]]) -> pd.DataFrame:
         .sort_values(["domain", "name"])
         .reset_index(drop=True)
     )
-    return summary
 
 
 def _prediction_row(name: str, preds: np.ndarray, elapsed: float, *, domain: str) -> dict[str, object]:
@@ -224,6 +227,43 @@ def _run_r_cf_baseline(
     return preds, elapsed
 
 
+def _run_r_csf_baseline_direct(
+    obs_df: pd.DataFrame,
+    feature_cols: list[str],
+    *,
+    output_root: Path,
+    horizon: float,
+    num_trees: int,
+    target: str,
+) -> tuple[np.ndarray, float]:
+    with tempfile.TemporaryDirectory(dir=output_root, prefix="r_csf_") as tmp_dir:
+        tmp_dir_path = Path(tmp_dir)
+        input_path = tmp_dir_path / "input.csv"
+        output_path = tmp_dir_path / "predictions.csv"
+        obs_df.loc[:, ["time", "event", "A", *feature_cols]].to_csv(input_path, index=False)
+        cmd = [
+            resolve_rscript(),
+            str(PROJECT_ROOT / "scripts" / "run_grf_csf_baseline.R"),
+            str(input_path),
+            ",".join(feature_cols),
+            str(float(horizon)),
+            str(int(num_trees)),
+            str(output_path),
+            target,
+        ]
+        t0 = time.time()
+        proc = subprocess.run(cmd, cwd=PROJECT_ROOT, text=True, capture_output=True, check=False)
+        elapsed = time.time() - t0
+        if proc.returncode != 0:
+            raise RuntimeError(
+                "R causal_survival_forest baseline failed.\n"
+                f"stdout:\n{proc.stdout}\n"
+                f"stderr:\n{proc.stderr}"
+            )
+        preds = pd.read_csv(output_path)["prediction"].to_numpy(dtype=float)
+    return preds, elapsed
+
+
 def _evaluate_synthetic_nc_case(case: dict[str, object], *, output_root: Path, num_trees_r: int, random_state: int):
     x = np.asarray(case["X"], dtype=float)
     w = np.asarray(case["W"], dtype=float)
@@ -239,6 +279,12 @@ def _evaluate_synthetic_nc_case(case: dict[str, object], *, output_root: Path, n
     final_model.fit_components(x, a, y, z, w)
     preds = final_model.effect_from_components(x, w, z).ravel()
     rows.append(_metric_row("Final Model", preds, true_cate, time.time() - t0))
+
+    rcf_final_model = FinalModelRCFNCCausalForest(random_state=random_state)
+    t0 = time.time()
+    rcf_final_model.fit_components(x, a, y, z, w)
+    preds = rcf_final_model.effect_from_components(x, w, z).ravel()
+    rows.append(_metric_row("Final Model (R grf final forest)", preds, true_cate, time.time() - t0))
 
     econ_model = StrictEconmlXWZNCCausalForest(random_state=random_state, cv=2)
     t0 = time.time()
@@ -267,17 +313,19 @@ def _evaluate_synthetic_c_case(case, *, output_root: Path, num_trees_r: int, tar
     a = np.asarray(case.A, dtype=float)
     time_obs = np.asarray(case.Y, dtype=float)
     event = np.asarray(case.delta, dtype=float)
+    horizon = float(case.horizon)
 
-    model_horizon = case.horizon
+    rows = []
+
     final_model = FinalModelCensoredSurvivalForest(
         target=target,
-        horizon=model_horizon,
+        horizon=horizon,
         random_state=random_state,
     )
     t0 = time.time()
     final_model.fit_components(x, a, time_obs, event, z, w)
     preds = final_model.effect_from_components(x, w, z).ravel()
-    rows = [
+    rows.append(
         _evaluate_predictions(
             "Final Model",
             preds,
@@ -285,7 +333,25 @@ def _evaluate_synthetic_c_case(case, *, output_root: Path, num_trees_r: int, tar
             time.time() - t0,
             backend=final_model.__class__.__name__,
         )
-    ]
+    )
+
+    r_final_model = FinalModelRCSFCensoredSurvivalForest(
+        target=target,
+        horizon=horizon,
+        random_state=random_state,
+    )
+    t0 = time.time()
+    r_final_model.fit_components(x, a, time_obs, event, z, w)
+    preds = r_final_model.effect_from_components(x, w, z).ravel()
+    rows.append(
+        _evaluate_predictions(
+            "Final Model (R grf final forest)",
+            preds,
+            case.true_cate,
+            time.time() - t0,
+            backend=r_final_model.__class__.__name__,
+        )
+    )
 
     feature_cols = [*case.x_cols, *case.w_cols, *case.z_cols]
     rows.append(
@@ -294,7 +360,7 @@ def _evaluate_synthetic_c_case(case, *, output_root: Path, num_trees_r: int, tar
             case.obs_df,
             feature_cols,
             case.true_cate,
-            case.horizon,
+            horizon,
             num_trees=num_trees_r,
             target=target,
         )
@@ -507,6 +573,16 @@ def _run_rhc_non_censored(raw_df: pd.DataFrame, output_dir: Path, *, num_trees_r
     prediction_frames.append(pd.DataFrame({"row_id": np.arange(len(preds)), "domain": "non_censored", "name": "Final Model", "prediction": preds}))
     summary_rows.append(_prediction_row("Final Model", preds, elapsed, domain="non_censored"))
 
+    rcf_final_model = FinalModelRCFNCCausalForest(random_state=random_state)
+    t0 = time.time()
+    rcf_final_model.fit_components(x, a, y, z, w)
+    preds = rcf_final_model.effect_from_components(x, w, z).ravel()
+    elapsed = time.time() - t0
+    prediction_frames.append(
+        pd.DataFrame({"row_id": np.arange(len(preds)), "domain": "non_censored", "name": "Final Model (R grf final forest)", "prediction": preds})
+    )
+    summary_rows.append(_prediction_row("Final Model (R grf final forest)", preds, elapsed, domain="non_censored"))
+
     econ_model = StrictEconmlXWZNCCausalForest(random_state=random_state, cv=2)
     t0 = time.time()
     econ_model.fit_components(x, a, y, z, w)
@@ -561,6 +637,20 @@ def _run_rhc_censored(
     prediction_frames.append(pd.DataFrame({"row_id": np.arange(len(preds)), "domain": "censored", "name": "Final Model", "prediction": preds}))
     summary_rows.append(_prediction_row("Final Model", preds, elapsed, domain="censored"))
 
+    r_final_model = FinalModelRCSFCensoredSurvivalForest(
+        target=target,
+        horizon=rhc_horizon,
+        random_state=random_state,
+    )
+    t0 = time.time()
+    r_final_model.fit_components(x, a, time_obs, event, z, w)
+    preds = r_final_model.effect_from_components(x, w, z).ravel()
+    elapsed = time.time() - t0
+    prediction_frames.append(
+        pd.DataFrame({"row_id": np.arange(len(preds)), "domain": "censored", "name": "Final Model (R grf final forest)", "prediction": preds})
+    )
+    summary_rows.append(_prediction_row("Final Model (R grf final forest)", preds, elapsed, domain="censored"))
+
     feature_cols = [*x_cols, *w_cols, *z_cols]
     preds, elapsed = _run_r_csf_baseline_direct(
         analysis_df,
@@ -578,43 +668,6 @@ def _run_rhc_censored(
     summary = _prediction_summary(summary_rows)
     summary.to_csv(output_dir / "summary.csv", index=False)
     return summary
-
-
-def _run_r_csf_baseline_direct(
-    obs_df: pd.DataFrame,
-    feature_cols: list[str],
-    *,
-    output_root: Path,
-    horizon: float,
-    num_trees: int,
-    target: str,
-) -> tuple[np.ndarray, float]:
-    with tempfile.TemporaryDirectory(dir=output_root, prefix="r_csf_") as tmp_dir:
-        tmp_dir_path = Path(tmp_dir)
-        input_path = tmp_dir_path / "input.csv"
-        output_path = tmp_dir_path / "predictions.csv"
-        obs_df.loc[:, ["time", "event", "A", *feature_cols]].to_csv(input_path, index=False)
-        cmd = [
-            resolve_rscript(),
-            str(PROJECT_ROOT / "scripts" / "run_grf_csf_baseline.R"),
-            str(input_path),
-            ",".join(feature_cols),
-            str(float(horizon)),
-            str(int(num_trees)),
-            str(output_path),
-            target,
-        ]
-        t0 = time.time()
-        proc = subprocess.run(cmd, cwd=PROJECT_ROOT, text=True, capture_output=True, check=False)
-        elapsed = time.time() - t0
-        if proc.returncode != 0:
-            raise RuntimeError(
-                "R causal_survival_forest baseline failed.\n"
-                f"stdout:\n{proc.stdout}\n"
-                f"stderr:\n{proc.stderr}"
-            )
-        preds = pd.read_csv(output_path)["prediction"].to_numpy(dtype=float)
-    return preds, elapsed
 
 
 def _write_combined_summary(output_dir: Path, frames: list[pd.DataFrame], filename: str) -> None:
