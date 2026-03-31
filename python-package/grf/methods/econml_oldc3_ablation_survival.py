@@ -6,12 +6,9 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from econml._ortho_learner import _OrthoLearner
 from econml.dml import CausalForestDML
 from econml.grf import CausalForest
-from sklearn.base import clone
 from sklearn.model_selection import KFold
-from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from grf.r_runtime import resolve_rscript
 
 from .econml_mild_shrink import (
@@ -1265,407 +1262,109 @@ class B2SummaryDMLObservedCensoredSurvivalForest(OldC3AugmentedSurvObservedDMLCe
         super().__init__(*args, **kwargs)
 
 
-class B2SummaryBaselineDMLCensoredSurvivalForest:
+class StrictEconmlXWZCensoredSurvivalForest:
+    """Strict censored EconML baseline on raw [X, W, Z] with IPCW pseudo-outcomes only."""
+
     def __init__(
         self,
         *,
-        include_raw_proxy: bool = True,
-        surv_scalar_mode: str | None = "pair",
-        observed_only: bool = False,
         target="RMST",
         horizon=None,
         n_estimators=200,
         min_samples_leaf=20,
-        cv=5,
+        cv=2,
+        model_y="auto",
+        model_t="auto",
+        discrete_treatment=True,
+        criterion="het",
         random_state=42,
-        q_kind="logit",
-        q_trees=300,
-        q_min_samples_leaf=20,
-        q_poly_degree=2,
-        q_clip=0.02,
-        y_tilde_clip_quantile=0.99,
-        y_res_clip_percentiles=(1.0, 99.0),
-        h_kind="extra",
-        h_n_estimators=1200,
-        h_min_samples_leaf=3,
         censoring_estimator="nelson-aalen",
-        n_jobs=1,
-        nuisance_feature_mode="dup",
+        **kwargs,
     ):
-        self._include_raw_proxy = bool(include_raw_proxy)
-        self._surv_scalar_mode = _resolve_surv_scalar_mode(True, surv_scalar_mode)
-        self._observed_only = bool(observed_only)
         self._target = target
         self._horizon = horizon
         self._n_estimators = int(n_estimators)
         self._min_samples_leaf = int(min_samples_leaf)
         self._cv = int(cv)
+        self._model_y = model_y
+        self._model_t = model_t
+        self._discrete_treatment = bool(discrete_treatment)
+        self._criterion = criterion
         self._random_state = int(random_state)
-        self._q_kind = q_kind
-        self._q_trees = int(q_trees)
-        self._q_min_samples_leaf = int(q_min_samples_leaf)
-        self._q_poly_degree = int(q_poly_degree)
-        self._q_clip = float(q_clip)
-        self._y_tilde_clip_quantile = y_tilde_clip_quantile
-        self._y_res_clip_percentiles = y_res_clip_percentiles
-        self._h_kind = h_kind
-        self._h_n_estimators = int(h_n_estimators)
-        self._h_min_samples_leaf = int(h_min_samples_leaf)
         self._censoring_estimator = censoring_estimator
-        self._n_jobs = int(n_jobs)
-        self._nuisance_feature_mode = nuisance_feature_mode
-        self._q_model_template = make_q_model(
-            q_kind,
-            random_state=random_state,
-            n_estimators=q_trees,
-            min_samples_leaf=q_min_samples_leaf,
-            poly_degree=q_poly_degree,
-        )
-        self._h_model_template = make_h_model(
-            h_kind,
-            random_state=random_state,
-            n_estimators=h_n_estimators,
-            min_samples_leaf=h_min_samples_leaf,
-            n_jobs=n_jobs,
-        )
-        self._baseline = None
-        self._feature_nuisance = None
+        self._extra_kwargs = dict(kwargs)
+        self._model = None
 
-    def _prepare_nuisance_inputs(self, W, Z):
-        w = _ensure_2d(W).astype(float)
-        z = _ensure_2d(Z).astype(float)
-        if self._observed_only:
-            w = np.zeros_like(w)
-            z = np.zeros_like(z)
-        return w, z
-
-    def _make_feature_nuisance(self):
-        return _MildShrinkNCSurvivalNuisance(
-            q_model=self._q_model_template,
-            h_model=self._h_model_template,
-            target=self._target,
-            horizon=self._horizon,
-            final_feature_mode="x_only",
-            nuisance_feature_mode=self._nuisance_feature_mode,
-            censoring_estimator=self._censoring_estimator,
-            q_clip=self._q_clip,
-            y_tilde_clip_quantile=self._y_tilde_clip_quantile,
-            y_res_clip_percentiles=self._y_res_clip_percentiles,
-        )
-
-    def _make_nuisance(self):
-        return self._make_feature_nuisance()
+    @staticmethod
+    def stack_final_features(*arrays):
+        parts = [_ensure_2d(np.asarray(arr, dtype=float)) for arr in arrays]
+        return np.hstack(parts)
 
     def fit_components(self, X, A, time, event, Z, W):
-        y_packed = np.column_stack([np.asarray(time, dtype=float).ravel(), np.asarray(event, dtype=float).ravel()])
-        x, _, _, w_nuis, z_nuis, x_final, _, _ = _crossfit_oldc3_survival_ablation_arrays(
-            self,
-            X,
-            A,
-            y_packed,
-            W,
-            Z,
-        )
-
-        self._baseline = BaselineCensoredCausalForestDML(
-            target=self._target,
-            horizon=self._horizon,
-            n_estimators=self._n_estimators,
-            min_samples_leaf=self._min_samples_leaf,
-            cv=self._cv,
-            random_state=self._random_state,
-            q_clip=self._q_clip,
-            y_tilde_clip_quantile=self._y_tilde_clip_quantile,
-            y_res_clip_percentiles=self._y_res_clip_percentiles,
-            censoring_estimator=self._censoring_estimator,
-        )
-        self._baseline.fit_survival(x_final, A, time, event)
-
-        self._feature_nuisance = self._make_feature_nuisance()
-        self._feature_nuisance.train(
-            False,
-            None,
-            y_packed,
-            np.asarray(A, dtype=float).ravel(),
-            X=x,
-            W=w_nuis,
-            Z=z_nuis,
-        )
-        return self
-
-    def effect_from_components(self, X, W, Z):
-        if self._baseline is None or self._feature_nuisance is None:
-            raise RuntimeError("Model must be fit before calling effect_from_components.")
         x = _ensure_2d(X).astype(float)
         raw_w = _ensure_2d(W).astype(float)
         raw_z = _ensure_2d(Z).astype(float)
-        w_nuis, z_nuis = self._prepare_nuisance_inputs(W, Z)
-        bridge = self._feature_nuisance.predict_bridge_outputs(
-            X=x,
-            W=w_nuis,
-            Z=z_nuis,
-        )
-        x_final = _build_oldc3_survival_ablation_features(
-            x,
-            raw_w,
-            raw_z,
-            bridge,
-            include_raw_proxy=self._include_raw_proxy,
-            surv_scalar_mode=self._surv_scalar_mode,
-        )
-        return self._baseline.effect(x_final)
+        x_full = self.stack_final_features(x, raw_w, raw_z)
+        y_time = np.asarray(time, dtype=float).ravel()
+        delta = np.asarray(event, dtype=float).ravel()
+        a = np.asarray(A).ravel()
 
-
-class _BaselineCensoredSurvivalNuisance:
-    max_grid = 500
-
-    def __init__(
-        self,
-        q_model,
-        h_model,
-        *,
-        target,
-        horizon,
-        censoring_estimator,
-        q_clip,
-        y_tilde_clip_quantile,
-        y_res_clip_percentiles,
-    ):
-        self._q_model_template = q_model
-        self._h_model_template = h_model
-        self._target = target
-        self._horizon = horizon
-        self._censoring_estimator = censoring_estimator
-        self._q_clip = q_clip
-        self._y_tilde_clip_quantile = y_tilde_clip_quantile
-        self._y_res_clip_percentiles = y_res_clip_percentiles
-
-        self._q_model = None
-        self._h1_model = None
-        self._h0_model = None
-        self._censor_model = None
-        self._event_cox_1 = None
-        self._event_cox_0 = None
-        self._cox_col_names_1 = None
-        self._cox_col_names_0 = None
-        self._cox_keep_mask_1 = None
-        self._cox_keep_mask_0 = None
-        self._t_grid = None
-
-    @staticmethod
-    def _unpack_y(y):
-        y = np.asarray(y)
-        if y.ndim == 2 and y.shape[1] >= 2:
-            return y[:, 0], y[:, 1]
-        raise ValueError("Y must be a 2-column array [time, event].")
-
-    def train(self, is_selecting, folds, Y, T, X=None, W=None, Z=None, sample_weight=None, groups=None):
-        y_time, delta = self._unpack_y(Y)
-        a = np.asarray(T).ravel()
-        x = _ensure_2d(X).astype(float)
         target_inputs = _prepare_target_inputs(
             y_time,
             delta,
             target=self._target,
             horizon=self._horizon,
         )
-
-        self._censor_model = _fit_censoring_model(
+        censor_model = _fit_censoring_model(
             target_inputs["nuisance_time"],
             target_inputs["nuisance_delta"],
-            x,
+            x_full,
             estimator=self._censoring_estimator,
         )
         y_tilde_eval_time = (
             target_inputs["eval_time"] if self._target == "survival.probability" else target_inputs["nuisance_time"]
         )
-        sc_for_y_tilde = _predict_censoring_survival_at_values(self._censor_model, x, y_tilde_eval_time)
+        sc_at_eval = _predict_censoring_survival_at_values(
+            censor_model,
+            x_full,
+            y_tilde_eval_time,
+            clip_min=1e-10,
+        )
         y_tilde = _compute_target_pseudo_outcome_from_sc(
             y_time=y_time,
             target=self._target,
             horizon=self._horizon,
             nuisance_time=target_inputs["nuisance_time"],
             nuisance_delta=target_inputs["nuisance_delta"],
-            sc_at_eval=sc_for_y_tilde,
-        )
-        y_tilde = _clip_quantile(y_tilde, self._y_tilde_clip_quantile)
-
-        self._q_model = clone(self._q_model_template)
-        self._q_model.fit(x, a)
-
-        treated_mask = a == 1
-        control_mask = a == 0
-        self._h1_model = clone(self._h_model_template)
-        self._h0_model = clone(self._h_model_template)
-        if treated_mask.sum() > 10:
-            self._h1_model.fit(x[treated_mask], y_tilde[treated_mask])
-        if control_mask.sum() > 10:
-            self._h0_model.fit(x[control_mask], y_tilde[control_mask])
-
-        self._event_cox_1, self._cox_col_names_1, self._cox_keep_mask_1 = _fit_event_cox(
-            target_inputs["nuisance_time"][treated_mask],
-            target_inputs["nuisance_delta"][treated_mask],
-            x[treated_mask],
-        )
-        self._event_cox_0, self._cox_col_names_0, self._cox_keep_mask_0 = _fit_event_cox(
-            target_inputs["nuisance_time"][control_mask],
-            target_inputs["nuisance_delta"][control_mask],
-            x[control_mask],
+            sc_at_eval=sc_at_eval,
         )
 
-        all_times = np.sort(np.unique(target_inputs["grid_time"]))
-        if len(all_times) > self.max_grid:
-            idx = np.linspace(0, len(all_times) - 1, self.max_grid, dtype=int)
-            all_times = all_times[idx]
-        self._t_grid = all_times
+        self._model = CausalForestDML(
+            model_y=self._model_y,
+            model_t=self._model_t,
+            cv=self._cv,
+            discrete_treatment=self._discrete_treatment,
+            criterion=self._criterion,
+            n_estimators=self._n_estimators,
+            min_samples_leaf=self._min_samples_leaf,
+            random_state=self._random_state,
+            **self._extra_kwargs,
+        )
+        self._model.fit(
+            Y=np.asarray(y_tilde, dtype=float).ravel(),
+            T=a,
+            X=x_full,
+        )
         return self
 
-    def predict(self, Y, T, X=None, W=None, Z=None, sample_weight=None, groups=None):
-        y_time, delta = self._unpack_y(Y)
-        a = np.asarray(T).ravel()
+    def effect_from_components(self, X, W, Z):
+        if self._model is None:
+            raise RuntimeError("Model must be fit before calling effect_from_components.")
         x = _ensure_2d(X).astype(float)
-        target_inputs = _prepare_target_inputs(
-            y_time,
-            delta,
-            target=self._target,
-            horizon=self._horizon,
-        )
-
-        q_pred = self._q_model.predict_proba(x)[:, 1]
-        q_pred = np.clip(q_pred, self._q_clip, 1.0 - self._q_clip)
-        h1_pred = self._h1_model.predict(x)
-        h0_pred = self._h0_model.predict(x)
-        m_pred = q_pred * h1_pred + (1.0 - q_pred) * h0_pred
-
-        s_hat_1 = _predict_s_on_grid(
-            self._event_cox_1,
-            self._cox_col_names_1,
-            x,
-            self._t_grid,
-            self._cox_keep_mask_1,
-        )
-        s_hat_0 = _predict_s_on_grid(
-            self._event_cox_0,
-            self._cox_col_names_0,
-            x,
-            self._t_grid,
-            self._cox_keep_mask_0,
-        )
-        if self._target == "survival.probability":
-            q_hat_1 = _compute_survival_probability_q_from_s(s_hat_1, self._t_grid, self._horizon)
-            q_hat_0 = _compute_survival_probability_q_from_s(s_hat_0, self._t_grid, self._horizon)
-        else:
-            q_hat_1 = _compute_q_from_s(s_hat_1, self._t_grid)
-            q_hat_0 = _compute_q_from_s(s_hat_0, self._t_grid)
-        q_hat = np.where((a == 1)[:, None], q_hat_1, q_hat_0)
-
-        if self._target == "RMST" and self._horizon is None:
-            sc_at_eval = _predict_censoring_survival_at_values(self._censor_model, x, y_time)
-            sc_grid = _predict_censoring_survival_on_grid(self._censor_model, x, self._t_grid)
-            y_res = _compute_ipcw_3term_y_res_from_survival(
-                y_time,
-                delta,
-                m_pred,
-                q_hat,
-                self._t_grid,
-                sc_at_eval,
-                sc_grid,
-                clip_percentiles=self._y_res_clip_percentiles,
-            )
-        else:
-            sc_at_eval = _predict_censoring_survival_at_values(
-                self._censor_model,
-                x,
-                target_inputs["eval_time"],
-            )
-            sc_grid = _predict_censoring_survival_on_grid(self._censor_model, x, self._t_grid)
-            y_res = _compute_target_ipcw_3term_y_res_from_survival(
-                target_inputs["f_y"],
-                target_inputs["eval_time"],
-                target_inputs["eval_delta"],
-                m_pred,
-                q_hat,
-                self._t_grid,
-                sc_at_eval,
-                sc_grid,
-                clip_percentiles=self._y_res_clip_percentiles,
-            )
-        a_res = (a - q_pred).reshape(-1, 1)
-        return y_res, a_res
-
-
-class BaselineCensoredCausalForestDML(CausalForestDML):
-    def __init__(
-        self,
-        *,
-        target="RMST",
-        horizon=None,
-        n_estimators=200,
-        min_samples_leaf=20,
-        cv=5,
-        random_state=42,
-        q_clip=0.02,
-        y_tilde_clip_quantile=0.99,
-        y_res_clip_percentiles=(1.0, 99.0),
-        censoring_estimator="nelson-aalen",
-        **kwargs,
-    ):
-        self._q_model_template = RandomForestClassifier(
-            n_estimators=100,
-            min_samples_leaf=20,
-            random_state=random_state,
-        )
-        self._h_model_template = RandomForestRegressor(
-            n_estimators=100,
-            min_samples_leaf=20,
-            random_state=random_state,
-        )
-        self._target = target
-        self._horizon = horizon
-        self._censoring_estimator = censoring_estimator
-        self._custom_q_clip = q_clip
-        self._custom_y_tilde_clip_quantile = y_tilde_clip_quantile
-        self._custom_y_res_clip_percentiles = y_res_clip_percentiles
-
-        kwargs["discrete_treatment"] = True
-        kwargs["criterion"] = "het"
-        kwargs.pop("model_y", None)
-        kwargs.pop("model_t", None)
-
-        super().__init__(
-            n_estimators=n_estimators,
-            min_samples_leaf=min_samples_leaf,
-            cv=cv,
-            random_state=random_state,
-            **kwargs,
-        )
-
-    def _gen_ortho_learner_model_nuisance(self):
-        return _BaselineCensoredSurvivalNuisance(
-            q_model=self._q_model_template,
-            h_model=self._h_model_template,
-            target=self._target,
-            horizon=self._horizon,
-            censoring_estimator=self._censoring_estimator,
-            q_clip=self._custom_q_clip,
-            y_tilde_clip_quantile=self._custom_y_tilde_clip_quantile,
-            y_res_clip_percentiles=self._custom_y_res_clip_percentiles,
-        )
-
-    def fit_survival(self, X, A, time, event, **kwargs):
-        x = np.asarray(X, dtype=float)
-        y_packed = np.column_stack([np.asarray(time, dtype=float).ravel(), np.asarray(event, dtype=float).ravel()])
-        return _OrthoLearner.fit(self, y_packed, A, X=x, **kwargs)
-
-
-class UnifiedB2SumBaselineCensoredSurvivalForest(B2SummaryBaselineDMLCensoredSurvivalForest):
-    """Matched censored B2Sum baseline family."""
-
-    def __init__(self, *args, **kwargs):
-        kwargs.setdefault("surv_scalar_mode", "pair")
-        kwargs.setdefault("censoring_estimator", "nelson-aalen")
-        kwargs.setdefault("nuisance_feature_mode", "broad_dup")
-        super().__init__(*args, **kwargs)
+        raw_w = _ensure_2d(W).astype(float)
+        raw_z = _ensure_2d(Z).astype(float)
+        x_full = self.stack_final_features(x, raw_w, raw_z)
+        return self._model.effect(x_full)
 
 
 class UnifiedB2SumMildShrinkCensoredSurvivalForest(B2SummaryDMLCensoredSurvivalForest):
@@ -1673,26 +1372,6 @@ class UnifiedB2SumMildShrinkCensoredSurvivalForest(B2SummaryDMLCensoredSurvivalF
 
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("surv_scalar_mode", "pair")
-        kwargs.setdefault("censoring_estimator", "nelson-aalen")
-        kwargs.setdefault("nuisance_feature_mode", "broad_dup")
-        super().__init__(*args, **kwargs)
-
-
-class UnifiedB2SumSinglePassBaselineCensoredSurvivalForest(_BaseSinglePassBridgeFeatureCensoredSurvivalForest):
-    """Single-pass baseline-style B2Sum with structured broad proxy duplication."""
-
-    def __init__(self, *args, **kwargs):
-        kwargs.setdefault("include_raw_proxy", True)
-        kwargs.setdefault("include_surv_scalar", True)
-        kwargs.setdefault("surv_scalar_mode", "pair")
-        kwargs.setdefault("prediction_nuisance_mode", "full_refit")
-        kwargs.setdefault("observed_only", False)
-        kwargs.setdefault("q_kind", "rf")
-        kwargs.setdefault("q_trees", 100)
-        kwargs.setdefault("q_min_samples_leaf", 20)
-        kwargs.setdefault("h_kind", "rf")
-        kwargs.setdefault("h_n_estimators", 100)
-        kwargs.setdefault("h_min_samples_leaf", 20)
         kwargs.setdefault("censoring_estimator", "nelson-aalen")
         kwargs.setdefault("nuisance_feature_mode", "broad_dup")
         super().__init__(*args, **kwargs)
@@ -2082,16 +1761,6 @@ class BroadAugSPObservedCensoredSurvivalForest(_BaseSinglePassBridgeFeatureCenso
         kwargs.setdefault("h_n_estimators", 1200)
         kwargs.setdefault("h_min_samples_leaf", 3)
         kwargs.setdefault("prediction_nuisance_mode", "full_refit")
-        kwargs.setdefault("nuisance_feature_mode", "broad_dup")
-        super().__init__(*args, **kwargs)
-
-
-class UnifiedBroadAugSPBaselineCensoredSurvivalForest(B2SummaryBaselineDMLCensoredSurvivalForest):
-    """Matched baseline-family BroadAugSP alias."""
-
-    def __init__(self, *args, **kwargs):
-        kwargs.setdefault("surv_scalar_mode", "full")
-        kwargs.setdefault("censoring_estimator", "nelson-aalen")
         kwargs.setdefault("nuisance_feature_mode", "broad_dup")
         super().__init__(*args, **kwargs)
 

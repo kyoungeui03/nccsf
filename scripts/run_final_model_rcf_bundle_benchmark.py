@@ -22,12 +22,12 @@ if str(ROOT_SCRIPTS) not in sys.path:
 from grf.benchmarks.econml_8variant import (  # noqa: E402
     CASE_SPECS as C_CASE_SPECS,
     _evaluate_predictions,
-    evaluate_r_csf_variant,
     prepare_case,
 )
 from grf.censored import (  # noqa: E402
     FinalModelCensoredSurvivalForest,
     FinalModelRCSFCensoredSurvivalForest,
+    StrictEconmlXWZCensoredSurvivalForest,
 )
 from grf.non_censored import (  # noqa: E402
     FinalModelNCCausalForest,
@@ -227,43 +227,6 @@ def _run_r_cf_baseline(
     return preds, elapsed
 
 
-def _run_r_csf_baseline_direct(
-    obs_df: pd.DataFrame,
-    feature_cols: list[str],
-    *,
-    output_root: Path,
-    horizon: float,
-    num_trees: int,
-    target: str,
-) -> tuple[np.ndarray, float]:
-    with tempfile.TemporaryDirectory(dir=output_root, prefix="r_csf_") as tmp_dir:
-        tmp_dir_path = Path(tmp_dir)
-        input_path = tmp_dir_path / "input.csv"
-        output_path = tmp_dir_path / "predictions.csv"
-        obs_df.loc[:, ["time", "event", "A", *feature_cols]].to_csv(input_path, index=False)
-        cmd = [
-            resolve_rscript(),
-            str(PROJECT_ROOT / "scripts" / "run_grf_csf_baseline.R"),
-            str(input_path),
-            ",".join(feature_cols),
-            str(float(horizon)),
-            str(int(num_trees)),
-            str(output_path),
-            target,
-        ]
-        t0 = time.time()
-        proc = subprocess.run(cmd, cwd=PROJECT_ROOT, text=True, capture_output=True, check=False)
-        elapsed = time.time() - t0
-        if proc.returncode != 0:
-            raise RuntimeError(
-                "R causal_survival_forest baseline failed.\n"
-                f"stdout:\n{proc.stdout}\n"
-                f"stderr:\n{proc.stderr}"
-            )
-        preds = pd.read_csv(output_path)["prediction"].to_numpy(dtype=float)
-    return preds, elapsed
-
-
 def _evaluate_synthetic_nc_case(case: dict[str, object], *, output_root: Path, num_trees_r: int, random_state: int):
     x = np.asarray(case["X"], dtype=float)
     w = np.asarray(case["W"], dtype=float)
@@ -353,16 +316,21 @@ def _evaluate_synthetic_c_case(case, *, output_root: Path, num_trees_r: int, tar
         )
     )
 
-    feature_cols = [*case.x_cols, *case.w_cols, *case.z_cols]
+    econml_model = StrictEconmlXWZCensoredSurvivalForest(
+        target=target,
+        horizon=horizon,
+        random_state=random_state,
+    )
+    t0 = time.time()
+    econml_model.fit_components(x, a, time_obs, event, z, w)
+    preds = econml_model.effect_from_components(x, w, z).ravel()
     rows.append(
-        evaluate_r_csf_variant(
-            "R-CSF Baseline",
-            case.obs_df,
-            feature_cols,
+        _evaluate_predictions(
+            "EconML Censored Baseline",
+            preds,
             case.true_cate,
-            horizon,
-            num_trees=num_trees_r,
-            target=target,
+            time.time() - t0,
+            backend=econml_model.__class__.__name__,
         )
     )
     return rows
@@ -651,17 +619,19 @@ def _run_rhc_censored(
     )
     summary_rows.append(_prediction_row("Final Model (R grf final forest)", preds, elapsed, domain="censored"))
 
-    feature_cols = [*x_cols, *w_cols, *z_cols]
-    preds, elapsed = _run_r_csf_baseline_direct(
-        analysis_df,
-        feature_cols,
-        output_root=output_dir,
-        horizon=rhc_horizon,
-        num_trees=num_trees_r,
+    econml_model = StrictEconmlXWZCensoredSurvivalForest(
         target=target,
+        horizon=rhc_horizon,
+        random_state=random_state,
     )
-    prediction_frames.append(pd.DataFrame({"row_id": np.arange(len(preds)), "domain": "censored", "name": "R-CSF Baseline", "prediction": preds}))
-    summary_rows.append(_prediction_row("R-CSF Baseline", preds, elapsed, domain="censored"))
+    t0 = time.time()
+    econml_model.fit_components(x, a, time_obs, event, z, w)
+    preds = econml_model.effect_from_components(x, w, z).ravel()
+    elapsed = time.time() - t0
+    prediction_frames.append(
+        pd.DataFrame({"row_id": np.arange(len(preds)), "domain": "censored", "name": "EconML Censored Baseline", "prediction": preds})
+    )
+    summary_rows.append(_prediction_row("EconML Censored Baseline", preds, elapsed, domain="censored"))
 
     predictions = pd.concat(prediction_frames, ignore_index=True)
     predictions.to_csv(output_dir / "predictions.csv", index=False)

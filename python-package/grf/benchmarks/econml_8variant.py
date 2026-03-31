@@ -15,7 +15,10 @@ from econml.utilities import filter_none_kwargs
 from scipy.special import gammainc
 from sklearn.base import clone
 
-from grf.methods import EconmlMildShrinkNCSurvivalForest
+from grf.methods import (
+    EconmlMildShrinkNCSurvivalForest,
+    StrictEconmlXWZCensoredSurvivalForest,
+)
 from grf.methods.econml_mild_shrink import (
     _clip_quantile,
     _compute_ipcw_3term_y_res,
@@ -151,8 +154,8 @@ EIGHT_VARIANT_SPECS = [
     ("A1  Oracle (all true)", "oracle", dict(true_surv=True, true_qh=True)),
     ("A2  Oracle (true surv, est q/h)", "oracle", dict(true_surv=True, true_qh=False)),
     ("A3  Oracle (all estimated)", "oracle", dict(true_surv=False, true_qh=False)),
-    ("B1  R-CSF baseline (X only)", "b1", {}),
-    ("R-CSF Baseline", "b2", {}),
+    ("B1  EconML Censored Baseline (X only)", "b1", {}),
+    ("EconML Censored Baseline", "b2", {}),
     ("C1  NC-CSF (all true)", "nc", dict(true_surv=True, true_qh=True)),
     ("C2  NC-CSF (true surv, est q/h)", "nc", dict(true_surv=True, true_qh=False)),
     ("C3  NC-CSF (all estimated)", "nc", dict(true_surv=False, true_qh=False)),
@@ -1259,6 +1262,37 @@ def evaluate_r_csf_variant(name, obs_df, feature_cols, true_cate, horizon, num_t
     return _evaluate_predictions(name, preds, true_cate, elapsed, backend="installed R grf")
 
 
+def evaluate_econml_csf_variant(
+    name,
+    obs_df,
+    x_cols,
+    w_cols,
+    z_cols,
+    true_cate,
+    horizon,
+    *,
+    target="RMST",
+    random_state=42,
+):
+    x = obs_df.loc[:, list(x_cols)].to_numpy(dtype=float)
+    w = obs_df.loc[:, list(w_cols)].to_numpy(dtype=float) if w_cols else np.zeros((len(obs_df), 0), dtype=float)
+    z = obs_df.loc[:, list(z_cols)].to_numpy(dtype=float) if z_cols else np.zeros((len(obs_df), 0), dtype=float)
+    a = obs_df["A"].to_numpy(dtype=float)
+    y_time = obs_df["time"].to_numpy(dtype=float)
+    delta = obs_df["event"].to_numpy(dtype=float)
+
+    model = StrictEconmlXWZCensoredSurvivalForest(
+        target=target,
+        horizon=horizon,
+        random_state=random_state,
+    )
+    t0 = time.time()
+    model.fit_components(x, a, y_time, delta, z, w)
+    preds = model.effect_from_components(x, w, z).ravel()
+    elapsed = time.time() - t0
+    return _evaluate_predictions(name, preds, true_cate, elapsed, backend=model.__class__.__name__)
+
+
 def _evaluate_oracle_variant(name, case: CaseData, *, true_surv: bool, true_qh: bool, target: str):
     x_oracle = np.column_stack([case.X, case.U])
     model = BenchmarkOracleSurvivalForestDML(
@@ -1317,23 +1351,25 @@ def run_case_benchmark(
         elif kind == "nc":
             row = _evaluate_nc_variant(name, case, target=target, **kwargs)
         elif kind == "b1":
-            row = evaluate_r_csf_variant(
+            row = evaluate_econml_csf_variant(
                 name,
                 case.obs_df,
                 case.x_cols,
+                [],
+                [],
                 case.true_cate,
                 case.horizon,
-                num_trees_b2,
                 target=target,
             )
         elif kind == "b2":
-            row = evaluate_r_csf_variant(
+            row = evaluate_econml_csf_variant(
                 name,
                 case.obs_df,
-                case.x_cols + case.w_cols + case.z_cols,
+                case.x_cols,
+                case.w_cols,
+                case.z_cols,
                 case.true_cate,
                 case.horizon,
-                num_trees_b2,
                 target=target,
             )
         else:
@@ -1518,7 +1554,7 @@ def render_top5_png(top5_df: pd.DataFrame, output_path: Path):
 
 
 def render_b2_vs_c3_png(combined_df: pd.DataFrame, output_path: Path):
-    subset = combined_df[combined_df["name"].isin(["R-CSF Baseline", "C3  NC-CSF (all estimated)"])].copy()
+    subset = combined_df[combined_df["name"].isin(["EconML Censored Baseline", "C3  NC-CSF (all estimated)"])].copy()
     order = combined_df.drop_duplicates("case_id").sort_values("case_id")[["case_id", "case_slug"]]
     case_labels = {
         1: "lin / lin / info / strong / bene / large",
@@ -1535,7 +1571,7 @@ def render_b2_vs_c3_png(combined_df: pd.DataFrame, output_path: Path):
         12: "nonlin / nonlin / weakproxy / weak / near0 / harm",
     }
 
-    b2 = subset[subset["name"] == "R-CSF Baseline"].sort_values("case_id")
+    b2 = subset[subset["name"] == "EconML Censored Baseline"].sort_values("case_id")
     c3 = subset[subset["name"] == "C3  NC-CSF (all estimated)"].sort_values("case_id")
     c3_wins = int((c3["pehe"].to_numpy() < b2["pehe"].to_numpy()).sum())
     b2_wins = int((b2["pehe"].to_numpy() < c3["pehe"].to_numpy()).sum())
@@ -1548,7 +1584,7 @@ def render_b2_vs_c3_png(combined_df: pd.DataFrame, output_path: Path):
     y = np.arange(len(order))
     height = 0.34
     ax.barh(y - height / 2, c3["pehe"], height=height, color="#2ca89b", label="C3  NC-CSF (all estimated)")
-    ax.barh(y + height / 2, b2["pehe"], height=height, color="#e76f51", label="R-CSF Baseline")
+    ax.barh(y + height / 2, b2["pehe"], height=height, color="#e76f51", label="EconML Censored Baseline")
     ax.set_yticks(y)
     ax.set_yticklabels([case_labels[i] for i in order["case_id"]], fontsize=12)
     ax.invert_yaxis()

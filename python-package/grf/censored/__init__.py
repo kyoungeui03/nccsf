@@ -5,6 +5,7 @@ from ..methods import (
     FinalModelNoPCICensoredSurvivalForest,
     FinalModelRCSFCensoredSurvivalForest,
     FinalModelRawCensoredSurvivalForest,
+    StrictEconmlXWZCensoredSurvivalForest,
 )
 
 __all__ = [
@@ -14,6 +15,7 @@ __all__ = [
     "FinalModelNoPCICensoredSurvivalForest",
     "FinalModelRCSFCensoredSurvivalForest",
     "FinalModelRawCensoredSurvivalForest",
+    "StrictEconmlXWZCensoredSurvivalForest",
     "prepare_case",
     "run_case_benchmark",
     "summarize_results",

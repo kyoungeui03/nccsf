@@ -6,6 +6,7 @@ from .econml_oldc3_ablation_survival import (
     FinalModelNoPCICensoredSurvivalForest,
     FinalModelRCSFCensoredSurvivalForest,
     FinalModelRawCensoredSurvivalForest,
+    StrictEconmlXWZCensoredSurvivalForest,
 )
 
 __all__ = [
@@ -15,5 +16,6 @@ __all__ = [
     "FinalModelNoPCICensoredSurvivalForest",
     "FinalModelRCSFCensoredSurvivalForest",
     "FinalModelRawCensoredSurvivalForest",
+    "StrictEconmlXWZCensoredSurvivalForest",
     "causal_survival_forest",
 ]

@@ -28,7 +28,7 @@ from grf.benchmarks.econml_8variant import (  # noqa: E402
     _evaluate_predictions,
     _predict_s_on_grid,
     _true_survival_components,
-    evaluate_r_csf_variant,
+    evaluate_econml_csf_variant,
     prepare_case,
     render_avg_summary_png,
     render_case_table_png,
@@ -51,7 +51,7 @@ VARIANT_SPECS = [
     ("A1  Final Model Oracle (all true)", "oracle", dict(true_surv=True, true_qh=True)),
     ("A2  Final Model Oracle (true surv, est q/h)", "oracle", dict(true_surv=True, true_qh=False)),
     ("A3  Final Model Oracle (all estimated)", "oracle", dict(true_surv=False, true_qh=False)),
-    ("R-CSF Baseline", "baseline", {}),
+    ("EconML Censored Baseline", "baseline", {}),
     ("C1  Final Model (all true)", "proxy", dict(true_surv=True, true_qh=True)),
     ("C2  Final Model (true surv, est q/h)", "proxy", dict(true_surv=True, true_qh=False)),
     ("C3  Final Model (all estimated)", "proxy", dict(true_surv=False, true_qh=False)),
@@ -482,13 +482,14 @@ def _evaluate_case_variant(case, name: str, kind: str, kwargs: dict[str, object]
     if kind == "proxy":
         return _evaluate_proxy_variant(name, case, **kwargs)
     if kind == "baseline":
-        return evaluate_r_csf_variant(
+        return evaluate_econml_csf_variant(
             name,
             case.obs_df,
-            case.x_cols + case.w_cols + case.z_cols,
+            case.x_cols,
+            case.w_cols,
+            case.z_cols,
             case.true_cate,
             case.horizon,
-            num_trees_baseline,
             target="RMST",
         )
     raise ValueError(f"Unknown variant kind: {kind}")

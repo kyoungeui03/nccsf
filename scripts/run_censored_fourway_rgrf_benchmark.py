@@ -16,13 +16,13 @@ if str(PYTHON_PACKAGE_ROOT) not in sys.path:
 from grf.benchmarks.econml_8variant import (  # noqa: E402
     CASE_SPECS as C_CASE_SPECS,
     _evaluate_predictions,
-    evaluate_r_csf_variant,
     prepare_case,
 )
 from grf.censored import (  # noqa: E402
     FinalModelCSFFinalCensoredSurvivalForest,
     FinalModelCensoredSurvivalForest,
     FinalModelRCSFCensoredSurvivalForest,
+    StrictEconmlXWZCensoredSurvivalForest,
 )
 
 
@@ -48,7 +48,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
             "Run a four-way censored benchmark with unified horizon/target settings: "
-            "Final Model, R-CSF Baseline, Final Model (R grf final forest), "
+            "Final Model, EconML Censored Baseline, Final Model (R grf final forest), "
             "and Final Model (R grf survival final forest)."
         )
     )
@@ -144,6 +144,7 @@ def _evaluate_case(case, *, num_trees_r: int, target: str, random_state: int) ->
 
     models = [
         ("Final Model", FinalModelCensoredSurvivalForest),
+        ("EconML Censored Baseline", StrictEconmlXWZCensoredSurvivalForest),
         ("Final Model (R grf final forest)", FinalModelRCSFCensoredSurvivalForest),
         ("Final Model (R grf survival final forest)", FinalModelCSFFinalCensoredSurvivalForest),
     ]
@@ -169,17 +170,6 @@ def _evaluate_case(case, *, num_trees_r: int, target: str, random_state: int) ->
             )
         )
 
-    rows.append(
-        evaluate_r_csf_variant(
-            "R-CSF Baseline",
-            case.obs_df,
-            feature_cols,
-            case.true_cate,
-            horizon,
-            num_trees=num_trees_r,
-            target=target,
-        )
-    )
     return rows
 
 
