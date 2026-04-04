@@ -39,13 +39,222 @@ PROJECT_ROOT = Path(__file__).resolve().parents[3]
 R_CSF_FINAL_FOREST_SCRIPT = PROJECT_ROOT / "scripts" / "run_grf_csf_final_forest.R"
 R_CSF_SURVIVAL_FINAL_FOREST_SCRIPT = PROJECT_ROOT / "scripts" / "run_grf_csf_survival_final_forest.R"
 
+_SURV_SCALAR_MODES = {
+    "none",
+    "pair",
+    "full",
+    "raw",
+    "raw_surv",
+    "qhat_diff_pts",
+    "qhat_full_pts",
+    "qhat_stats",
+    "s_stats",
+    "censor_stats",
+    "disagreement",
+    "qhat_censor",
+    "qhat_disagree",
+    "all_lite",
+}
+_SURV_SCALAR_SUMMARY_COUNTS = {
+    "none": 4,
+    "pair": 6,
+    "full": 7,
+    "raw_surv": 3,
+    "qhat_diff_pts": 10,
+    "qhat_full_pts": 16,
+    "qhat_stats": 13,
+    "s_stats": 13,
+    "censor_stats": 11,
+    "disagreement": 11,
+    "qhat_censor": 17,
+    "qhat_disagree": 17,
+    "all_lite": 21,
+}
+
 
 def _resolve_surv_scalar_mode(include_surv_scalar: bool, surv_scalar_mode: str | None) -> str:
     if surv_scalar_mode is None:
         return "full" if include_surv_scalar else "none"
-    if surv_scalar_mode not in {"none", "pair", "full", "raw"}:
+    if surv_scalar_mode not in _SURV_SCALAR_MODES:
         raise ValueError(f"Unsupported surv_scalar_mode: {surv_scalar_mode}")
     return surv_scalar_mode
+
+
+def _mode_uses_surv_scalar(surv_scalar_mode: str) -> bool:
+    return surv_scalar_mode not in {"none", "raw"}
+
+
+def _curve_anchor_values(curve, fractions=(0.25, 0.50, 0.75)):
+    curve = np.asarray(curve, dtype=float)
+    if curve.ndim != 2:
+        raise ValueError("curve must be 2D.")
+    if curve.shape[1] == 0:
+        return np.zeros((curve.shape[0], len(fractions)), dtype=float)
+    indices = [
+        int(np.clip(round((curve.shape[1] - 1) * frac), 0, max(curve.shape[1] - 1, 0)))
+        for frac in fractions
+    ]
+    return curve[:, indices]
+
+
+def _curve_window_means(curve, n_windows=3):
+    curve = np.asarray(curve, dtype=float)
+    if curve.ndim != 2:
+        raise ValueError("curve must be 2D.")
+    if curve.shape[1] == 0:
+        return np.zeros((curve.shape[0], n_windows), dtype=float)
+    splits = np.array_split(np.arange(curve.shape[1]), n_windows)
+    means = []
+    for split in splits:
+        if len(split) == 0:
+            means.append(np.zeros(curve.shape[0], dtype=float))
+        else:
+            means.append(np.mean(curve[:, split], axis=1))
+    return np.column_stack(means)
+
+
+def _curve_auc(curve, t_grid):
+    curve = np.asarray(curve, dtype=float)
+    t_grid = np.asarray(t_grid, dtype=float).ravel()
+    if curve.ndim != 2:
+        raise ValueError("curve must be 2D.")
+    if curve.shape[1] == 0:
+        return np.zeros(curve.shape[0], dtype=float)
+    if t_grid.shape[0] != curve.shape[1]:
+        return np.mean(curve, axis=1)
+    span = float(t_grid[-1] - t_grid[0]) if t_grid.shape[0] > 1 else 1.0
+    span = max(span, 1e-8)
+    return np.trapezoid(curve, x=t_grid, axis=1) / span
+
+
+def _survival_feature_extras(bridge, surv_scalar_mode: str):
+    if surv_scalar_mode in {"none", "pair", "full", "raw", "raw_surv"}:
+        return []
+    summary = _bridge_scalar_summaries(bridge)
+
+    extras: list[np.ndarray] = []
+    if surv_scalar_mode == "qhat_diff_pts":
+        extras.append(summary["qhat_diff_pts"])
+    elif surv_scalar_mode == "qhat_full_pts":
+        extras.extend(
+            [
+                summary["qhat1_pts"],
+                summary["qhat0_pts"],
+                summary["qhat_diff_pts"],
+            ]
+        )
+    elif surv_scalar_mode == "qhat_stats":
+        extras.extend(
+            [
+                summary["qhat_auc_stats"],
+                summary["qhat_diff_windows"],
+            ]
+        )
+    elif surv_scalar_mode == "s_stats":
+        extras.extend(
+            [
+                summary["s_auc_stats"],
+                summary["s_diff_windows"],
+            ]
+        )
+    elif surv_scalar_mode == "censor_stats":
+        extras.append(summary["c_stats"])
+    elif surv_scalar_mode == "disagreement":
+        extras.extend(
+            [
+                np.asarray(bridge["h_diff_pred"], dtype=float).reshape(-1, 1),
+                np.asarray(bridge["m_survival_pred"], dtype=float).reshape(-1, 1),
+                np.asarray(bridge["m_gap_pred"], dtype=float).reshape(-1, 1),
+                np.abs(np.asarray(bridge["m_gap_pred"], dtype=float)).reshape(-1, 1),
+            ]
+        )
+    elif surv_scalar_mode == "qhat_censor":
+        extras.extend(
+            [
+                summary["qhat_auc_stats"],
+                summary["qhat_diff_windows"],
+                summary["c_stats"],
+            ]
+        )
+    elif surv_scalar_mode == "qhat_disagree":
+        extras.extend(
+            [
+                summary["qhat_auc_stats"],
+                summary["qhat_diff_windows"],
+                np.asarray(bridge["h_diff_pred"], dtype=float).reshape(-1, 1),
+                np.asarray(bridge["m_survival_pred"], dtype=float).reshape(-1, 1),
+                np.asarray(bridge["m_gap_pred"], dtype=float).reshape(-1, 1),
+                np.abs(np.asarray(bridge["m_gap_pred"], dtype=float)).reshape(-1, 1),
+            ]
+        )
+    elif surv_scalar_mode == "all_lite":
+        extras.extend(
+            [
+                summary["qhat_auc_stats"],
+                summary["qhat_diff_windows"],
+                summary["c_stats"],
+                np.asarray(bridge["h_diff_pred"], dtype=float).reshape(-1, 1),
+                np.asarray(bridge["m_survival_pred"], dtype=float).reshape(-1, 1),
+                np.asarray(bridge["m_gap_pred"], dtype=float).reshape(-1, 1),
+                np.abs(np.asarray(bridge["m_gap_pred"], dtype=float)).reshape(-1, 1),
+            ]
+        )
+    else:
+        raise ValueError(f"Unsupported surv_scalar_mode: {surv_scalar_mode}")
+    return extras
+
+
+def _bridge_scalar_summaries(bridge):
+    if "qhat_auc_stats" in bridge:
+        return {
+            "qhat1_pts": np.asarray(bridge["qhat1_pts"], dtype=float),
+            "qhat0_pts": np.asarray(bridge["qhat0_pts"], dtype=float),
+            "qhat_diff_pts": np.asarray(bridge["qhat_diff_pts"], dtype=float),
+            "qhat_auc_stats": np.asarray(bridge["qhat_auc_stats"], dtype=float),
+            "qhat_diff_windows": np.asarray(bridge["qhat_diff_windows"], dtype=float),
+            "s_auc_stats": np.asarray(bridge["s_auc_stats"], dtype=float),
+            "s_diff_windows": np.asarray(bridge["s_diff_windows"], dtype=float),
+            "c_stats": np.asarray(bridge["c_stats"], dtype=float),
+        }
+
+    qhat1_curve = np.asarray(bridge["qhat1_curve"], dtype=float)
+    qhat0_curve = np.asarray(bridge["qhat0_curve"], dtype=float)
+    s1_curve = np.asarray(bridge["s1_curve"], dtype=float)
+    s0_curve = np.asarray(bridge["s0_curve"], dtype=float)
+    c_curve = np.asarray(bridge["c_curve"], dtype=float)
+    qhat_diff_curve = qhat1_curve - qhat0_curve
+    s_diff_curve = s1_curve - s0_curve
+    t_grid = np.asarray(bridge.get("t_grid", np.arange(qhat1_curve.shape[1], dtype=float)), dtype=float).ravel()
+
+    return {
+        "qhat1_pts": _curve_anchor_values(qhat1_curve),
+        "qhat0_pts": _curve_anchor_values(qhat0_curve),
+        "qhat_diff_pts": _curve_anchor_values(qhat_diff_curve),
+        "qhat_auc_stats": np.column_stack(
+            [
+                _curve_auc(qhat1_curve, t_grid),
+                _curve_auc(qhat0_curve, t_grid),
+                _curve_auc(qhat_diff_curve, t_grid),
+            ]
+        ),
+        "qhat_diff_windows": _curve_window_means(qhat_diff_curve),
+        "s_auc_stats": np.column_stack(
+            [
+                _curve_auc(s1_curve, t_grid),
+                _curve_auc(s0_curve, t_grid),
+                _curve_auc(s_diff_curve, t_grid),
+            ]
+        ),
+        "s_diff_windows": _curve_window_means(s_diff_curve),
+        "c_stats": np.column_stack(
+            [
+                c_curve[:, -1],
+                np.mean(c_curve, axis=1),
+                np.min(c_curve, axis=1),
+                np.mean(1.0 / np.maximum(c_curve, 1e-6), axis=1),
+            ]
+        ),
+    }
 
 
 def _build_oldc3_survival_ablation_features(
@@ -63,6 +272,15 @@ def _build_oldc3_survival_ablation_features(
         parts.extend([_ensure_2d(W_raw).astype(float), _ensure_2d(Z_raw).astype(float)])
     if surv_scalar_mode == "raw":
         return np.hstack(parts)
+    if surv_scalar_mode == "raw_surv":
+        parts.extend(
+            [
+                np.asarray(bridge["surv1_pred"], dtype=float).reshape(-1, 1),
+                np.asarray(bridge["surv0_pred"], dtype=float).reshape(-1, 1),
+                np.asarray(bridge["surv_diff_pred"], dtype=float).reshape(-1, 1),
+            ]
+        )
+        return np.hstack(parts)
     parts.extend(
         [
             np.asarray(bridge["q_pred"], dtype=float).reshape(-1, 1),
@@ -71,15 +289,16 @@ def _build_oldc3_survival_ablation_features(
             np.asarray(bridge["m_pred"], dtype=float).reshape(-1, 1),
         ]
     )
-    if surv_scalar_mode in {"pair", "full"}:
+    if _mode_uses_surv_scalar(surv_scalar_mode):
         parts.extend(
             [
                 np.asarray(bridge["surv1_pred"], dtype=float).reshape(-1, 1),
                 np.asarray(bridge["surv0_pred"], dtype=float).reshape(-1, 1),
             ]
         )
-    if surv_scalar_mode == "full":
+    if surv_scalar_mode not in {"none", "pair", "raw"}:
         parts.append(np.asarray(bridge["surv_diff_pred"], dtype=float).reshape(-1, 1))
+    parts.extend(_survival_feature_extras(bridge, surv_scalar_mode))
     return np.hstack(parts)
 
 
@@ -272,8 +491,9 @@ def _predict_r_csf_survival_final_forest(
 def _oldc3_ablation_feature_mode(*, include_raw_proxy: bool, surv_scalar_mode: str) -> str:
     if surv_scalar_mode == "raw":
         return "xwz" if include_raw_proxy else "x_only"
-    if include_raw_proxy and surv_scalar_mode == "full":
-        return "augmented_surv"
+    if surv_scalar_mode in {"full", "raw_surv", "qhat_diff_pts", "qhat_full_pts", "qhat_stats", "s_stats", "censor_stats", "disagreement", "qhat_censor", "qhat_disagree", "all_lite"}:
+        count = _SURV_SCALAR_SUMMARY_COUNTS[surv_scalar_mode]
+        return f"augmented_custom_{count}" if include_raw_proxy else f"summary_custom_{count}"
     if include_raw_proxy and surv_scalar_mode == "pair":
         return "augmented_surv_pair"
     if include_raw_proxy and surv_scalar_mode == "none":
@@ -372,7 +592,7 @@ class _BaseOldC3FeatureGRFCensoredSurvivalForest:
     ):
         self._include_raw_proxy = bool(include_raw_proxy)
         self._surv_scalar_mode = _resolve_surv_scalar_mode(include_surv_scalar, surv_scalar_mode)
-        self._include_surv_scalar = self._surv_scalar_mode in {"pair", "full"}
+        self._include_surv_scalar = _mode_uses_surv_scalar(self._surv_scalar_mode)
         self._observed_only = bool(observed_only)
         self._target = target
         self._horizon = horizon
@@ -530,7 +750,7 @@ class _BaseOldC3FeatureDMLCensoredSurvivalForest:
     ):
         self._include_raw_proxy = bool(include_raw_proxy)
         self._surv_scalar_mode = _resolve_surv_scalar_mode(include_surv_scalar, surv_scalar_mode)
-        self._include_surv_scalar = self._surv_scalar_mode in {"pair", "full"}
+        self._include_surv_scalar = _mode_uses_surv_scalar(self._surv_scalar_mode)
         self._observed_only = bool(observed_only)
         self._target = target
         self._horizon = horizon
@@ -685,6 +905,7 @@ class _BridgeOutputSurvivalNuisance(_MildShrinkNCSurvivalNuisance):
             groups=groups,
         )
         bridge = super().predict_bridge_outputs(X=X, W=W, Z=Z)
+        summary = _bridge_scalar_summaries(bridge)
         return (
             y_res,
             a_res,
@@ -692,9 +913,21 @@ class _BridgeOutputSurvivalNuisance(_MildShrinkNCSurvivalNuisance):
             bridge["h1_pred"],
             bridge["h0_pred"],
             bridge["m_pred"],
+            bridge["m_bridge_pred"],
+            bridge["m_survival_pred"],
+            bridge["m_gap_pred"],
+            bridge["h_diff_pred"],
             bridge["surv1_pred"],
             bridge["surv0_pred"],
             bridge["surv_diff_pred"],
+            summary["qhat1_pts"],
+            summary["qhat0_pts"],
+            summary["qhat_diff_pts"],
+            summary["qhat_auc_stats"],
+            summary["qhat_diff_windows"],
+            summary["s_auc_stats"],
+            summary["s_diff_windows"],
+            summary["c_stats"],
         )
 
 
@@ -711,7 +944,7 @@ class _BridgeFeatureSurvivalModelFinal:
         self._base_model_final = base_model_final
         self._include_raw_proxy = bool(include_raw_proxy)
         self._surv_scalar_mode = _resolve_surv_scalar_mode(include_surv_scalar, surv_scalar_mode)
-        self._include_surv_scalar = self._surv_scalar_mode in {"pair", "full"}
+        self._include_surv_scalar = _mode_uses_surv_scalar(self._surv_scalar_mode)
         self._raw_proxy_supplier = raw_proxy_supplier
         self._train_x_final = None
 
@@ -723,18 +956,42 @@ class _BridgeFeatureSurvivalModelFinal:
             h1_pred,
             h0_pred,
             m_pred,
+            m_bridge_pred,
+            m_survival_pred,
+            m_gap_pred,
+            h_diff_pred,
             surv1_pred,
             surv0_pred,
             surv_diff_pred,
+            qhat1_pts,
+            qhat0_pts,
+            qhat_diff_pts,
+            qhat_auc_stats,
+            qhat_diff_windows,
+            s_auc_stats,
+            s_diff_windows,
+            c_stats,
         ) = nuisances
         bridge = {
             "q_pred": q_pred,
             "h1_pred": h1_pred,
             "h0_pred": h0_pred,
             "m_pred": m_pred,
+            "m_bridge_pred": m_bridge_pred,
+            "m_survival_pred": m_survival_pred,
+            "m_gap_pred": m_gap_pred,
+            "h_diff_pred": h_diff_pred,
             "surv1_pred": surv1_pred,
             "surv0_pred": surv0_pred,
             "surv_diff_pred": surv_diff_pred,
+            "qhat1_pts": qhat1_pts,
+            "qhat0_pts": qhat0_pts,
+            "qhat_diff_pts": qhat_diff_pts,
+            "qhat_auc_stats": qhat_auc_stats,
+            "qhat_diff_windows": qhat_diff_windows,
+            "s_auc_stats": s_auc_stats,
+            "s_diff_windows": s_diff_windows,
+            "c_stats": c_stats,
         }
         w_for_final = W
         z_for_final = Z
@@ -808,7 +1065,7 @@ class SinglePassBridgeFeatureCensoredSurvivalForest(EconmlMildShrinkNCSurvivalFo
     def __init__(self, *, include_raw_proxy: bool, include_surv_scalar: bool, surv_scalar_mode: str | None = None, **kwargs):
         self._include_raw_proxy = bool(include_raw_proxy)
         self._surv_scalar_mode = _resolve_surv_scalar_mode(include_surv_scalar, surv_scalar_mode)
-        self._include_surv_scalar = self._surv_scalar_mode in {"pair", "full"}
+        self._include_surv_scalar = _mode_uses_surv_scalar(self._surv_scalar_mode)
         self._raw_w_for_final = None
         self._raw_z_for_final = None
         kwargs.setdefault(
@@ -841,6 +1098,14 @@ class SinglePassBridgeFeatureCensoredSurvivalForest(EconmlMildShrinkNCSurvivalFo
             q_clip=self._custom_q_clip,
             y_tilde_clip_quantile=self._custom_y_tilde_clip_quantile,
             y_res_clip_percentiles=self._custom_y_res_clip_percentiles,
+            event_survival_estimator=self._event_survival_estimator,
+            m_pred_mode=self._m_pred_mode,
+            survival_forest_num_trees=self._survival_forest_num_trees,
+            survival_forest_min_node_size=self._survival_forest_min_node_size,
+            survival_fast_logrank=self._survival_fast_logrank,
+            n_jobs=self._n_jobs,
+            random_state=self._random_state,
+            enforce_finite_horizon=self._enforce_finite_horizon,
         )
 
     def _gen_ortho_learner_model_final(self):
@@ -884,13 +1149,19 @@ class _BaseSinglePassBridgeFeatureCensoredSurvivalForest:
         h_n_estimators=1200,
         h_min_samples_leaf=3,
         censoring_estimator="kaplan-meier",
+        event_survival_estimator="cox",
+        m_pred_mode="bridge",
+        survival_forest_num_trees=50,
+        survival_forest_min_node_size=15,
+        survival_fast_logrank=False,
+        enforce_finite_horizon=False,
         n_jobs=1,
         nuisance_feature_mode="dup",
         prediction_nuisance_mode="full_refit",
     ):
         self._include_raw_proxy = bool(include_raw_proxy)
         self._surv_scalar_mode = _resolve_surv_scalar_mode(include_surv_scalar, surv_scalar_mode)
-        self._include_surv_scalar = self._surv_scalar_mode in {"pair", "full"}
+        self._include_surv_scalar = _mode_uses_surv_scalar(self._surv_scalar_mode)
         self._observed_only = bool(observed_only)
         self._target = target
         self._horizon = horizon
@@ -909,6 +1180,12 @@ class _BaseSinglePassBridgeFeatureCensoredSurvivalForest:
         self._h_n_estimators = int(h_n_estimators)
         self._h_min_samples_leaf = int(h_min_samples_leaf)
         self._censoring_estimator = censoring_estimator
+        self._event_survival_estimator = event_survival_estimator
+        self._m_pred_mode = m_pred_mode
+        self._survival_forest_num_trees = int(survival_forest_num_trees)
+        self._survival_forest_min_node_size = int(survival_forest_min_node_size)
+        self._survival_fast_logrank = bool(survival_fast_logrank)
+        self._enforce_finite_horizon = bool(enforce_finite_horizon)
         self._n_jobs = int(n_jobs)
         self._nuisance_feature_mode = nuisance_feature_mode
         self._prediction_nuisance_mode = prediction_nuisance_mode
@@ -953,6 +1230,14 @@ class _BaseSinglePassBridgeFeatureCensoredSurvivalForest:
             q_clip=self._q_clip,
             y_tilde_clip_quantile=self._y_tilde_clip_quantile,
             y_res_clip_percentiles=self._y_res_clip_percentiles,
+            event_survival_estimator=self._event_survival_estimator,
+            m_pred_mode=self._m_pred_mode,
+            survival_forest_num_trees=self._survival_forest_num_trees,
+            survival_forest_min_node_size=self._survival_forest_min_node_size,
+            survival_fast_logrank=self._survival_fast_logrank,
+            n_jobs=self._n_jobs,
+            random_state=self._random_state,
+            enforce_finite_horizon=self._enforce_finite_horizon,
         )
 
     def _make_nuisance(self):
@@ -985,6 +1270,12 @@ class _BaseSinglePassBridgeFeatureCensoredSurvivalForest:
             h_n_estimators=self._h_n_estimators,
             h_min_samples_leaf=self._h_min_samples_leaf,
             censoring_estimator=self._censoring_estimator,
+            event_survival_estimator=self._event_survival_estimator,
+            m_pred_mode=self._m_pred_mode,
+            survival_forest_num_trees=self._survival_forest_num_trees,
+            survival_forest_min_node_size=self._survival_forest_min_node_size,
+            survival_fast_logrank=self._survival_fast_logrank,
+            enforce_finite_horizon=self._enforce_finite_horizon,
             n_jobs=self._n_jobs,
             nuisance_feature_mode=self._nuisance_feature_mode,
         )
@@ -1668,6 +1959,185 @@ class UnifiedB2SumBaselineCensoredSurvivalForest(B2SummaryBaselineDMLCensoredSur
         super().__init__(*args, **kwargs)
 
 
+class RCSFStyleEconmlCensoredBaseline:
+    """Strict-like censored baseline with survival/censoring summaries but no explicit bridge residualization."""
+
+    max_grid = 500
+
+    def __init__(
+        self,
+        *,
+        target="RMST",
+        horizon=None,
+        n_estimators=200,
+        min_samples_leaf=20,
+        cv=2,
+        model_y="auto",
+        model_t="auto",
+        discrete_treatment=True,
+        criterion="het",
+        random_state=42,
+        censoring_estimator="nelson-aalen",
+        event_survival_estimator="cox",
+        **kwargs,
+    ):
+        self._target = target
+        self._horizon = horizon
+        self._n_estimators = int(n_estimators)
+        self._min_samples_leaf = int(min_samples_leaf)
+        self._cv = int(cv)
+        self._model_y = model_y
+        self._model_t = model_t
+        self._discrete_treatment = bool(discrete_treatment)
+        self._criterion = criterion
+        self._random_state = int(random_state)
+        self._censoring_estimator = censoring_estimator
+        self._event_survival_estimator = event_survival_estimator
+        self._extra_kwargs = dict(kwargs)
+        self._model = None
+        self._t_grid = None
+        self._event_cox_1 = None
+        self._event_cox_0 = None
+        self._cox_col_names_1 = None
+        self._cox_col_names_0 = None
+        self._cox_keep_mask_1 = None
+        self._cox_keep_mask_0 = None
+
+    @staticmethod
+    def stack_final_features(*arrays):
+        parts = [_ensure_2d(np.asarray(arr, dtype=float)) for arr in arrays]
+        return np.hstack(parts)
+
+    def _predict_event_survival_curves(self, x_full):
+        if self._event_survival_estimator != "cox":
+            raise ValueError("RCSFStyleEconmlCensoredBaseline currently supports event_survival_estimator='cox' only.")
+        return (
+            _predict_s_on_grid(
+                self._event_cox_1,
+                self._cox_col_names_1,
+                x_full,
+                self._t_grid,
+                self._cox_keep_mask_1,
+            ),
+            _predict_s_on_grid(
+                self._event_cox_0,
+                self._cox_col_names_0,
+                x_full,
+                self._t_grid,
+                self._cox_keep_mask_0,
+            ),
+        )
+
+    def _build_final_features(self, x, raw_w, raw_z):
+        x_full = self.stack_final_features(x, raw_w, raw_z)
+        s_hat_1, s_hat_0 = self._predict_event_survival_curves(x_full)
+        if self._target == "survival.probability":
+            q_hat_1 = _compute_survival_probability_q_from_s(s_hat_1, self._t_grid, self._horizon)
+            q_hat_0 = _compute_survival_probability_q_from_s(s_hat_0, self._t_grid, self._horizon)
+        else:
+            q_hat_1 = _compute_q_from_s(s_hat_1, self._t_grid)
+            q_hat_0 = _compute_q_from_s(s_hat_0, self._t_grid)
+        bridge = {
+            "surv1_pred": q_hat_1[:, 0],
+            "surv0_pred": q_hat_0[:, 0],
+            "surv_diff_pred": q_hat_1[:, 0] - q_hat_0[:, 0],
+        }
+        return _build_oldc3_survival_ablation_features(
+            x,
+            raw_w,
+            raw_z,
+            bridge,
+            include_raw_proxy=True,
+            surv_scalar_mode="raw_surv",
+        )
+
+    def fit_components(self, X, A, time, event, Z, W):
+        x = _ensure_2d(X).astype(float)
+        raw_w = _ensure_2d(W).astype(float)
+        raw_z = _ensure_2d(Z).astype(float)
+        x_full = self.stack_final_features(x, raw_w, raw_z)
+        y_time = np.asarray(time, dtype=float).ravel()
+        delta = np.asarray(event, dtype=float).ravel()
+        a = np.asarray(A).ravel()
+
+        target_inputs = _prepare_target_inputs(
+            y_time,
+            delta,
+            target=self._target,
+            horizon=self._horizon,
+        )
+        all_times = np.sort(np.unique(target_inputs["grid_time"]))
+        if len(all_times) > self.max_grid:
+            idx = np.linspace(0, len(all_times) - 1, self.max_grid, dtype=int)
+            all_times = all_times[idx]
+        self._t_grid = all_times
+
+        censor_model = _fit_censoring_model(
+            target_inputs["nuisance_time"],
+            target_inputs["nuisance_delta"],
+            x_full,
+            estimator=self._censoring_estimator,
+        )
+        y_tilde_eval_time = (
+            target_inputs["eval_time"] if self._target == "survival.probability" else target_inputs["nuisance_time"]
+        )
+        sc_at_eval = _predict_censoring_survival_at_values(
+            censor_model,
+            x_full,
+            y_tilde_eval_time,
+            clip_min=1e-10,
+        )
+        y_tilde = _compute_target_pseudo_outcome_from_sc(
+            y_time=y_time,
+            target=self._target,
+            horizon=self._horizon,
+            nuisance_time=target_inputs["nuisance_time"],
+            nuisance_delta=target_inputs["nuisance_delta"],
+            sc_at_eval=sc_at_eval,
+        )
+
+        treated_mask = a == 1
+        control_mask = a == 0
+        self._event_cox_1, self._cox_col_names_1, self._cox_keep_mask_1 = _fit_event_cox(
+            target_inputs["nuisance_time"][treated_mask],
+            target_inputs["nuisance_delta"][treated_mask],
+            x_full[treated_mask],
+        )
+        self._event_cox_0, self._cox_col_names_0, self._cox_keep_mask_0 = _fit_event_cox(
+            target_inputs["nuisance_time"][control_mask],
+            target_inputs["nuisance_delta"][control_mask],
+            x_full[control_mask],
+        )
+
+        x_final = self._build_final_features(x, raw_w, raw_z)
+        self._model = CausalForestDML(
+            model_y=self._model_y,
+            model_t=self._model_t,
+            cv=self._cv,
+            discrete_treatment=self._discrete_treatment,
+            criterion=self._criterion,
+            n_estimators=self._n_estimators,
+            min_samples_leaf=self._min_samples_leaf,
+            random_state=self._random_state,
+            **self._extra_kwargs,
+        )
+        self._model.fit(
+            Y=np.asarray(y_tilde, dtype=float).ravel(),
+            T=a,
+            X=x_final,
+        )
+        return self
+
+    def effect_from_components(self, X, W, Z):
+        if self._model is None or self._t_grid is None:
+            raise RuntimeError("Model must be fit before calling effect_from_components.")
+        x = _ensure_2d(X).astype(float)
+        raw_w = _ensure_2d(W).astype(float)
+        raw_z = _ensure_2d(Z).astype(float)
+        x_final = self._build_final_features(x, raw_w, raw_z)
+        return self._model.effect(x_final)
+
+
 class UnifiedB2SumMildShrinkCensoredSurvivalForest(B2SummaryDMLCensoredSurvivalForest):
     """Matched censored B2Sum mild-shrink family."""
 
@@ -1704,7 +2174,7 @@ class FinalModelCensoredSurvivalForest(_BaseSinglePassBridgeFeatureCensoredSurvi
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("include_raw_proxy", True)
         kwargs.setdefault("include_surv_scalar", True)
-        kwargs.setdefault("surv_scalar_mode", "pair")
+        kwargs.setdefault("surv_scalar_mode", "full")
         kwargs.setdefault("prediction_nuisance_mode", "full_refit")
         kwargs.setdefault("observed_only", False)
         kwargs.setdefault("target", "RMST")
@@ -1984,7 +2454,7 @@ class FinalModelNoPCICensoredSurvivalForest(_BaseSinglePassBridgeFeatureCensored
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("include_raw_proxy", True)
         kwargs.setdefault("include_surv_scalar", True)
-        kwargs.setdefault("surv_scalar_mode", "pair")
+        kwargs.setdefault("surv_scalar_mode", "full")
         kwargs.setdefault("prediction_nuisance_mode", "full_refit")
         kwargs.setdefault("observed_only", True)
         kwargs.setdefault("target", "RMST")
@@ -2002,6 +2472,40 @@ class FinalModelNoPCICensoredSurvivalForest(_BaseSinglePassBridgeFeatureCensored
         kwargs.setdefault("min_samples_leaf", 20)
         kwargs.setdefault("censoring_estimator", "nelson-aalen")
         kwargs.setdefault("nuisance_feature_mode", "broad_dup")
+        kwargs.setdefault("n_jobs", 1)
+        super().__init__(*args, **kwargs)
+
+
+class MatchedNoPCICensoredSurvivalForest(FinalModelNoPCICensoredSurvivalForest):
+    """Matched censored baseline: keep the finalized censored backbone, remove PCI from nuisance fitting."""
+
+
+class ProperNoPCICensoredSurvivalForest(_BaseSinglePassBridgeFeatureCensoredSurvivalForest):
+    """Proper censored baseline: explicit residuals + CausalForest, but no PCI, no broad-dup, no clipping."""
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("include_raw_proxy", True)
+        kwargs.setdefault("include_surv_scalar", True)
+        kwargs.setdefault("surv_scalar_mode", "raw_surv")
+        kwargs.setdefault("prediction_nuisance_mode", "full_refit")
+        kwargs.setdefault("observed_only", True)
+        kwargs.setdefault("target", "RMST")
+        kwargs.setdefault("horizon", None)
+        kwargs.setdefault("cv", 5)
+        kwargs.setdefault("random_state", 42)
+        kwargs.setdefault("q_kind", "logit")
+        kwargs.setdefault("h_kind", "extra")
+        kwargs.setdefault("h_n_estimators", 600)
+        kwargs.setdefault("h_min_samples_leaf", 5)
+        kwargs.setdefault("q_clip", 0.0)
+        kwargs.setdefault("y_tilde_clip_quantile", None)
+        kwargs.setdefault("y_res_clip_percentiles", (0.0, 100.0))
+        kwargs.setdefault("n_estimators", 200)
+        kwargs.setdefault("min_samples_leaf", 20)
+        kwargs.setdefault("censoring_estimator", "nelson-aalen")
+        kwargs.setdefault("event_survival_estimator", "cox")
+        kwargs.setdefault("m_pred_mode", "survival")
+        kwargs.setdefault("nuisance_feature_mode", "dup")
         kwargs.setdefault("n_jobs", 1)
         super().__init__(*args, **kwargs)
 

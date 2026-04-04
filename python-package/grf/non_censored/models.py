@@ -2329,6 +2329,29 @@ class FinalModelNoPCINCCausalForest(_BaseSinglePassBridgeFeatureNCCausalForest):
         super().__init__(*args, **kwargs)
 
 
+class ProperNoPCINCCausalForest(_BaseSinglePassBridgeFeatureNCCausalForest):
+    """Explicit-residual non-censored baseline with no PCI, no broad-dup, and no clipping."""
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("final_feature_mode", "raw")
+        kwargs.setdefault("prediction_nuisance_mode", "full_refit")
+        kwargs.setdefault("observed_only", True)
+        kwargs.setdefault("cv", 5)
+        kwargs.setdefault("random_state", 42)
+        kwargs.setdefault("q_kind", "logit")
+        kwargs.setdefault("h_kind", "extra")
+        kwargs.setdefault("h_n_estimators", 600)
+        kwargs.setdefault("h_min_samples_leaf", 5)
+        kwargs.setdefault("q_clip", 0.0)
+        kwargs.setdefault("y_clip_quantile", None)
+        kwargs.setdefault("y_res_clip_percentiles", (0.0, 100.0))
+        kwargs.setdefault("n_estimators", 200)
+        kwargs.setdefault("min_samples_leaf", 20)
+        kwargs.setdefault("nuisance_feature_mode", "dup")
+        kwargs.setdefault("n_jobs", 1)
+        super().__init__(*args, **kwargs)
+
+
 class FinalModelRawNCCausalForest(_BaseSinglePassBridgeFeatureNCCausalForest):
     """Finalized non-censored model with raw final-stage features only."""
 
