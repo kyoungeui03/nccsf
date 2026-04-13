@@ -2138,6 +2138,113 @@ class RCSFStyleEconmlCensoredBaseline:
         return self._model.effect(x_final)
 
 
+class StrictEconmlXWZCensoredSurvivalForest:
+    """Strict censored EconML baseline on raw [X, W, Z] with IPCW pseudo-outcomes only."""
+
+    def __init__(
+        self,
+        *,
+        target="RMST",
+        horizon=None,
+        n_estimators=200,
+        min_samples_leaf=20,
+        cv=2,
+        model_y="auto",
+        model_t="auto",
+        discrete_treatment=True,
+        criterion="het",
+        random_state=42,
+        censoring_estimator="nelson-aalen",
+        **kwargs,
+    ):
+        self._target = target
+        self._horizon = horizon
+        self._n_estimators = int(n_estimators)
+        self._min_samples_leaf = int(min_samples_leaf)
+        self._cv = int(cv)
+        self._model_y = model_y
+        self._model_t = model_t
+        self._discrete_treatment = bool(discrete_treatment)
+        self._criterion = criterion
+        self._random_state = int(random_state)
+        self._censoring_estimator = censoring_estimator
+        self._extra_kwargs = dict(kwargs)
+        self._model = None
+
+    @staticmethod
+    def stack_final_features(*arrays):
+        parts = [_ensure_2d(np.asarray(arr, dtype=float)) for arr in arrays]
+        return np.hstack(parts)
+
+    def fit_components(self, X, A, time, event, Z, W):
+        x = _ensure_2d(X).astype(float)
+        raw_w = _ensure_2d(W).astype(float)
+        raw_z = _ensure_2d(Z).astype(float)
+        x_full = self.stack_final_features(x, raw_w, raw_z)
+        y_time = np.asarray(time, dtype=float).ravel()
+        delta = np.asarray(event, dtype=float).ravel()
+        a = np.asarray(A, dtype=float).ravel()
+
+        target_inputs = _prepare_target_inputs(
+            y_time,
+            delta,
+            target=self._target,
+            horizon=self._horizon,
+        )
+        censor_model = _fit_censoring_model(
+            target_inputs["nuisance_time"],
+            target_inputs["nuisance_delta"],
+            x_full,
+            estimator=self._censoring_estimator,
+        )
+        y_tilde_eval_time = (
+            target_inputs["eval_time"]
+            if self._target == "survival.probability"
+            else target_inputs["nuisance_time"]
+        )
+        sc_at_eval = _predict_censoring_survival_at_values(
+            censor_model,
+            x_full,
+            y_tilde_eval_time,
+            clip_min=1e-10,
+        )
+        y_tilde = _compute_target_pseudo_outcome_from_sc(
+            y_time=y_time,
+            target=self._target,
+            horizon=self._horizon,
+            nuisance_time=target_inputs["nuisance_time"],
+            nuisance_delta=target_inputs["nuisance_delta"],
+            sc_at_eval=sc_at_eval,
+        )
+
+        self._model = CausalForestDML(
+            model_y=self._model_y,
+            model_t=self._model_t,
+            cv=self._cv,
+            discrete_treatment=self._discrete_treatment,
+            criterion=self._criterion,
+            n_estimators=self._n_estimators,
+            min_samples_leaf=self._min_samples_leaf,
+            random_state=self._random_state,
+            **self._extra_kwargs,
+        )
+        self._model.fit(
+            Y=np.asarray(y_tilde, dtype=float).ravel(),
+            T=a,
+            X=x_full,
+        )
+        return self
+
+    def effect_from_components(self, X, W, Z):
+        if self._model is None:
+            raise RuntimeError("Model must be fit before calling effect_from_components.")
+        x = _ensure_2d(X).astype(float)
+        raw_w = _ensure_2d(W).astype(float)
+        raw_z = _ensure_2d(Z).astype(float)
+        x_full = self.stack_final_features(x, raw_w, raw_z)
+        return self._model.effect(x_full)
+
+
 class UnifiedB2SumMildShrinkCensoredSurvivalForest(B2SummaryDMLCensoredSurvivalForest):
     """Matched censored B2Sum mild-shrink family."""
 

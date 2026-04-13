@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 """Run the self-contained censored models on our synthetic benchmark cases.
 
-This runner is designed to live next to the three standalone model files so
+This runner is designed to live next to the standalone model files so
 that someone can keep one folder open and both:
 
     1. inspect the model implementations, and
     2. run the standard basic12 benchmark or any selected synthetic cases.
 
-By default it runs the three single-file models on the full basic12 suite.
-It can also run only a subset of cases via case ids or case slugs.
+By default it runs the three Python single-file models on the full basic12
+suite. It can also run only a subset of cases via case ids or case slugs, and
+optionally include the installed-R GRF baseline.
 """
 
 from __future__ import annotations
@@ -36,10 +37,12 @@ from grf.benchmarks.econml_8variant import CASE_SPECS, _evaluate_predictions, pr
 
 try:  # pragma: no cover - allows both script and module execution
     from .final_censored_model import FinalModelCensoredSurvivalForest  # noqa: E402
+    from .grf_censored_baseline import GRFCensoredBaseline  # noqa: E402
     from .proper_censored_baseline import ProperNoPCICensoredSurvivalForest  # noqa: E402
     from .strict_censored_baseline import StrictEconmlXWZCensoredSurvivalForest  # noqa: E402
 except ImportError:  # pragma: no cover
     from final_censored_model import FinalModelCensoredSurvivalForest  # type: ignore  # noqa: E402
+    from grf_censored_baseline import GRFCensoredBaseline  # type: ignore  # noqa: E402
     from proper_censored_baseline import ProperNoPCICensoredSurvivalForest  # type: ignore  # noqa: E402
     from strict_censored_baseline import StrictEconmlXWZCensoredSurvivalForest  # type: ignore  # noqa: E402
 
@@ -65,6 +68,14 @@ MODEL_BUILDERS = {
     "proper": (
         "Proper Censored Baseline (single file)",
         lambda target, horizon, random_state: ProperNoPCICensoredSurvivalForest(
+            target=target,
+            horizon=horizon,
+            random_state=random_state,
+        ),
+    ),
+    "grf": (
+        "R grf Causal Survival Forest (single file)",
+        lambda target, horizon, random_state: GRFCensoredBaseline(
             target=target,
             horizon=horizon,
             random_state=random_state,
@@ -103,7 +114,7 @@ def parse_args() -> argparse.Namespace:
         "--models",
         nargs="*",
         choices=sorted(MODEL_BUILDERS),
-        default=sorted(MODEL_BUILDERS),
+        default=["final", "strict", "proper"],
         help="Subset of single-file models to run. Defaults to final strict proper.",
     )
     parser.add_argument(
