@@ -12,6 +12,7 @@ Models:
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 import time
 from pathlib import Path
@@ -78,6 +79,8 @@ except ImportError:  # pragma: no cover
 
 TARGETS = ["RMST", "survival.probability"]
 MODEL_COUNT = 5
+CHECKPOINT_RESULTS_FILE = "results_incremental.csv"
+RUN_METADATA_FILE = "run_metadata.json"
 
 
 class StrictOracleCensoredSurvivalForest(StrictEconmlXWZCensoredSurvivalForest):
@@ -441,10 +444,104 @@ def _resolve_targets(target_arg: str) -> list[str]:
     return [target_arg]
 
 
+def _case_base_name(case_id: int, case_slug: str, target: str) -> str:
+    target_slug = target.replace(".", "_")
+    return f"case_{int(case_id):02d}_{case_slug}_{target_slug}"
+
+
+def _make_run_metadata(
+    *,
+    args: argparse.Namespace,
+    case_specs: list[dict[str, object]],
+    targets: list[str],
+) -> dict[str, object]:
+    return {
+        "script": THIS_FILE.name,
+        "runner_version": 2,
+        "case_ids": [int(spec["case_id"]) for spec in case_specs],
+        "case_slugs": [str(spec["slug"]) for spec in case_specs],
+        "targets": list(targets),
+        "horizon_quantile": float(args.horizon_quantile),
+        "random_state": int(args.random_state),
+        "num_trees_baseline": int(args.num_trees_baseline),
+        "model_count": MODEL_COUNT,
+    }
+
+
+def _metadata_path(output_dir: Path) -> Path:
+    return output_dir / RUN_METADATA_FILE
+
+
+def _checkpoint_path(output_dir: Path) -> Path:
+    return output_dir / CHECKPOINT_RESULTS_FILE
+
+
+def _results_full_path(output_dir: Path) -> Path:
+    return output_dir / "results_full.csv"
+
+
+def _write_json(path: Path, payload: dict[str, object]) -> None:
+    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def _load_checkpoint_results(output_dir: Path) -> pd.DataFrame:
+    checkpoint_path = _checkpoint_path(output_dir)
+    if checkpoint_path.exists():
+        return pd.read_csv(checkpoint_path)
+
+    results_full_path = _results_full_path(output_dir)
+    if results_full_path.exists():
+        return pd.read_csv(results_full_path)
+
+    return pd.DataFrame()
+
+
+def _validate_or_initialize_resume_state(
+    *,
+    output_dir: Path,
+    metadata: dict[str, object],
+) -> pd.DataFrame:
+    meta_path = _metadata_path(output_dir)
+    existing_results = _load_checkpoint_results(output_dir)
+
+    if meta_path.exists():
+        existing_metadata = json.loads(meta_path.read_text(encoding="utf-8"))
+        if existing_metadata != metadata:
+            raise ValueError(
+                "Existing checkpoint metadata does not match the requested run. "
+                f"Use a new --output-dir or remove {meta_path} and saved results to restart cleanly."
+            )
+    else:
+        _write_json(meta_path, metadata)
+
+    if not existing_results.empty:
+        _persist_checkpoint(existing_results, output_dir=output_dir)
+
+    return existing_results
+
+
+def _sort_results_frame(results: pd.DataFrame) -> pd.DataFrame:
+    if results.empty:
+        return results.copy()
+    sort_cols = ["case_id", "target", "name"]
+    existing_cols = [col for col in sort_cols if col in results.columns]
+    if not existing_cols:
+        return results.reset_index(drop=True)
+    return results.sort_values(existing_cols).reset_index(drop=True)
+
+
 def _normalize_metrics_row(row: dict[str, object]) -> dict[str, object]:
     normalized = dict(row)
-    normalized["sign_precision"] = float(normalized.pop("sign_acc"))
-    normalized["pearson_correlation"] = float(normalized.pop("pearson"))
+    if "sign_acc" in normalized:
+        normalized["sign_precision"] = float(normalized.pop("sign_acc"))
+    elif "sign_precision" in normalized:
+        normalized["sign_precision"] = float(normalized["sign_precision"])
+
+    if "pearson" in normalized:
+        normalized["pearson_correlation"] = float(normalized.pop("pearson"))
+    elif "pearson_correlation" in normalized:
+        normalized["pearson_correlation"] = float(normalized["pearson_correlation"])
+
     normalized.pop("pehe", None)
     return normalized
 
@@ -634,9 +731,14 @@ def _format_progress_line(step_idx: int, total_steps: int, row: dict[str, object
 def _evaluate_case_target(
     case,
     *,
+    case_id: int,
+    case_slug: str,
+    case_title: str,
     target: str,
     random_state: int,
     num_trees_baseline: int,
+    existing_rows_by_name: dict[str, dict[str, object]] | None = None,
+    save_row_hook=None,
     progress_hook=None,
 ) -> list[dict[str, object]]:
     x = np.asarray(case.X, dtype=float)
@@ -648,124 +750,144 @@ def _evaluate_case_target(
     horizon = float(case.horizon)
 
     rows: list[dict[str, object]] = []
+    existing_rows_by_name = existing_rows_by_name or {}
+    u = _ensure_2d(case.U)
+    x_oracle = np.column_stack([x, u])
+
+    def finalize_row(row: dict[str, object], *, resumed: bool) -> dict[str, object]:
+        normalized = _normalize_metrics_row(row)
+        normalized["target"] = target
+        normalized["case_id"] = int(case_id)
+        normalized["case_slug"] = str(case_slug)
+        normalized["case_title"] = str(case_title)
+        normalized["horizon"] = float(case.horizon)
+        rows.append(normalized)
+        if not resumed and save_row_hook is not None:
+            save_row_hook(normalized)
+        if progress_hook is not None:
+            progress_hook(normalized, resumed=resumed)
+        return normalized
+
+    def run_or_resume(model_name: str, runner):
+        if model_name in existing_rows_by_name:
+            finalize_row(dict(existing_rows_by_name[model_name]), resumed=True)
+            return
+        finalize_row(runner(), resumed=False)
 
     final_name, final_builder = MODEL_BUILDERS["final"]
-    final_model = final_builder(target, horizon, random_state)
-    t0 = time.time()
-    final_model.fit_components(x, a, time_obs, event, z, w)
-    final_preds = np.asarray(final_model.effect_from_components(x, w, z), dtype=float).ravel()
-    rows.append(
-        _evaluate_predictions(
+
+    def run_final():
+        final_model = final_builder(target, horizon, random_state)
+        t0 = time.time()
+        final_model.fit_components(x, a, time_obs, event, z, w)
+        final_preds = np.asarray(final_model.effect_from_components(x, w, z), dtype=float).ravel()
+        return _evaluate_predictions(
             final_name,
             final_preds,
             case.true_cate,
             time.time() - t0,
             backend=final_model.__class__.__name__,
         )
-    )
 
-    u = _ensure_2d(case.U)
-    x_oracle = np.column_stack([x, u])
-    oracle_model = SingleFileFinalOracleCensoredSurvivalForest(
-        cfg=case.cfg,
-        dgp=case.dgp,
-        p_x=x.shape[1],
-        target=target,
-        horizon=horizon,
-        random_state=random_state,
-        q_kind="logit",
-        h_kind="extra",
-        h_n_estimators=600,
-        h_min_samples_leaf=5,
-        q_clip=0.03,
-        y_tilde_clip_quantile=0.98,
-        y_res_clip_percentiles=(2.0, 98.0),
-        n_estimators=200,
-        min_samples_leaf=20,
-        cv=5,
-        censoring_estimator="nelson-aalen",
-        event_survival_estimator="cox",
-        m_pred_mode="bridge",
-        nuisance_feature_mode="broad_dup",
-    )
-    t0 = time.time()
-    oracle_model.fit_oracle(x_oracle, a, time_obs, event, u)
-    oracle_preds = np.asarray(oracle_model.effect_oracle(x, u), dtype=float).ravel()
-    rows.append(
-        _evaluate_predictions(
+    run_or_resume(final_name, run_final)
+
+    def run_final_oracle():
+        oracle_model = SingleFileFinalOracleCensoredSurvivalForest(
+            cfg=case.cfg,
+            dgp=case.dgp,
+            p_x=x.shape[1],
+            target=target,
+            horizon=horizon,
+            random_state=random_state,
+            q_kind="logit",
+            h_kind="extra",
+            h_n_estimators=600,
+            h_min_samples_leaf=5,
+            q_clip=0.03,
+            y_tilde_clip_quantile=0.98,
+            y_res_clip_percentiles=(2.0, 98.0),
+            n_estimators=200,
+            min_samples_leaf=20,
+            cv=5,
+            censoring_estimator="nelson-aalen",
+            event_survival_estimator="cox",
+            m_pred_mode="bridge",
+            nuisance_feature_mode="broad_dup",
+        )
+        t0 = time.time()
+        oracle_model.fit_oracle(x_oracle, a, time_obs, event, u)
+        oracle_preds = np.asarray(oracle_model.effect_oracle(x, u), dtype=float).ravel()
+        return _evaluate_predictions(
             "Final Model Oracle",
             oracle_preds,
             case.true_cate,
             time.time() - t0,
             backend=oracle_model.__class__.__name__,
         )
-    )
+
+    run_or_resume("Final Model Oracle", run_final_oracle)
 
     strict_name, strict_builder = MODEL_BUILDERS["strict"]
-    strict_model = strict_builder(target, horizon, random_state)
-    t0 = time.time()
-    strict_model.fit_components(x, a, time_obs, event, z, w)
-    strict_preds = np.asarray(strict_model.effect_from_components(x, w, z), dtype=float).ravel()
-    rows.append(
-        _evaluate_predictions(
+
+    def run_strict():
+        strict_model = strict_builder(target, horizon, random_state)
+        t0 = time.time()
+        strict_model.fit_components(x, a, time_obs, event, z, w)
+        strict_preds = np.asarray(strict_model.effect_from_components(x, w, z), dtype=float).ravel()
+        return _evaluate_predictions(
             strict_name,
             strict_preds,
             case.true_cate,
             time.time() - t0,
             backend=strict_model.__class__.__name__,
         )
-    )
 
-    strict_oracle_model = StrictOracleCensoredSurvivalForest(
-        cfg=case.cfg,
-        dgp=case.dgp,
-        target=target,
-        horizon=horizon,
-        random_state=random_state,
-    )
-    t0 = time.time()
-    strict_oracle_model.fit_oracle(x, a, time_obs, event, z, w, case.U)
-    strict_oracle_preds = np.asarray(strict_oracle_model.effect_from_components(x, w, z), dtype=float).ravel()
-    rows.append(
-        _evaluate_predictions(
+    run_or_resume(strict_name, run_strict)
+
+    def run_strict_oracle():
+        strict_oracle_model = StrictOracleCensoredSurvivalForest(
+            cfg=case.cfg,
+            dgp=case.dgp,
+            target=target,
+            horizon=horizon,
+            random_state=random_state,
+        )
+        t0 = time.time()
+        strict_oracle_model.fit_oracle(x, a, time_obs, event, z, w, case.U)
+        strict_oracle_preds = np.asarray(strict_oracle_model.effect_from_components(x, w, z), dtype=float).ravel()
+        return _evaluate_predictions(
             "Strict Baseline Oracle",
             strict_oracle_preds,
             case.true_cate,
             time.time() - t0,
             backend=strict_oracle_model.__class__.__name__,
         )
-    )
 
-    r_model = GRFCensoredBaseline(
-        target=target,
-        horizon=horizon,
-        n_estimators=num_trees_baseline,
-        random_state=random_state,
-    )
-    try:
-        t0 = time.time()
-        r_model.fit_components(x, a, time_obs, event, z, w)
-        r_preds = np.asarray(r_model.effect_from_components(x, w, z), dtype=float).ravel()
-        rows.append(
-            _evaluate_predictions(
+    run_or_resume("Strict Baseline Oracle", run_strict_oracle)
+
+    def run_r_csf():
+        r_model = GRFCensoredBaseline(
+            target=target,
+            horizon=horizon,
+            n_estimators=num_trees_baseline,
+            random_state=random_state,
+        )
+        try:
+            t0 = time.time()
+            r_model.fit_components(x, a, time_obs, event, z, w)
+            r_preds = np.asarray(r_model.effect_from_components(x, w, z), dtype=float).ravel()
+            return _evaluate_predictions(
                 "R-CSF Baseline",
                 r_preds,
                 case.true_cate,
                 time.time() - t0,
                 backend=r_model.__class__.__name__,
             )
-        )
-    finally:
-        r_model.cleanup()
+        finally:
+            r_model.cleanup()
 
-    normalized_rows: list[dict[str, object]] = []
-    for row in rows:
-        normalized = _normalize_metrics_row(row)
-        normalized["target"] = target
-        normalized_rows.append(normalized)
-        if progress_hook is not None:
-            progress_hook(normalized)
-    return normalized_rows
+    run_or_resume("R-CSF Baseline", run_r_csf)
+    return rows
 
 
 def _write_target_summaries(results: pd.DataFrame, *, output_dir: Path, file_prefix: str) -> None:
@@ -781,6 +903,63 @@ def _write_target_summaries(results: pd.DataFrame, *, output_dir: Path, file_pre
         render_top5_png(top5_df, output_dir / f"{file_prefix}_{slug}_top5.png")
 
 
+def _write_case_outputs(results: pd.DataFrame, *, output_dir: Path, case_id: int, case_slug: str, target: str) -> None:
+    case_df = results.loc[
+        (results["case_id"] == int(case_id))
+        & (results["case_slug"] == str(case_slug))
+        & (results["target"] == target)
+    ].copy()
+    if case_df.empty:
+        return
+    case_df = case_df.sort_values(["name"]).reset_index(drop=True)
+    case_base = _case_base_name(case_id, case_slug, target)
+    case_df.to_csv(output_dir / f"{case_base}.csv", index=False)
+    render_case_table_png(case_df, output_dir / f"{case_base}.png")
+
+
+def _persist_checkpoint(
+    results: pd.DataFrame,
+    *,
+    output_dir: Path,
+    latest_case_id: int | None = None,
+    latest_case_slug: str | None = None,
+    latest_target: str | None = None,
+) -> None:
+    results = _sort_results_frame(results)
+    checkpoint_path = _checkpoint_path(output_dir)
+    results_full_path = _results_full_path(output_dir)
+    results.to_csv(checkpoint_path, index=False)
+    results.to_csv(results_full_path, index=False)
+
+    if results.empty:
+        return
+
+    if latest_case_id is not None and latest_case_slug is not None and latest_target is not None:
+        _write_case_outputs(
+            results,
+            output_dir=output_dir,
+            case_id=latest_case_id,
+            case_slug=latest_case_slug,
+            target=latest_target,
+        )
+    else:
+        grouped = (
+            results.loc[:, ["case_id", "case_slug", "target"]]
+            .drop_duplicates()
+            .sort_values(["case_id", "target"])
+        )
+        for row in grouped.to_dict("records"):
+            _write_case_outputs(
+                results,
+                output_dir=output_dir,
+                case_id=int(row["case_id"]),
+                case_slug=str(row["case_slug"]),
+                target=str(row["target"]),
+            )
+
+    _write_target_summaries(results, output_dir=output_dir, file_prefix="basic12")
+
+
 def main() -> int:
     args = parse_args()
     if args.list_cases:
@@ -793,51 +972,106 @@ def main() -> int:
 
     case_specs = _selected_case_specs(args.case_ids, args.case_slugs)
     targets = _resolve_targets(args.target)
+    run_metadata = _make_run_metadata(args=args, case_specs=case_specs, targets=targets)
+    checkpoint_results = _validate_or_initialize_resume_state(
+        output_dir=output_dir,
+        metadata=run_metadata,
+    )
+    checkpoint_results = _sort_results_frame(checkpoint_results)
+
+    completed_lookup: dict[tuple[int, str, str], dict[str, object]] = {}
+    for row in checkpoint_results.to_dict("records"):
+        completed_lookup[(int(row["case_id"]), str(row["target"]), str(row["name"]))] = dict(row)
+
     total_steps = len(case_specs) * len(targets) * MODEL_COUNT
-    completed_steps = 0
+    completed_steps = len(completed_lookup)
 
-    frames: list[pd.DataFrame] = []
-    for case_spec in case_specs:
-        for target in targets:
-            case = prepare_case(case_spec, target=target, horizon_quantile=args.horizon_quantile)
+    def save_row(row: dict[str, object]) -> None:
+        nonlocal checkpoint_results
+        row_df = pd.DataFrame([row])
+        checkpoint_results = pd.concat([checkpoint_results, row_df], ignore_index=True)
+        checkpoint_results = checkpoint_results.drop_duplicates(
+            subset=["case_id", "target", "name"],
+            keep="last",
+        )
+        checkpoint_results = _sort_results_frame(checkpoint_results)
+        completed_lookup[(int(row["case_id"]), str(row["target"]), str(row["name"]))] = dict(row)
+        _persist_checkpoint(
+            checkpoint_results,
+            output_dir=output_dir,
+            latest_case_id=int(row["case_id"]),
+            latest_case_slug=str(row["case_slug"]),
+            latest_target=str(row["target"]),
+        )
 
-            def progress_hook(row, *, _case_id=int(case_spec["case_id"]), _case_slug=str(case_spec["slug"]), _target=target):
-                nonlocal completed_steps
-                completed_steps += 1
-                print(
-                    _format_progress_line(
-                        completed_steps,
-                        total_steps,
-                        row,
-                        case_id=_case_id,
-                        case_slug=_case_slug,
-                        target=_target,
-                    ),
-                    flush=True,
+    try:
+        for case_spec in case_specs:
+            case_id = int(case_spec["case_id"])
+            case_slug = str(case_spec["slug"])
+            case_title = str(case_spec["title"])
+            for target in targets:
+                case = prepare_case(case_spec, target=target, horizon_quantile=args.horizon_quantile)
+                existing_rows_by_name = {
+                    name: row
+                    for (row_case_id, row_target, name), row in completed_lookup.items()
+                    if row_case_id == case_id and row_target == target
+                }
+
+                def progress_hook(row, *, resumed: bool, _case_id=case_id, _case_slug=case_slug, _target=target):
+                    nonlocal completed_steps
+                    if resumed:
+                        print(
+                            "[resume] "
+                            + _format_progress_line(
+                                completed_steps,
+                                total_steps,
+                                row,
+                                case_id=_case_id,
+                                case_slug=_case_slug,
+                                target=_target,
+                            ),
+                            flush=True,
+                        )
+                        return
+
+                    completed_steps += 1
+                    print(
+                        _format_progress_line(
+                            completed_steps,
+                            total_steps,
+                            row,
+                            case_id=_case_id,
+                            case_slug=_case_slug,
+                            target=_target,
+                        ),
+                        flush=True,
+                    )
+
+                _evaluate_case_target(
+                    case,
+                    case_id=case_id,
+                    case_slug=case_slug,
+                    case_title=case_title,
+                    target=target,
+                    random_state=args.random_state,
+                    num_trees_baseline=args.num_trees_baseline,
+                    existing_rows_by_name=existing_rows_by_name,
+                    save_row_hook=save_row,
+                    progress_hook=progress_hook,
                 )
+    except KeyboardInterrupt:
+        if not checkpoint_results.empty:
+            _persist_checkpoint(checkpoint_results, output_dir=output_dir)
+        print(
+            "\nInterrupted. Completed model rows have been checkpointed. "
+            f"Re-run the script with the same arguments to resume from {output_dir}.",
+            file=sys.stderr,
+            flush=True,
+        )
+        return 130
 
-            rows = _evaluate_case_target(
-                case,
-                target=target,
-                random_state=args.random_state,
-                num_trees_baseline=args.num_trees_baseline,
-                progress_hook=progress_hook,
-            )
-            case_df = pd.DataFrame(rows)
-            case_df["case_id"] = int(case_spec["case_id"])
-            case_df["case_slug"] = str(case_spec["slug"])
-            case_df["case_title"] = str(case_spec["title"])
-            case_df["horizon"] = float(case.horizon)
-            frames.append(case_df)
-
-            target_slug = target.replace(".", "_")
-            case_base = f"case_{int(case_spec['case_id']):02d}_{case_spec['slug']}_{target_slug}"
-            case_df.to_csv(output_dir / f"{case_base}.csv", index=False)
-            render_case_table_png(case_df, output_dir / f"{case_base}.png")
-
-    results = pd.concat(frames, ignore_index=True)
-    results.to_csv(output_dir / "results_full.csv", index=False)
-    _write_target_summaries(results, output_dir=output_dir, file_prefix="basic12")
+    results = _sort_results_frame(checkpoint_results)
+    _persist_checkpoint(results, output_dir=output_dir)
     return 0
 
 
