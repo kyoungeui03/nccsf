@@ -22,6 +22,21 @@ benchmark pipeline:
 The implementation below is deliberately focused on the default path that we
 actually benchmark. It does not try to preserve every experimental ablation
 branch from the original research files.
+
+Notation
+--------
+Throughout this file we use the following names consistently:
+
+    - `x`: baseline covariates X
+    - `w`: outcome-side proxy block W
+    - `z`: treatment-side proxy block Z
+    - `a`: binary treatment A
+    - `y_time`: observed follow-up time min(T, C)
+    - `delta`: event indicator 1{T <= C}
+    - `q_pred`: bridge-style treatment nuisance
+    - `h1_pred`, `h0_pred`: arm-specific bridge regressions
+    - `m_pred`: bridge mixture q*h1 + (1-q)*h0
+    - `y_res`, `a_res`: orthogonal residuals fed to the final forest
 """
 
 from __future__ import annotations
@@ -1078,6 +1093,8 @@ class _SinglePassBridgeFeatureCensoredSurvivalForest(CausalForestDML):
         )
 
     def fit_survival(self, X, A, time, event, Z, W, **kwargs):
+        """Pack `(time, event)` and delegate fitting to EconML's OrthoLearner."""
+
         x = np.asarray(X, dtype=float)
         y = np.asarray(time, dtype=float).ravel()
         delta = np.asarray(event, dtype=float).ravel()
@@ -1087,9 +1104,13 @@ class _SinglePassBridgeFeatureCensoredSurvivalForest(CausalForestDML):
         return _OrthoLearner.fit(self, y_packed, A, X=x, W=w, Z=z, **kwargs)
 
     def effect_on_final_features(self, x_final):
+        """Evaluate the final causal forest on already-constructed `x_final`."""
+
         return np.asarray(self._ortho_learner_model_final.predict(x_final), dtype=float)
 
     def training_x_final(self):
+        """Expose the cached training-time final feature matrix for debugging."""
+
         return self._ortho_learner_model_final.training_x_final()
 
 
@@ -1234,6 +1255,9 @@ class FinalCensoredModel:
         x = _ensure_2d(X).astype(float)
         raw_w = _ensure_2d(W).astype(float)
         raw_z = _ensure_2d(Z).astype(float)
+
+        # `raw_w` and `raw_z` are the observed proxy blocks used in the final
+        # feature representation `[X, W, Z, q, h1, h0, m, surv1, surv0, diff]`.
         w_nuis, z_nuis = self._prepare_nuisance_inputs(W, Z)
 
         self._dml_model = _SinglePassBridgeFeatureCensoredSurvivalForest(
@@ -1258,6 +1282,8 @@ class FinalCensoredModel:
             m_pred_mode=self._m_pred_mode,
             nuisance_feature_mode=self._nuisance_feature_mode,
         )
+        # Save the raw proxy blocks so the custom final-model wrapper can
+        # rebuild `x_final` inside EconML after cross-fitting the nuisances.
         self._dml_model._raw_w_for_final = raw_w
         self._dml_model._raw_z_for_final = raw_z
         self._dml_model.fit_survival(x, A, time, event, z_nuis, w_nuis)
@@ -1267,6 +1293,8 @@ class FinalCensoredModel:
         self._train_z = np.asarray(raw_z, dtype=float).copy()
         self._train_x_final = self._dml_model.training_x_final()
 
+        # Refit nuisances on the full training sample for prediction-time
+        # reconstruction of `x_final`.
         y_packed = np.column_stack([np.asarray(time, dtype=float).ravel(), np.asarray(event, dtype=float).ravel()])
         self._feature_nuisance = self._make_feature_nuisance()
         self._feature_nuisance.train(
@@ -1291,6 +1319,8 @@ class FinalCensoredModel:
         raw_z = _ensure_2d(Z).astype(float)
         w_nuis, z_nuis = self._prepare_nuisance_inputs(W, Z)
 
+        # Recompute the nuisance summaries at the new point, then rebuild the
+        # same `x_final` representation used during training.
         bridge = self._feature_nuisance.predict_bridge_outputs(
             X=x,
             W=w_nuis,

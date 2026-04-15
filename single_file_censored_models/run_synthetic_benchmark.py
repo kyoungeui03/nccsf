@@ -37,13 +37,17 @@ from grf.benchmarks.econml_8variant import CASE_SPECS, _evaluate_predictions, pr
 
 try:  # pragma: no cover - allows both script and module execution
     from .final_censored_model import FinalModelCensoredSurvivalForest  # noqa: E402
+    from .final_censored_model_conditional import FinalModelConditionalCensoredSurvivalForest  # noqa: E402
     from .grf_censored_baseline import GRFCensoredBaseline  # noqa: E402
     from .proper_censored_baseline import ProperNoPCICensoredSurvivalForest  # noqa: E402
+    from .revised_censored_baseline import RevisedBaselineCensoredSurvivalForest  # noqa: E402
     from .strict_censored_baseline import StrictEconmlXWZCensoredSurvivalForest  # noqa: E402
 except ImportError:  # pragma: no cover
     from final_censored_model import FinalModelCensoredSurvivalForest  # type: ignore  # noqa: E402
+    from final_censored_model_conditional import FinalModelConditionalCensoredSurvivalForest  # type: ignore  # noqa: E402
     from grf_censored_baseline import GRFCensoredBaseline  # type: ignore  # noqa: E402
     from proper_censored_baseline import ProperNoPCICensoredSurvivalForest  # type: ignore  # noqa: E402
+    from revised_censored_baseline import RevisedBaselineCensoredSurvivalForest  # type: ignore  # noqa: E402
     from strict_censored_baseline import StrictEconmlXWZCensoredSurvivalForest  # type: ignore  # noqa: E402
 
 
@@ -57,12 +61,48 @@ MODEL_BUILDERS = {
             surv_scalar_mode="full",
         ),
     ),
+    "final_conditional": (
+        "Final Model (conditional censoring)",
+        lambda target, horizon, random_state: FinalModelConditionalCensoredSurvivalForest(
+            target=target,
+            horizon=horizon,
+            random_state=random_state,
+            surv_scalar_mode="full",
+        ),
+    ),
     "strict": (
         "Strict EconML Censored Baseline (single file)",
         lambda target, horizon, random_state: StrictEconmlXWZCensoredSurvivalForest(
             target=target,
             horizon=horizon,
             random_state=random_state,
+        ),
+    ),
+    "strict_conditional": (
+        "Strict EconML Censored Baseline (conditional censoring)",
+        lambda target, horizon, random_state: StrictEconmlXWZCensoredSurvivalForest(
+            target=target,
+            horizon=horizon,
+            random_state=random_state,
+            censoring_estimator="cox",
+        ),
+    ),
+    "revised": (
+        "Revised Censored Baseline (single file)",
+        lambda target, horizon, random_state: RevisedBaselineCensoredSurvivalForest(
+            target=target,
+            horizon=horizon,
+            random_state=random_state,
+            censoring_estimator="nelson-aalen",
+        ),
+    ),
+    "revised_conditional": (
+        "Revised Censored Baseline (conditional censoring)",
+        lambda target, horizon, random_state: RevisedBaselineCensoredSurvivalForest(
+            target=target,
+            horizon=horizon,
+            random_state=random_state,
+            censoring_estimator="cox",
         ),
     ),
     "proper": (
