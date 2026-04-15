@@ -40,7 +40,6 @@ if str(MODEL_DIR) not in sys.path:
     sys.path.insert(0, str(MODEL_DIR))
 
 from grf.benchmarks.econml_8variant import (  # noqa: E402
-    CASE_SPECS,
     _build_true_y_tilde,
     _compute_true_target_ipcw_3term_y_res,
     _evaluate_predictions,
@@ -81,6 +80,202 @@ TARGETS = ["RMST", "survival.probability"]
 MODEL_COUNT = 5
 CHECKPOINT_RESULTS_FILE = "results_incremental.csv"
 RUN_METADATA_FILE = "run_metadata.json"
+
+CASE_SPECS = [
+    {
+        "case_id": 1,
+        "slug": "linear_linear_informative_strong_beneficial_large",
+        "title": "Linear treatment / linear outcome DGP, informative proxies, strong confounding, beneficial treatment effect",
+        "cfg": dict(
+            beta_u_in_t=0.8,
+            gamma_u_in_a=0.8,
+            sigma_z=1.125,
+            sigma_w=1.53,
+            tau_log_hr=-0.6,
+            linear_treatment=True,
+            linear_outcome=True,
+        ),
+    },
+    {
+        "case_id": 2,
+        "slug": "linear_linear_informative_weak_harmful_small",
+        "title": "Linear treatment / linear outcome DGP, informative proxies, weak confounding, small beneficial treatment effect",
+        "cfg": dict(
+            beta_u_in_t=0.3,
+            gamma_u_in_a=0.2,
+            sigma_z=1.125,
+            sigma_w=1.53,
+            tau_log_hr=-0.25,
+            linear_treatment=True,
+            linear_outcome=True,
+        ),
+    },
+    {
+        "case_id": 3,
+        "slug": "linear_linear_weakproxy_strong_harmful_moderate",
+        "title": "Linear treatment / linear outcome DGP, weak proxies, strong confounding, beneficial treatment effect",
+        "cfg": dict(
+            beta_u_in_t=0.9,
+            gamma_u_in_a=0.9,
+            sigma_z=7.35,
+            sigma_w=4.77,
+            tau_log_hr=-0.5,
+            linear_treatment=True,
+            linear_outcome=True,
+        ),
+    },
+    {
+        "case_id": 4,
+        "slug": "linear_linear_weakproxy_weak_nearnull_harmful",
+        "title": "Linear treatment / linear outcome DGP, weak proxies, weak confounding, near-null beneficial treatment effect",
+        "cfg": dict(
+            beta_u_in_t=0.2,
+            gamma_u_in_a=0.3,
+            sigma_z=7.35,
+            sigma_w=4.77,
+            tau_log_hr=-0.12,
+            linear_treatment=True,
+            linear_outcome=True,
+        ),
+    },
+    {
+        "case_id": 5,
+        "slug": "linear_nonlinear_informative_strong_beneficial_large",
+        "title": "Linear treatment / nonlinear outcome DGP, informative proxies, strong confounding, beneficial treatment effect",
+        "cfg": dict(
+            beta_u_in_t=0.8,
+            gamma_u_in_a=0.9,
+            sigma_z=1.125,
+            sigma_w=1.53,
+            tau_log_hr=-0.7,
+            linear_treatment=True,
+            linear_outcome=False,
+        ),
+    },
+    {
+        "case_id": 6,
+        "slug": "linear_nonlinear_informative_weak_harmful_small",
+        "title": "Linear treatment / nonlinear outcome DGP, informative proxies, weak confounding, small beneficial treatment effect",
+        "cfg": dict(
+            beta_u_in_t=0.2,
+            gamma_u_in_a=0.2,
+            sigma_z=1.125,
+            sigma_w=1.53,
+            tau_log_hr=-0.3,
+            linear_treatment=True,
+            linear_outcome=False,
+        ),
+    },
+    {
+        "case_id": 7,
+        "slug": "linear_nonlinear_weakproxy_strong_harmful_moderate",
+        "title": "Linear treatment / nonlinear outcome DGP, weak proxies, strong confounding, beneficial treatment effect",
+        "cfg": dict(
+            beta_u_in_t=1.1,
+            gamma_u_in_a=0.9,
+            sigma_z=7.35,
+            sigma_w=4.77,
+            tau_log_hr=-0.5,
+            linear_treatment=True,
+            linear_outcome=False,
+        ),
+    },
+    {
+        "case_id": 8,
+        "slug": "linear_nonlinear_weakproxy_weak_nearnull_harmful",
+        "title": "Linear treatment / nonlinear outcome DGP, weak proxies, weak confounding, near-null beneficial treatment effect",
+        "cfg": dict(
+            beta_u_in_t=0.15,
+            gamma_u_in_a=0.25,
+            sigma_z=7.35,
+            sigma_w=4.77,
+            tau_log_hr=-0.12,
+            linear_treatment=True,
+            linear_outcome=False,
+        ),
+    },
+    {
+        "case_id": 9,
+        "slug": "nonlinear_nonlinear_informative_strong_beneficial_large",
+        "title": "Nonlinear treatment / nonlinear outcome DGP, informative proxies, strong confounding, beneficial treatment effect",
+        "cfg": dict(
+            beta_u_in_t=1.0,
+            gamma_u_in_a=1.0,
+            sigma_z=1.125,
+            sigma_w=1.53,
+            tau_log_hr=-0.7,
+            linear_treatment=False,
+            linear_outcome=False,
+        ),
+    },
+    {
+        "case_id": 10,
+        "slug": "nonlinear_nonlinear_informative_weak_harmful_small",
+        "title": "Nonlinear treatment / nonlinear outcome DGP, informative proxies, weak confounding, small beneficial treatment effect",
+        "cfg": dict(
+            beta_u_in_t=0.2,
+            gamma_u_in_a=0.2,
+            sigma_z=1.125,
+            sigma_w=1.53,
+            tau_log_hr=-0.3,
+            linear_treatment=False,
+            linear_outcome=False,
+        ),
+    },
+    {
+        "case_id": 11,
+        "slug": "nonlinear_nonlinear_weakproxy_strong_harmful_moderate",
+        "title": "Nonlinear treatment / nonlinear outcome DGP, weak proxies, strong confounding, beneficial treatment effect",
+        "cfg": dict(
+            beta_u_in_t=1.1,
+            gamma_u_in_a=0.9,
+            sigma_z=7.35,
+            sigma_w=4.77,
+            tau_log_hr=-0.5,
+            linear_treatment=False,
+            linear_outcome=False,
+        ),
+    },
+    {
+        "case_id": 12,
+        "slug": "nonlinear_nonlinear_weakproxy_weak_nearnull_harmful",
+        "title": "Nonlinear treatment / nonlinear outcome DGP, weak proxies, weak confounding, near-null beneficial treatment effect",
+        "cfg": dict(
+            beta_u_in_t=0.2,
+            gamma_u_in_a=0.3,
+            sigma_z=7.35,
+            sigma_w=4.77,
+            tau_log_hr=-0.12,
+            linear_treatment=False,
+            linear_outcome=False,
+        ),
+    },
+]
+
+SETTINGS = [
+    {"setting_id": "S01", "n": 500, "p_x": 5, "p_w": 1, "p_z": 1},
+    {"setting_id": "S02", "n": 1000, "p_x": 5, "p_w": 1, "p_z": 1},
+    {"setting_id": "S03", "n": 2000, "p_x": 5, "p_w": 1, "p_z": 1},
+    {"setting_id": "S04", "n": 4000, "p_x": 5, "p_w": 1, "p_z": 1},
+    {"setting_id": "S05", "n": 8000, "p_x": 5, "p_w": 1, "p_z": 1},
+    {"setting_id": "S06", "n": 16000, "p_x": 5, "p_w": 1, "p_z": 1},
+    {"setting_id": "S07", "n": 2000, "p_x": 2, "p_w": 1, "p_z": 1},
+    {"setting_id": "S08", "n": 2000, "p_x": 5, "p_w": 1, "p_z": 1},
+    {"setting_id": "S09", "n": 2000, "p_x": 10, "p_w": 1, "p_z": 1},
+    {"setting_id": "S10", "n": 2000, "p_x": 20, "p_w": 1, "p_z": 1},
+    {"setting_id": "S11", "n": 2000, "p_x": 40, "p_w": 1, "p_z": 1},
+    {"setting_id": "S12", "n": 2000, "p_x": 5, "p_w": 2, "p_z": 2},
+    {"setting_id": "S13", "n": 2000, "p_x": 5, "p_w": 3, "p_z": 3},
+    {"setting_id": "S14", "n": 2000, "p_x": 5, "p_w": 5, "p_z": 5},
+    {"setting_id": "S15", "n": 2000, "p_x": 5, "p_w": 10, "p_z": 10},
+    {"setting_id": "S16", "n": 2000, "p_x": 5, "p_w": 20, "p_z": 20},
+    {"setting_id": "S17", "n": 2000, "p_x": 5, "p_w": 1, "p_z": 10},
+    {"setting_id": "S18", "n": 2000, "p_x": 5, "p_w": 10, "p_z": 1},
+    {"setting_id": "S19", "n": 2000, "p_x": 10, "p_w": 5, "p_z": 5},
+    {"setting_id": "S20", "n": 2000, "p_x": 20, "p_w": 5, "p_z": 5},
+    {"setting_id": "S21", "n": 2000, "p_x": 40, "p_w": 10, "p_z": 10},
+    {"setting_id": "S22", "n": 4000, "p_x": 20, "p_w": 10, "p_z": 10},
+]
 
 
 class StrictOracleCensoredSurvivalForest(StrictEconmlXWZCensoredSurvivalForest):
@@ -413,11 +608,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-dir", type=Path, default=None)
     parser.add_argument("--case-ids", nargs="*", type=int, default=None)
     parser.add_argument("--case-slugs", nargs="*", default=None)
+    parser.add_argument("--setting-ids", nargs="*", default=None)
     parser.add_argument("--target", choices=["RMST", "survival.probability", "both"], default="both")
     parser.add_argument("--horizon-quantile", type=float, default=0.60)
     parser.add_argument("--random-state", type=int, default=42)
     parser.add_argument("--num-trees-baseline", type=int, default=200)
     parser.add_argument("--list-cases", action="store_true")
+    parser.add_argument("--list-settings", action="store_true")
     return parser.parse_args()
 
 
@@ -444,22 +641,49 @@ def _resolve_targets(target_arg: str) -> list[str]:
     return [target_arg]
 
 
-def _case_base_name(case_id: int, case_slug: str, target: str) -> str:
+def _selected_settings(setting_ids: list[str] | None) -> list[dict[str, int | str]]:
+    if not setting_ids:
+        return list(SETTINGS)
+    wanted = {str(s).upper() for s in setting_ids}
+    selected = [s for s in SETTINGS if str(s["setting_id"]).upper() in wanted]
+    if not selected:
+        raise ValueError("No settings matched the requested setting ids.")
+    return selected
+
+
+def _case_spec_with_setting(case_spec: dict[str, object], setting: dict[str, int | str]) -> dict[str, object]:
+    case_copy = dict(case_spec)
+    cfg = dict(case_spec["cfg"])
+    cfg.update(
+        {
+            "n": int(setting["n"]),
+            "p_x": int(setting["p_x"]),
+            "p_w": int(setting["p_w"]),
+            "p_z": int(setting["p_z"]),
+        }
+    )
+    case_copy["cfg"] = cfg
+    return case_copy
+
+
+def _case_base_name(case_id: int, case_slug: str, setting_id: str, target: str) -> str:
     target_slug = target.replace(".", "_")
-    return f"case_{int(case_id):02d}_{case_slug}_{target_slug}"
+    return f"case_{int(case_id):02d}_{case_slug}_{setting_id}_{target_slug}"
 
 
 def _make_run_metadata(
     *,
     args: argparse.Namespace,
     case_specs: list[dict[str, object]],
+    settings: list[dict[str, int | str]],
     targets: list[str],
 ) -> dict[str, object]:
     return {
         "script": THIS_FILE.name,
-        "runner_version": 2,
+        "runner_version": 3,
         "case_ids": [int(spec["case_id"]) for spec in case_specs],
         "case_slugs": [str(spec["slug"]) for spec in case_specs],
+        "setting_ids": [str(setting["setting_id"]) for setting in settings],
         "targets": list(targets),
         "horizon_quantile": float(args.horizon_quantile),
         "random_state": int(args.random_state),
@@ -514,16 +738,13 @@ def _validate_or_initialize_resume_state(
     else:
         _write_json(meta_path, metadata)
 
-    if not existing_results.empty:
-        _persist_checkpoint(existing_results, output_dir=output_dir)
-
     return existing_results
 
 
 def _sort_results_frame(results: pd.DataFrame) -> pd.DataFrame:
     if results.empty:
         return results.copy()
-    sort_cols = ["case_id", "target", "name"]
+    sort_cols = ["case_id", "setting_id", "target", "name"]
     existing_cols = [col for col in sort_cols if col in results.columns]
     if not existing_cols:
         return results.reset_index(drop=True)
@@ -532,16 +753,8 @@ def _sort_results_frame(results: pd.DataFrame) -> pd.DataFrame:
 
 def _normalize_metrics_row(row: dict[str, object]) -> dict[str, object]:
     normalized = dict(row)
-    if "sign_acc" in normalized:
-        normalized["sign_precision"] = float(normalized.pop("sign_acc"))
-    elif "sign_precision" in normalized:
-        normalized["sign_precision"] = float(normalized["sign_precision"])
-
-    if "pearson" in normalized:
-        normalized["pearson_correlation"] = float(normalized.pop("pearson"))
-    elif "pearson_correlation" in normalized:
-        normalized["pearson_correlation"] = float(normalized["pearson_correlation"])
-
+    normalized["sign_precision"] = float(normalized.pop("sign_acc"))
+    normalized["pearson_correlation"] = float(normalized.pop("pearson"))
     normalized.pop("pehe", None)
     return normalized
 
@@ -734,6 +947,7 @@ def _evaluate_case_target(
     case_id: int,
     case_slug: str,
     case_title: str,
+    setting: dict[str, int | str],
     target: str,
     random_state: int,
     num_trees_baseline: int,
@@ -750,29 +964,39 @@ def _evaluate_case_target(
     horizon = float(case.horizon)
 
     rows: list[dict[str, object]] = []
+
+    def _attach_metadata(normalized: dict[str, object]) -> dict[str, object]:
+        row = dict(normalized)
+        row["target"] = target
+        row["case_id"] = int(case_id)
+        row["case_slug"] = str(case_slug)
+        row["case_title"] = str(case_title)
+        row["setting_id"] = str(setting["setting_id"])
+        row["n"] = int(setting["n"])
+        row["p_x"] = int(setting["p_x"])
+        row["p_w"] = int(setting["p_w"])
+        row["p_z"] = int(setting["p_z"])
+        row["horizon"] = float(case.horizon)
+        return row
+
     existing_rows_by_name = existing_rows_by_name or {}
-    u = _ensure_2d(case.U)
-    x_oracle = np.column_stack([x, u])
 
-    def finalize_row(row: dict[str, object], *, resumed: bool) -> dict[str, object]:
-        normalized = _normalize_metrics_row(row)
-        normalized["target"] = target
-        normalized["case_id"] = int(case_id)
-        normalized["case_slug"] = str(case_slug)
-        normalized["case_title"] = str(case_title)
-        normalized["horizon"] = float(case.horizon)
-        rows.append(normalized)
-        if not resumed and save_row_hook is not None:
-            save_row_hook(normalized)
-        if progress_hook is not None:
-            progress_hook(normalized, resumed=resumed)
-        return normalized
-
-    def run_or_resume(model_name: str, runner):
+    def run_or_resume(model_name: str, build_row):
         if model_name in existing_rows_by_name:
-            finalize_row(dict(existing_rows_by_name[model_name]), resumed=True)
+            resumed_row = dict(existing_rows_by_name[model_name])
+            rows.append(resumed_row)
+            if progress_hook is not None:
+                progress_hook(resumed_row, resumed=True)
             return
-        finalize_row(runner(), resumed=False)
+
+        raw = build_row()
+        normalized = _normalize_metrics_row(raw)
+        full_row = _attach_metadata(normalized)
+        rows.append(full_row)
+        if save_row_hook is not None:
+            save_row_hook(full_row)
+        if progress_hook is not None:
+            progress_hook(full_row, resumed=False)
 
     final_name, final_builder = MODEL_BUILDERS["final"]
 
@@ -791,6 +1015,8 @@ def _evaluate_case_target(
 
     run_or_resume(final_name, run_final)
 
+    u = _ensure_2d(case.U)
+    x_oracle = np.column_stack([x, u])
     def run_final_oracle():
         oracle_model = SingleFileFinalOracleCensoredSurvivalForest(
             cfg=case.cfg,
@@ -903,16 +1129,25 @@ def _write_target_summaries(results: pd.DataFrame, *, output_dir: Path, file_pre
         render_top5_png(top5_df, output_dir / f"{file_prefix}_{slug}_top5.png")
 
 
-def _write_case_outputs(results: pd.DataFrame, *, output_dir: Path, case_id: int, case_slug: str, target: str) -> None:
+def _write_case_outputs(
+    results: pd.DataFrame,
+    *,
+    output_dir: Path,
+    case_id: int,
+    case_slug: str,
+    setting_id: str,
+    target: str,
+) -> None:
     case_df = results.loc[
         (results["case_id"] == int(case_id))
         & (results["case_slug"] == str(case_slug))
+        & (results["setting_id"] == str(setting_id))
         & (results["target"] == target)
     ].copy()
     if case_df.empty:
         return
     case_df = case_df.sort_values(["name"]).reset_index(drop=True)
-    case_base = _case_base_name(case_id, case_slug, target)
+    case_base = _case_base_name(case_id, case_slug, setting_id, target)
     case_df.to_csv(output_dir / f"{case_base}.csv", index=False)
     render_case_table_png(case_df, output_dir / f"{case_base}.png")
 
@@ -923,6 +1158,7 @@ def _persist_checkpoint(
     output_dir: Path,
     latest_case_id: int | None = None,
     latest_case_slug: str | None = None,
+    latest_setting_id: str | None = None,
     latest_target: str | None = None,
 ) -> None:
     results = _sort_results_frame(results)
@@ -934,19 +1170,25 @@ def _persist_checkpoint(
     if results.empty:
         return
 
-    if latest_case_id is not None and latest_case_slug is not None and latest_target is not None:
+    if (
+        latest_case_id is not None
+        and latest_case_slug is not None
+        and latest_setting_id is not None
+        and latest_target is not None
+    ):
         _write_case_outputs(
             results,
             output_dir=output_dir,
             case_id=latest_case_id,
             case_slug=latest_case_slug,
+            setting_id=latest_setting_id,
             target=latest_target,
         )
     else:
         grouped = (
-            results.loc[:, ["case_id", "case_slug", "target"]]
+            results.loc[:, ["case_id", "case_slug", "setting_id", "target"]]
             .drop_duplicates()
-            .sort_values(["case_id", "target"])
+            .sort_values(["case_id", "setting_id", "target"])
         )
         for row in grouped.to_dict("records"):
             _write_case_outputs(
@@ -954,6 +1196,7 @@ def _persist_checkpoint(
                 output_dir=output_dir,
                 case_id=int(row["case_id"]),
                 case_slug=str(row["case_slug"]),
+                setting_id=str(row["setting_id"]),
                 target=str(row["target"]),
             )
 
@@ -966,24 +1209,44 @@ def main() -> int:
         for spec in CASE_SPECS:
             print(f"{int(spec['case_id']):2d}  {spec['slug']}")
         return 0
+    if args.list_settings:
+        for setting in SETTINGS:
+            print(
+                f"{setting['setting_id']}: n={setting['n']} p_x={setting['p_x']} "
+                f"p_w={setting['p_w']} p_z={setting['p_z']}"
+            )
+        return 0
 
     output_dir = _resolve_output_dir(args)
     output_dir.mkdir(parents=True, exist_ok=True)
 
     case_specs = _selected_case_specs(args.case_ids, args.case_slugs)
+    settings = _selected_settings(args.setting_ids)
     targets = _resolve_targets(args.target)
-    run_metadata = _make_run_metadata(args=args, case_specs=case_specs, targets=targets)
+    run_metadata = _make_run_metadata(
+        args=args,
+        case_specs=case_specs,
+        settings=settings,
+        targets=targets,
+    )
     checkpoint_results = _validate_or_initialize_resume_state(
         output_dir=output_dir,
         metadata=run_metadata,
     )
     checkpoint_results = _sort_results_frame(checkpoint_results)
 
-    completed_lookup: dict[tuple[int, str, str], dict[str, object]] = {}
+    completed_lookup: dict[tuple[int, str, str, str], dict[str, object]] = {}
     for row in checkpoint_results.to_dict("records"):
-        completed_lookup[(int(row["case_id"]), str(row["target"]), str(row["name"]))] = dict(row)
+        completed_lookup[
+            (
+                int(row["case_id"]),
+                str(row["setting_id"]),
+                str(row["target"]),
+                str(row["name"]),
+            )
+        ] = dict(row)
 
-    total_steps = len(case_specs) * len(targets) * MODEL_COUNT
+    total_steps = len(case_specs) * len(settings) * len(targets) * MODEL_COUNT
     completed_steps = len(completed_lookup)
 
     def save_row(row: dict[str, object]) -> None:
@@ -991,16 +1254,24 @@ def main() -> int:
         row_df = pd.DataFrame([row])
         checkpoint_results = pd.concat([checkpoint_results, row_df], ignore_index=True)
         checkpoint_results = checkpoint_results.drop_duplicates(
-            subset=["case_id", "target", "name"],
+            subset=["case_id", "setting_id", "target", "name"],
             keep="last",
         )
         checkpoint_results = _sort_results_frame(checkpoint_results)
-        completed_lookup[(int(row["case_id"]), str(row["target"]), str(row["name"]))] = dict(row)
+        completed_lookup[
+            (
+                int(row["case_id"]),
+                str(row["setting_id"]),
+                str(row["target"]),
+                str(row["name"]),
+            )
+        ] = dict(row)
         _persist_checkpoint(
             checkpoint_results,
             output_dir=output_dir,
             latest_case_id=int(row["case_id"]),
             latest_case_slug=str(row["case_slug"]),
+            latest_setting_id=str(row["setting_id"]),
             latest_target=str(row["target"]),
         )
 
@@ -1009,56 +1280,56 @@ def main() -> int:
             case_id = int(case_spec["case_id"])
             case_slug = str(case_spec["slug"])
             case_title = str(case_spec["title"])
-            for target in targets:
-                case = prepare_case(case_spec, target=target, horizon_quantile=args.horizon_quantile)
-                existing_rows_by_name = {
-                    name: row
-                    for (row_case_id, row_target, name), row in completed_lookup.items()
-                    if row_case_id == case_id and row_target == target
-                }
+            for setting in settings:
+                setting_id = str(setting["setting_id"])
+                case_with_setting = _case_spec_with_setting(case_spec, setting)
+                for target in targets:
+                    case = prepare_case(case_with_setting, target=target, horizon_quantile=args.horizon_quantile)
 
-                def progress_hook(row, *, resumed: bool, _case_id=case_id, _case_slug=case_slug, _target=target):
-                    nonlocal completed_steps
-                    if resumed:
-                        print(
-                            "[resume] "
-                            + _format_progress_line(
-                                completed_steps,
-                                total_steps,
-                                row,
-                                case_id=_case_id,
-                                case_slug=_case_slug,
-                                target=_target,
-                            ),
-                            flush=True,
-                        )
-                        return
+                    existing_rows_by_name = {
+                        name: row
+                        for (row_case_id, row_setting_id, row_target, name), row in completed_lookup.items()
+                        if row_case_id == case_id and row_setting_id == setting_id and row_target == target
+                    }
 
-                    completed_steps += 1
-                    print(
-                        _format_progress_line(
+                    def progress_hook(row, *, resumed: bool, _case_id=case_id, _case_slug=case_slug, _setting_id=setting_id, _target=target):
+                        nonlocal completed_steps
+                        line = _format_progress_line(
                             completed_steps,
                             total_steps,
                             row,
                             case_id=_case_id,
                             case_slug=_case_slug,
                             target=_target,
-                        ),
-                        flush=True,
-                    )
+                        )
+                        if resumed:
+                            print(f"[resume] {line} setting={_setting_id}", flush=True)
+                            return
 
-                _evaluate_case_target(
-                    case,
-                    case_id=case_id,
-                    case_slug=case_slug,
-                    case_title=case_title,
-                    target=target,
-                    random_state=args.random_state,
-                    num_trees_baseline=args.num_trees_baseline,
-                    existing_rows_by_name=existing_rows_by_name,
-                    save_row_hook=save_row,
-                    progress_hook=progress_hook,
-                )
+                        completed_steps += 1
+                        line = _format_progress_line(
+                            completed_steps,
+                            total_steps,
+                            row,
+                            case_id=_case_id,
+                            case_slug=_case_slug,
+                            target=_target,
+                        )
+                        print(f"{line} setting={_setting_id}", flush=True)
+
+                    _evaluate_case_target(
+                        case,
+                        case_id=case_id,
+                        case_slug=case_slug,
+                        case_title=case_title,
+                        setting=setting,
+                        target=target,
+                        random_state=args.random_state,
+                        num_trees_baseline=args.num_trees_baseline,
+                        existing_rows_by_name=existing_rows_by_name,
+                        save_row_hook=save_row,
+                        progress_hook=progress_hook,
+                    )
     except KeyboardInterrupt:
         if not checkpoint_results.empty:
             _persist_checkpoint(checkpoint_results, output_dir=output_dir)
