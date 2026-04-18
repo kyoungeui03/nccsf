@@ -1,0 +1,6 @@
+output_file,model_name,rows,source
+final_conditional_results.csv,Final Conditional,528,/Users/kyoungeuihong/Desktop/csf_grf_new/outputs/five_models_output/results_full.csv
+revised_conditional_results.csv,Revised Conditional,528,/Users/kyoungeuihong/Desktop/csf_grf_new/outputs/five_models_output/results_full.csv
+final_model_oracle_results.csv,Final Model Oracle,528,git:7fdc98313f1158d356daab6eabbb0e0a9946a8dd:outputs/single_file_censored_models_5model/results_full.csv
+r_csf_results.csv,R-CSF Baseline,528,git:7fdc98313f1158d356daab6eabbb0e0a9946a8dd:outputs/single_file_censored_models_5model/results_full.csv
+combined_4model_results.csv,Combined 4-model file,2112,mixed
