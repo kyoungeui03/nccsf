@@ -78,7 +78,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--model", choices=sorted(MODEL_SPECS), default="final")
     parser.add_argument("--settings", nargs="*", type=int, choices=sorted(SETTINGS), default=sorted(SETTINGS))
     parser.add_argument("--target", choices=["RMST", "survival.probability", "both"], default="both")
-    parser.add_argument("--protocol", choices=sorted(PROTOCOLS), default="archive-aligned")
+    parser.add_argument("--protocol", choices=sorted(PROTOCOLS), default="paper-exact")
     parser.add_argument("--reps", type=int, default=None)
     parser.add_argument("--n-train", type=int, default=None)
     parser.add_argument("--n-test", type=int, default=None)

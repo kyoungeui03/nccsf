@@ -135,7 +135,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--horizon-quantile",
         type=float,
-        default=0.60,
+        default=0.90,
         help="Quantile used when target=survival.probability.",
     )
     parser.add_argument(

@@ -47,6 +47,8 @@ if (length(args) < 1) {
       "grf_censored_baseline_runner.R train <train_csv> <feature_cols_csv> <target> <horizon> <num_trees> <min_node_size> <model_rds> [seed]",
       "or",
       "grf_censored_baseline_runner.R predict <model_rds> <predict_csv> <feature_cols_csv> <output_csv>",
+      "or",
+      "grf_censored_baseline_runner.R scores <model_rds> <output_csv>",
       call. = FALSE
     )
   )
@@ -126,8 +128,22 @@ if (identical(mode, "train")) {
   X <- as.matrix(obs[, feature_cols, drop = FALSE])
   pred <- predict(fit, X)[["predictions"]]
   write.csv(data.frame(prediction = pred), output_csv, row.names = FALSE)
+} else if (identical(mode, "scores")) {
+  if (length(args) != 3) {
+    stop(
+      "Usage: grf_censored_baseline_runner.R scores <model_rds> <output_csv>",
+      call. = FALSE
+    )
+  }
+
+  model_rds <- args[[2]]
+  output_csv <- args[[3]]
+
+  fit <- readRDS(model_rds)
+  scores <- get_scores(fit)
+  write.csv(data.frame(score = scores), output_csv, row.names = FALSE)
 } else {
-  stop("mode must be one of: train, predict", call. = FALSE)
+  stop("mode must be one of: train, predict, scores", call. = FALSE)
 }
 """
 
@@ -175,6 +191,12 @@ def _read_prediction_csv(path):
     with open(path, newline="", encoding="utf-8") as handle:
         reader = csv.DictReader(handle)
         return np.asarray([float(row["prediction"]) for row in reader], dtype=float)
+
+
+def _read_score_csv(path):
+    with open(path, newline="", encoding="utf-8") as handle:
+        reader = csv.DictReader(handle)
+        return np.asarray([float(row["score"]) for row in reader], dtype=float)
 
 
 class GRFCensoredBaseline:
@@ -295,6 +317,17 @@ class GRFCensoredBaseline:
             ]
         )
         return _read_prediction_csv(output_csv)
+
+    def dr_scores_training(self):
+        """Return grf::get_scores(fit) for the fitted training sample."""
+
+        if self._tmpdir is None or self._model_path is None:
+            raise RuntimeError("Model must be fit before calling dr_scores_training.")
+
+        workspace = Path(self._tmpdir.name)
+        output_csv = workspace / "scores.csv"
+        self._call_r(["scores", str(self._model_path), str(output_csv)])
+        return _read_score_csv(output_csv)
 
     def cleanup(self):
         if self._tmpdir is not None:

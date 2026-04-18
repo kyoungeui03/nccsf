@@ -38,7 +38,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-dir", type=Path, default=None)
     parser.add_argument("--case-ids", nargs="*", type=int)
     parser.add_argument("--target", choices=["RMST", "survival.probability"], default="RMST")
-    parser.add_argument("--horizon-quantile", type=float, default=0.60)
+    parser.add_argument("--horizon-quantile", type=float, default=0.90)
     parser.add_argument("--num-trees-r", type=int, default=200)
     parser.add_argument("--random-state", type=int, default=42)
     return parser.parse_args()

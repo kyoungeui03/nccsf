@@ -2,11 +2,11 @@
 """Run the 5-model censored benchmark from the single-file model folder.
 
 Models:
-    1. Final Model
-    2. Final Model Oracle
-    3. Strict Baseline
-    4. Strict Baseline Oracle
-    5. R-CSF Baseline
+    1. Final Conditional
+    2. Final Conditional Oracle
+    3. Revised Marginal
+    4. Revised Conditional
+    5. Strict Conditional
 """
 
 from __future__ import annotations
@@ -52,7 +52,6 @@ from grf.benchmarks.econml_8variant import (  # noqa: E402
 
 try:  # pragma: no cover
     from .final_censored_model import (  # noqa: E402
-        FinalModelCensoredSurvivalForest,
         _SinglePassBridgeFeatureCensoredSurvivalForest,
         _build_final_features_full,
         _compute_q_from_s,
@@ -60,11 +59,12 @@ try:  # pragma: no cover
         _ensure_2d,
         _prepare_target_inputs,
     )
-    from .grf_censored_baseline import GRFCensoredBaseline  # noqa: E402
+    from .final_censored_model_conditional import FinalModelConditionalCensoredSurvivalForest  # noqa: E402
+    from .gpu_backends import make_xgb_classifier, make_xgb_regressor, resolve_xgboost_gpu_mode  # noqa: E402
+    from .revised_censored_baseline import RevisedBaselineCensoredSurvivalForest  # noqa: E402
     from .strict_censored_baseline import StrictEconmlXWZCensoredSurvivalForest  # noqa: E402
 except ImportError:  # pragma: no cover
     from single_file_censored_models.final_censored_model import (  # type: ignore  # noqa: E402
-        FinalModelCensoredSurvivalForest,
         _SinglePassBridgeFeatureCensoredSurvivalForest,
         _build_final_features_full,
         _compute_q_from_s,
@@ -72,7 +72,17 @@ except ImportError:  # pragma: no cover
         _ensure_2d,
         _prepare_target_inputs,
     )
-    from single_file_censored_models.grf_censored_baseline import GRFCensoredBaseline  # type: ignore  # noqa: E402
+    from single_file_censored_models.final_censored_model_conditional import (  # type: ignore  # noqa: E402
+        FinalModelConditionalCensoredSurvivalForest,
+    )
+    from single_file_censored_models.gpu_backends import (  # type: ignore  # noqa: E402
+        make_xgb_classifier,
+        make_xgb_regressor,
+        resolve_xgboost_gpu_mode,
+    )
+    from single_file_censored_models.revised_censored_baseline import (  # type: ignore  # noqa: E402
+        RevisedBaselineCensoredSurvivalForest,
+    )
     from single_file_censored_models.strict_censored_baseline import StrictEconmlXWZCensoredSurvivalForest  # type: ignore  # noqa: E402
 
 
@@ -580,24 +590,12 @@ class SingleFileFinalOracleCensoredSurvivalForest(_SinglePassBridgeFeatureCensor
         return np.asarray(self.effect_on_final_features(x_final), dtype=float)
 
 
-MODEL_BUILDERS = {
-    "final": (
-        "Final Model",
-        lambda target, horizon, random_state: FinalModelCensoredSurvivalForest(
-            target=target,
-            horizon=horizon,
-            random_state=random_state,
-            surv_scalar_mode="full",
-        ),
-    ),
-    "strict": (
-        "Strict Baseline",
-        lambda target, horizon, random_state: StrictEconmlXWZCensoredSurvivalForest(
-            target=target,
-            horizon=horizon,
-            random_state=random_state,
-        ),
-    ),
+MODEL_NAMES = {
+    "final_conditional": "Final Conditional",
+    "final_conditional_oracle": "Final Conditional Oracle",
+    "revised_marginal": "Revised Marginal",
+    "revised_conditional": "Revised Conditional",
+    "strict_conditional": "Strict Conditional",
 }
 
 
@@ -610,9 +608,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--case-slugs", nargs="*", default=None)
     parser.add_argument("--setting-ids", nargs="*", default=None)
     parser.add_argument("--target", choices=["RMST", "survival.probability", "both"], default="both")
-    parser.add_argument("--horizon-quantile", type=float, default=0.60)
+    parser.add_argument("--horizon-quantile", type=float, default=0.90)
     parser.add_argument("--random-state", type=int, default=42)
-    parser.add_argument("--num-trees-baseline", type=int, default=200)
+    parser.add_argument("--num-trees", "--num-trees-baseline", dest="num_trees", type=int, default=200)
+    parser.add_argument("--gpu", choices=["off", "auto", "xgboost"], default="auto")
     parser.add_argument("--list-cases", action="store_true")
     parser.add_argument("--list-settings", action="store_true")
     return parser.parse_args()
@@ -621,7 +620,7 @@ def parse_args() -> argparse.Namespace:
 def _resolve_output_dir(args: argparse.Namespace) -> Path:
     if args.output_dir is not None:
         return args.output_dir.resolve()
-    return (PROJECT_ROOT / "outputs" / "single_file_censored_models_5model").resolve()
+    return (PROJECT_ROOT / "outputs" / "single_file_censored_models_5model_conditional_suite").resolve()
 
 
 def _selected_case_specs(case_ids: list[int] | None, case_slugs: list[str] | None) -> list[dict[str, object]]:
@@ -680,14 +679,15 @@ def _make_run_metadata(
 ) -> dict[str, object]:
     return {
         "script": THIS_FILE.name,
-        "runner_version": 3,
+        "runner_version": 4,
         "case_ids": [int(spec["case_id"]) for spec in case_specs],
         "case_slugs": [str(spec["slug"]) for spec in case_specs],
         "setting_ids": [str(setting["setting_id"]) for setting in settings],
         "targets": list(targets),
         "horizon_quantile": float(args.horizon_quantile),
         "random_state": int(args.random_state),
-        "num_trees_baseline": int(args.num_trees_baseline),
+        "num_trees": int(args.num_trees),
+        "gpu_mode": str(args.gpu),
         "model_count": MODEL_COUNT,
     }
 
@@ -810,7 +810,7 @@ def render_case_table_png(case_df: pd.DataFrame, output_path: Path):
     ax.axis("off")
     title = case_df["case_title"].iloc[0]
     fig.suptitle(title, fontsize=20, fontweight="bold", y=0.98)
-    ax.set_title("5-model benchmark", fontsize=13, color="#4b5563", pad=18)
+    ax.set_title("Conditional-censoring 5-model benchmark", fontsize=13, color="#4b5563", pad=18)
 
     table = ax.table(
         cellText=display.values,
@@ -818,7 +818,7 @@ def render_case_table_png(case_df: pd.DataFrame, output_path: Path):
         cellLoc="center",
         colLoc="center",
         bbox=[0, 0.02, 1, 0.86],
-        colWidths=[0.34, 0.09, 0.09, 0.08, 0.08, 0.08, 0.1, 0.09, 0.07],
+        colWidths=[0.38, 0.08, 0.08, 0.08, 0.08, 0.08, 0.1, 0.08, 0.06],
     )
     table.auto_set_font_size(False)
     table.set_fontsize(12)
@@ -950,7 +950,8 @@ def _evaluate_case_target(
     setting: dict[str, int | str],
     target: str,
     random_state: int,
-    num_trees_baseline: int,
+    num_trees: int,
+    gpu_config: dict[str, object],
     existing_rows_by_name: dict[str, dict[str, object]] | None = None,
     save_row_hook=None,
     progress_hook=None,
@@ -962,6 +963,10 @@ def _evaluate_case_target(
     time_obs = np.asarray(case.Y, dtype=float)
     event = np.asarray(case.delta, dtype=float)
     horizon = float(case.horizon)
+    use_gpu = bool(gpu_config.get("use_gpu", False))
+    q_kind = "xgb_gpu" if use_gpu else "logit"
+    h_kind = "xgb_gpu" if use_gpu else "extra"
+    propensity_kind = "xgb_gpu" if use_gpu else "logit"
 
     rows: list[dict[str, object]] = []
 
@@ -977,6 +982,8 @@ def _evaluate_case_target(
         row["p_w"] = int(setting["p_w"])
         row["p_z"] = int(setting["p_z"])
         row["horizon"] = float(case.horizon)
+        row["gpu_requested"] = str(gpu_config.get("mode", "off"))
+        row["gpu_enabled"] = bool(gpu_config.get("use_gpu", False))
         return row
 
     existing_rows_by_name = existing_rows_by_name or {}
@@ -998,26 +1005,33 @@ def _evaluate_case_target(
         if progress_hook is not None:
             progress_hook(full_row, resumed=False)
 
-    final_name, final_builder = MODEL_BUILDERS["final"]
-
-    def run_final():
-        final_model = final_builder(target, horizon, random_state)
+    def run_final_conditional():
+        final_model = FinalModelConditionalCensoredSurvivalForest(
+            target=target,
+            horizon=horizon,
+            random_state=random_state,
+            surv_scalar_mode="full",
+            n_estimators=num_trees,
+            censoring_estimator="cox",
+            q_kind=q_kind,
+            h_kind=h_kind,
+        )
         t0 = time.time()
         final_model.fit_components(x, a, time_obs, event, z, w)
         final_preds = np.asarray(final_model.effect_from_components(x, w, z), dtype=float).ravel()
         return _evaluate_predictions(
-            final_name,
+            MODEL_NAMES["final_conditional"],
             final_preds,
             case.true_cate,
             time.time() - t0,
             backend=final_model.__class__.__name__,
         )
 
-    run_or_resume(final_name, run_final)
+    run_or_resume(MODEL_NAMES["final_conditional"], run_final_conditional)
 
     u = _ensure_2d(case.U)
     x_oracle = np.column_stack([x, u])
-    def run_final_oracle():
+    def run_final_conditional_oracle():
         oracle_model = SingleFileFinalOracleCensoredSurvivalForest(
             cfg=case.cfg,
             dgp=case.dgp,
@@ -1032,10 +1046,10 @@ def _evaluate_case_target(
             q_clip=0.03,
             y_tilde_clip_quantile=0.98,
             y_res_clip_percentiles=(2.0, 98.0),
-            n_estimators=200,
+            n_estimators=num_trees,
             min_samples_leaf=20,
             cv=5,
-            censoring_estimator="nelson-aalen",
+            censoring_estimator="cox",
             event_survival_estimator="cox",
             m_pred_mode="bridge",
             nuisance_feature_mode="broad_dup",
@@ -1044,75 +1058,96 @@ def _evaluate_case_target(
         oracle_model.fit_oracle(x_oracle, a, time_obs, event, u)
         oracle_preds = np.asarray(oracle_model.effect_oracle(x, u), dtype=float).ravel()
         return _evaluate_predictions(
-            "Final Model Oracle",
+            MODEL_NAMES["final_conditional_oracle"],
             oracle_preds,
             case.true_cate,
             time.time() - t0,
             backend=oracle_model.__class__.__name__,
         )
 
-    run_or_resume("Final Model Oracle", run_final_oracle)
+    run_or_resume(MODEL_NAMES["final_conditional_oracle"], run_final_conditional_oracle)
 
-    strict_name, strict_builder = MODEL_BUILDERS["strict"]
+    def run_revised_marginal():
+        revised_model = RevisedBaselineCensoredSurvivalForest(
+            target=target,
+            horizon=horizon,
+            random_state=random_state,
+            n_estimators=num_trees,
+            censoring_estimator="nelson-aalen",
+            propensity_kind=propensity_kind,
+        )
+        t0 = time.time()
+        revised_model.fit_components(x, a, time_obs, event, z, w)
+        revised_preds = np.asarray(revised_model.effect_from_components(x, w, z), dtype=float).ravel()
+        return _evaluate_predictions(
+            MODEL_NAMES["revised_marginal"],
+            revised_preds,
+            case.true_cate,
+            time.time() - t0,
+            backend=revised_model.__class__.__name__,
+        )
 
-    def run_strict():
-        strict_model = strict_builder(target, horizon, random_state)
+    run_or_resume(MODEL_NAMES["revised_marginal"], run_revised_marginal)
+
+    def run_revised_conditional():
+        revised_model = RevisedBaselineCensoredSurvivalForest(
+            target=target,
+            horizon=horizon,
+            random_state=random_state,
+            n_estimators=num_trees,
+            censoring_estimator="cox",
+            propensity_kind=propensity_kind,
+        )
+        t0 = time.time()
+        revised_model.fit_components(x, a, time_obs, event, z, w)
+        revised_preds = np.asarray(revised_model.effect_from_components(x, w, z), dtype=float).ravel()
+        return _evaluate_predictions(
+            MODEL_NAMES["revised_conditional"],
+            revised_preds,
+            case.true_cate,
+            time.time() - t0,
+            backend=revised_model.__class__.__name__,
+        )
+
+    run_or_resume(MODEL_NAMES["revised_conditional"], run_revised_conditional)
+
+    def run_strict_conditional():
+        strict_kwargs = {}
+        if use_gpu:
+            strict_kwargs["model_y"] = make_xgb_regressor(
+                random_state=random_state,
+                n_estimators=num_trees,
+                min_samples_leaf=20,
+                n_jobs=1,
+                device="cuda",
+            )
+            strict_kwargs["model_t"] = make_xgb_classifier(
+                random_state=random_state,
+                n_estimators=num_trees,
+                min_samples_leaf=20,
+                n_jobs=1,
+                device="cuda",
+            )
+        strict_model = StrictEconmlXWZCensoredSurvivalForest(
+            target=target,
+            horizon=horizon,
+            n_estimators=num_trees,
+            random_state=random_state,
+            censoring_estimator="cox",
+            **strict_kwargs,
+        )
         t0 = time.time()
         strict_model.fit_components(x, a, time_obs, event, z, w)
         strict_preds = np.asarray(strict_model.effect_from_components(x, w, z), dtype=float).ravel()
         return _evaluate_predictions(
-            strict_name,
+            MODEL_NAMES["strict_conditional"],
             strict_preds,
             case.true_cate,
             time.time() - t0,
             backend=strict_model.__class__.__name__,
         )
 
-    run_or_resume(strict_name, run_strict)
-
-    def run_strict_oracle():
-        strict_oracle_model = StrictOracleCensoredSurvivalForest(
-            cfg=case.cfg,
-            dgp=case.dgp,
-            target=target,
-            horizon=horizon,
-            random_state=random_state,
-        )
-        t0 = time.time()
-        strict_oracle_model.fit_oracle(x, a, time_obs, event, z, w, case.U)
-        strict_oracle_preds = np.asarray(strict_oracle_model.effect_from_components(x, w, z), dtype=float).ravel()
-        return _evaluate_predictions(
-            "Strict Baseline Oracle",
-            strict_oracle_preds,
-            case.true_cate,
-            time.time() - t0,
-            backend=strict_oracle_model.__class__.__name__,
-        )
-
-    run_or_resume("Strict Baseline Oracle", run_strict_oracle)
-
-    def run_r_csf():
-        r_model = GRFCensoredBaseline(
-            target=target,
-            horizon=horizon,
-            n_estimators=num_trees_baseline,
-            random_state=random_state,
-        )
-        try:
-            t0 = time.time()
-            r_model.fit_components(x, a, time_obs, event, z, w)
-            r_preds = np.asarray(r_model.effect_from_components(x, w, z), dtype=float).ravel()
-            return _evaluate_predictions(
-                "R-CSF Baseline",
-                r_preds,
-                case.true_cate,
-                time.time() - t0,
-                backend=r_model.__class__.__name__,
-            )
-        finally:
-            r_model.cleanup()
-
-    run_or_resume("R-CSF Baseline", run_r_csf)
+    run_or_resume(MODEL_NAMES["strict_conditional"], run_strict_conditional)
     return rows
 
 
@@ -1200,7 +1235,7 @@ def _persist_checkpoint(
                 target=str(row["target"]),
             )
 
-    _write_target_summaries(results, output_dir=output_dir, file_prefix="basic12")
+    _write_target_summaries(results, output_dir=output_dir, file_prefix="basic12_conditional_suite")
 
 
 def main() -> int:
@@ -1219,6 +1254,14 @@ def main() -> int:
 
     output_dir = _resolve_output_dir(args)
     output_dir.mkdir(parents=True, exist_ok=True)
+
+    use_gpu, gpu_reason = resolve_xgboost_gpu_mode(args.gpu)
+    gpu_config = {
+        "mode": str(args.gpu),
+        "use_gpu": bool(use_gpu),
+        "reason": str(gpu_reason),
+    }
+    print(f"[gpu] requested={args.gpu} enabled={use_gpu} reason={gpu_reason}", flush=True)
 
     case_specs = _selected_case_specs(args.case_ids, args.case_slugs)
     settings = _selected_settings(args.setting_ids)
@@ -1325,7 +1368,8 @@ def main() -> int:
                         setting=setting,
                         target=target,
                         random_state=args.random_state,
-                        num_trees_baseline=args.num_trees_baseline,
+                        num_trees=args.num_trees,
+                        gpu_config=gpu_config,
                         existing_rows_by_name=existing_rows_by_name,
                         save_row_hook=save_row,
                         progress_hook=progress_hook,

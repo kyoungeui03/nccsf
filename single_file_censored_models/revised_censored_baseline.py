@@ -46,6 +46,11 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import PolynomialFeatures
 
+try:  # pragma: no cover
+    from .gpu_backends import make_xgb_classifier
+except ImportError:  # pragma: no cover
+    from single_file_censored_models.gpu_backends import make_xgb_classifier  # type: ignore
+
 
 def _ensure_2d(array):
     """Convert a 1D vector into a 2D column matrix."""
@@ -92,6 +97,10 @@ def _prepare_target_inputs(y_time, delta, *, target, horizon):
     - `eval_time`, `eval_delta`: time/event pair used inside the IPCW score
     - `f_y`: target-specific transformed outcome
     - `grid_time`: time grid source for Cox/survival summaries
+
+    For finite-horizon RMST, the grid is extended to include the requested
+    horizon so the Cox-based q-hat summaries target RMST up to that horizon
+    rather than stopping at the largest observed follow-up time.
     """
 
     y_time = np.asarray(y_time, dtype=float)
@@ -124,7 +133,7 @@ def _prepare_target_inputs(y_time, delta, *, target, horizon):
         eval_time = nuisance_time
         eval_delta = nuisance_delta
         f_y = nuisance_time
-        grid_time = nuisance_time
+        grid_time = np.concatenate([nuisance_time, np.asarray([float(horizon)], dtype=float)])
 
     return {
         "nuisance_time": nuisance_time,
@@ -164,6 +173,22 @@ def make_propensity_model(
             max_iter=n_estimators,
             min_samples_leaf=min_samples_leaf,
             random_state=random_state,
+        )
+    if kind == "xgb":
+        return make_xgb_classifier(
+            random_state=random_state,
+            n_estimators=n_estimators,
+            min_samples_leaf=min_samples_leaf,
+            n_jobs=1,
+            device="cpu",
+        )
+    if kind == "xgb_gpu":
+        return make_xgb_classifier(
+            random_state=random_state,
+            n_estimators=n_estimators,
+            min_samples_leaf=min_samples_leaf,
+            n_jobs=1,
+            device="cuda",
         )
     return LogisticRegression(max_iter=10000)
 

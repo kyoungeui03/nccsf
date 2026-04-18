@@ -1,23 +1,34 @@
-"""Single-file conditional-censoring variant of the censored Final Model.
+"""Single-file conditional-censoring variant of ProperNoPCICensoredSurvivalForest.
 
-This module keeps the same bridge, survival, and final-forest logic as the
-current single-file Final Model, but replaces the marginal censoring nuisance
-with a conditional Cox censoring model that estimates
+This module keeps the same no-PCI residualization and survival-only final-stage
+features as the marginal Proper baseline, but replaces the marginal censoring
+nuisance with a conditional Cox model for
 
     S_C(t | X, W, Z, A).
+
+The treatment/outcome/survival nuisance branches still follow the proper
+baseline convention `observed_only=True`, i.e. the proxy blocks are zeroed for
+those nuisances. The raw observed proxies are used only by the conditional
+censoring nuisance and by the final feature block `[X, W, Z, surv1, surv0,
+surv_diff]`.
 """
 
 from __future__ import annotations
 
 import numpy as np
-from econml.utilities import filter_none_kwargs
 from sklearn.base import clone
 
 try:  # pragma: no cover
-    from .final_censored_model import (
-        FinalCensoredModel,
-        _FinalCensoredNuisance,
-        _SinglePassBridgeFeatureCensoredSurvivalForest,
+    from .final_censored_model_conditional import (  # noqa: E402
+        _fit_conditional_censoring_model,
+        _predict_conditional_censoring_survival_at_values,
+        _predict_conditional_censoring_survival_on_grid,
+    )
+    from .proper_censored_baseline import (  # noqa: E402
+        ProperNoPCICensoredSurvivalForest,
+        _ProperNoPCICensoredDML,
+        _ProperNoPCINuisance,
+        _build_final_features_raw_surv,
         _build_nuisance_features,
         _compute_ipcw_3term_y_res_from_survival,
         _compute_q_from_s,
@@ -25,17 +36,19 @@ try:  # pragma: no cover
         _compute_target_ipcw_3term_y_res_from_survival,
         _compute_target_pseudo_outcome_from_sc,
         _ensure_2d,
-        _evaluate_sc,
-        _fit_censoring_model as _fit_marginal_censoring_model,
-        _fit_event_cox,
-        _predict_s_on_grid,
         _prepare_target_inputs,
     )
 except ImportError:  # pragma: no cover
-    from single_file_censored_models.final_censored_model import (  # type: ignore
-        FinalCensoredModel,
-        _FinalCensoredNuisance,
-        _SinglePassBridgeFeatureCensoredSurvivalForest,
+    from single_file_censored_models.final_censored_model_conditional import (  # type: ignore  # noqa: E402
+        _fit_conditional_censoring_model,
+        _predict_conditional_censoring_survival_at_values,
+        _predict_conditional_censoring_survival_on_grid,
+    )
+    from single_file_censored_models.proper_censored_baseline import (  # type: ignore  # noqa: E402
+        ProperNoPCICensoredSurvivalForest,
+        _ProperNoPCICensoredDML,
+        _ProperNoPCINuisance,
+        _build_final_features_raw_surv,
         _build_nuisance_features,
         _compute_ipcw_3term_y_res_from_survival,
         _compute_q_from_s,
@@ -43,80 +56,32 @@ except ImportError:  # pragma: no cover
         _compute_target_ipcw_3term_y_res_from_survival,
         _compute_target_pseudo_outcome_from_sc,
         _ensure_2d,
-        _evaluate_sc,
-        _fit_censoring_model as _fit_marginal_censoring_model,
-        _fit_event_cox,
-        _predict_s_on_grid,
         _prepare_target_inputs,
     )
 
 
-def _fit_conditional_censoring_model(time, event, features, *, estimator="cox"):
-    """Fit a censoring survival model on feature block [X, W, Z, A]."""
+class _ConditionalProperNoPCINuisance(_ProperNoPCINuisance):
+    """Proper-no-PCI nuisance layer with conditional censoring survival."""
 
-    if estimator == "cox":
-        cox, col_names, keep_mask = _fit_event_cox(
-            time,
-            1.0 - np.asarray(event, dtype=float),
-            features,
-        )
-        return {
-            "kind": "cox",
-            "model": cox,
-            "col_names": col_names,
-            "keep_mask": keep_mask,
-        }
-    return _fit_marginal_censoring_model(time, event, estimator=estimator)
-
-
-def _predict_conditional_censoring_survival_at_values(censor_model, features, values, *, clip_min=0.01):
-    """Evaluate S_C(y | features) for each observation."""
-
-    values = np.asarray(values, dtype=float)
-    if censor_model["kind"] == "marginal":
-        return _evaluate_sc(values, censor_model["times"], censor_model["surv"], clip_min=clip_min)
-
-    eval_times = np.sort(np.unique(values))
-    surv = _predict_s_on_grid(
-        censor_model["model"],
-        censor_model["col_names"],
-        np.asarray(features, dtype=float),
-        eval_times,
-        censor_model["keep_mask"],
-    )
-    idx = np.searchsorted(eval_times, values, side="right") - 1
-    idx = np.clip(idx, 0, len(eval_times) - 1)
-    return np.clip(surv[np.arange(len(values)), idx], clip_min, 1.0)
-
-
-def _predict_conditional_censoring_survival_on_grid(censor_model, features, t_grid, *, clip_min=0.01):
-    """Evaluate S_C(t | features) on the common grid for every observation."""
-
-    t_grid = np.asarray(t_grid, dtype=float)
-    if censor_model["kind"] == "marginal":
-        surv = _evaluate_sc(t_grid, censor_model["times"], censor_model["surv"], clip_min=clip_min)
-        return np.broadcast_to(surv[None, :], (len(features), len(t_grid)))
-
-    surv = _predict_s_on_grid(
-        censor_model["model"],
-        censor_model["col_names"],
-        np.asarray(features, dtype=float),
-        t_grid,
-        censor_model["keep_mask"],
-    )
-    return np.clip(surv, clip_min, 1.0)
-
-
-class _ConditionalBridgeOutputNuisance(_FinalCensoredNuisance):
-    """Final-model nuisance layer with conditional censoring S_C(t|X,W,Z,A)."""
+    def __init__(self, *args, observed_only=True, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._observed_only = bool(observed_only)
 
     @staticmethod
-    def _build_censor_features(x, w, z):
-        return np.column_stack([_ensure_2d(x), _ensure_2d(w), _ensure_2d(z)])
+    def _build_censor_features(x, raw_w, raw_z):
+        return np.column_stack([_ensure_2d(x), _ensure_2d(raw_w), _ensure_2d(raw_z)])
 
     @staticmethod
     def _augment_with_treatment(features, a):
         return np.column_stack([np.asarray(features, dtype=float), np.asarray(a, dtype=float).reshape(-1, 1)])
+
+    def _prepare_no_pci_inputs(self, raw_w, raw_z):
+        w = _ensure_2d(raw_w).astype(float)
+        z = _ensure_2d(raw_z).astype(float)
+        if self._observed_only:
+            w = np.zeros_like(w)
+            z = np.zeros_like(z)
+        return w, z
 
     def train(self, is_selecting, folds, Y, T, X=None, W=None, Z=None, sample_weight=None, groups=None):
         del is_selecting, folds, groups
@@ -124,8 +89,9 @@ class _ConditionalBridgeOutputNuisance(_FinalCensoredNuisance):
         y_time, delta = self._unpack_y(Y)
         a = np.asarray(T, dtype=float).ravel()
         x = _ensure_2d(X).astype(float)
-        w = _ensure_2d(W).astype(float)
-        z = _ensure_2d(Z).astype(float)
+        raw_w = _ensure_2d(W).astype(float)
+        raw_z = _ensure_2d(Z).astype(float)
+        w, z = self._prepare_no_pci_inputs(raw_w, raw_z)
 
         target_inputs = _prepare_target_inputs(
             y_time,
@@ -134,7 +100,7 @@ class _ConditionalBridgeOutputNuisance(_FinalCensoredNuisance):
             horizon=self._horizon,
         )
         xq, xh, surv_features = _build_nuisance_features(x, w, z, self._nuisance_feature_mode)
-        censor_features = self._build_censor_features(x, w, z)
+        censor_features = self._build_censor_features(x, raw_w, raw_z)
         censor_features_obs = self._augment_with_treatment(censor_features, a)
 
         all_times = np.sort(np.unique(target_inputs["grid_time"]))
@@ -168,14 +134,15 @@ class _ConditionalBridgeOutputNuisance(_FinalCensoredNuisance):
             nuisance_delta=target_inputs["nuisance_delta"],
             sc_at_eval=sc_for_y_tilde,
         )
-        y_tilde = np.clip(
-            y_tilde,
-            np.quantile(y_tilde, 1.0 - self._y_tilde_clip_quantile),
-            np.quantile(y_tilde, self._y_tilde_clip_quantile),
-        )
+        if self._y_tilde_clip_quantile is not None:
+            y_tilde = np.clip(
+                y_tilde,
+                np.quantile(y_tilde, 1.0 - self._y_tilde_clip_quantile),
+                np.quantile(y_tilde, self._y_tilde_clip_quantile),
+            )
 
         self._q_model = clone(self._q_model_template)
-        self._q_model.fit(xq, a, **filter_none_kwargs(sample_weight=sample_weight))
+        self._q_model.fit(xq, a)
 
         treated_mask = a == 1
         control_mask = a == 0
@@ -185,16 +152,8 @@ class _ConditionalBridgeOutputNuisance(_FinalCensoredNuisance):
         if treated_mask.sum() <= 10 or control_mask.sum() <= 10:
             raise ValueError("Each treatment arm must have more than 10 samples per fold for this model.")
 
-        self._h1_model.fit(
-            xh[treated_mask],
-            y_tilde[treated_mask],
-            **filter_none_kwargs(sample_weight=None if sample_weight is None else sample_weight[treated_mask]),
-        )
-        self._h0_model.fit(
-            xh[control_mask],
-            y_tilde[control_mask],
-            **filter_none_kwargs(sample_weight=None if sample_weight is None else sample_weight[control_mask]),
-        )
+        self._h1_model.fit(xh[treated_mask], y_tilde[treated_mask])
+        self._h0_model.fit(xh[control_mask], y_tilde[control_mask])
 
         self._fit_event_survival_models(
             target_inputs["nuisance_time"],
@@ -210,8 +169,9 @@ class _ConditionalBridgeOutputNuisance(_FinalCensoredNuisance):
         y_time, delta = self._unpack_y(Y)
         a = np.asarray(T, dtype=float).ravel()
         x = _ensure_2d(X).astype(float)
-        w = _ensure_2d(W).astype(float)
-        z = _ensure_2d(Z).astype(float)
+        raw_w = _ensure_2d(W).astype(float)
+        raw_z = _ensure_2d(Z).astype(float)
+        w, z = self._prepare_no_pci_inputs(raw_w, raw_z)
 
         target_inputs = _prepare_target_inputs(
             y_time,
@@ -220,7 +180,7 @@ class _ConditionalBridgeOutputNuisance(_FinalCensoredNuisance):
             horizon=self._horizon,
         )
         xq, xh, surv_features = _build_nuisance_features(x, w, z, self._nuisance_feature_mode)
-        censor_features = self._build_censor_features(x, w, z)
+        censor_features = self._build_censor_features(x, raw_w, raw_z)
         censor_features_obs = self._augment_with_treatment(censor_features, a)
 
         q_pred = self._q_model.predict_proba(xq)[:, 1]
@@ -228,7 +188,7 @@ class _ConditionalBridgeOutputNuisance(_FinalCensoredNuisance):
         h1_pred = self._h1_model.predict(xh)
         h0_pred = self._h0_model.predict(xh)
         s_hat_1, s_hat_0 = self._predict_event_survival_curves(surv_features)
-        m_pred = self._compute_m_pred(q_pred, h1_pred, h0_pred)
+        m_pred = self._compute_m_pred(q_pred, h1_pred, h0_pred, s_hat_1, s_hat_0)
 
         if self._target == "survival.probability":
             q_hat_1 = _compute_survival_probability_q_from_s(s_hat_1, self._t_grid, self._horizon)
@@ -279,25 +239,63 @@ class _ConditionalBridgeOutputNuisance(_FinalCensoredNuisance):
             )
 
         a_res = (a - q_pred).reshape(-1, 1)
+        return y_res, a_res
+
+    def predict_bridge_outputs(self, X=None, W=None, Z=None):
+        x = _ensure_2d(X).astype(float)
+        raw_w = _ensure_2d(W).astype(float)
+        raw_z = _ensure_2d(Z).astype(float)
+        w, z = self._prepare_no_pci_inputs(raw_w, raw_z)
+        xq, xh, surv_features = _build_nuisance_features(x, w, z, self._nuisance_feature_mode)
+
+        q_pred = self._q_model.predict_proba(xq)[:, 1]
+        q_pred = np.clip(q_pred, self._q_clip, 1.0 - self._q_clip)
+        h1_pred = self._h1_model.predict(xh)
+        h0_pred = self._h0_model.predict(xh)
+        s_hat_1, s_hat_0 = self._predict_event_survival_curves(surv_features)
+        m_pred = self._compute_m_pred(q_pred, h1_pred, h0_pred, s_hat_1, s_hat_0)
+
+        if self._target == "survival.probability":
+            q_hat_1 = _compute_survival_probability_q_from_s(s_hat_1, self._t_grid, self._horizon)
+            q_hat_0 = _compute_survival_probability_q_from_s(s_hat_0, self._t_grid, self._horizon)
+        else:
+            q_hat_1 = _compute_q_from_s(s_hat_1, self._t_grid)
+            q_hat_0 = _compute_q_from_s(s_hat_0, self._t_grid)
+
+        surv1_pred = q_hat_1[:, 0]
+        surv0_pred = q_hat_0[:, 0]
+        return {
+            "surv1_pred": surv1_pred,
+            "surv0_pred": surv0_pred,
+            "surv_diff_pred": surv1_pred - surv0_pred,
+            "m_pred": m_pred,
+        }
+
+
+class _ConditionalProperBridgeOutputNuisance(_ConditionalProperNoPCINuisance):
+    """Bridge-output wrapper for the conditional Proper-no-PCI path."""
+
+    def predict(self, Y, T, X=None, W=None, Z=None, sample_weight=None, groups=None):
+        y_res, a_res = super().predict(Y, T, X=X, W=W, Z=Z, sample_weight=sample_weight, groups=groups)
         bridge = super().predict_bridge_outputs(X=X, W=W, Z=Z)
         return (
             y_res,
             a_res,
-            bridge["q_pred"],
-            bridge["h1_pred"],
-            bridge["h0_pred"],
-            bridge["m_pred"],
             bridge["surv1_pred"],
             bridge["surv0_pred"],
             bridge["surv_diff_pred"],
         )
 
 
-class _ConditionalSinglePassBridgeFeatureCensoredSurvivalForest(_SinglePassBridgeFeatureCensoredSurvivalForest):
-    """CausalForestDML wrapper whose censoring nuisance is conditional on [X, W, Z, A]."""
+class _ConditionalProperNoPCICensoredDML(_ProperNoPCICensoredDML):
+    """Proper-no-PCI CausalForestDML with conditional censoring nuisance."""
+
+    def __init__(self, *args, observed_only=True, **kwargs):
+        self._observed_only = bool(observed_only)
+        super().__init__(*args, **kwargs)
 
     def _gen_ortho_learner_model_nuisance(self):
-        return _ConditionalBridgeOutputNuisance(
+        return _ConditionalProperBridgeOutputNuisance(
             q_model=self._q_model_template,
             h_model=self._h_model_template,
             target=self._target,
@@ -309,21 +307,22 @@ class _ConditionalSinglePassBridgeFeatureCensoredSurvivalForest(_SinglePassBridg
             y_res_clip_percentiles=self._custom_y_res_clip_percentiles,
             event_survival_estimator=self._event_survival_estimator,
             m_pred_mode=self._m_pred_mode,
+            observed_only=self._observed_only,
         )
 
 
-class ConditionalCensoringFinalCensoredModel(FinalCensoredModel):
-    """Final Model with conditional Cox censoring nuisance S_C(t|X,W,Z,A)."""
+class ProperNoPCIConditionalCensoredSurvivalForest(ProperNoPCICensoredSurvivalForest):
+    """Proper-no-PCI censored baseline with conditional censoring S_C(t|X,W,Z,A)."""
 
     def __init__(self, *args, censoring_estimator="cox", **kwargs):
         if censoring_estimator != "cox":
             raise ValueError(
-                "ConditionalCensoringFinalCensoredModel currently supports only censoring_estimator='cox'."
+                "ProperNoPCIConditionalCensoredSurvivalForest currently supports only censoring_estimator='cox'."
             )
         super().__init__(*args, censoring_estimator=censoring_estimator, **kwargs)
 
     def _make_feature_nuisance(self):
-        return _ConditionalBridgeOutputNuisance(
+        return _ConditionalProperNoPCINuisance(
             q_model=self._q_model_template,
             h_model=self._h_model_template,
             target=self._target,
@@ -335,15 +334,15 @@ class ConditionalCensoringFinalCensoredModel(FinalCensoredModel):
             y_res_clip_percentiles=self._y_res_clip_percentiles,
             event_survival_estimator=self._event_survival_estimator,
             m_pred_mode=self._m_pred_mode,
+            observed_only=self._observed_only,
         )
 
     def fit_components(self, X, A, time, event, Z, W):
         x = _ensure_2d(X).astype(float)
         raw_w = _ensure_2d(W).astype(float)
         raw_z = _ensure_2d(Z).astype(float)
-        w_nuis, z_nuis = self._prepare_nuisance_inputs(W, Z)
 
-        self._dml_model = _ConditionalSinglePassBridgeFeatureCensoredSurvivalForest(
+        self._dml_model = _ConditionalProperNoPCICensoredDML(
             target=self._target,
             horizon=self._horizon,
             n_estimators=self._n_estimators,
@@ -364,20 +363,18 @@ class ConditionalCensoringFinalCensoredModel(FinalCensoredModel):
             event_survival_estimator=self._event_survival_estimator,
             m_pred_mode=self._m_pred_mode,
             nuisance_feature_mode=self._nuisance_feature_mode,
-            final_feature_mode=self._final_feature_mode,
+            observed_only=self._observed_only,
         )
         self._dml_model._raw_w_for_final = raw_w
         self._dml_model._raw_z_for_final = raw_z
-        self._dml_model.fit_survival(x, A, time, event, z_nuis, w_nuis)
+        self._dml_model.fit_survival(x, A, time, event, raw_z, raw_w)
 
         self._train_x = np.asarray(x, dtype=float).copy()
         self._train_w = np.asarray(raw_w, dtype=float).copy()
         self._train_z = np.asarray(raw_z, dtype=float).copy()
         self._train_x_final = self._dml_model.training_x_final()
 
-        y_packed = np.column_stack(
-            [np.asarray(time, dtype=float).ravel(), np.asarray(event, dtype=float).ravel()]
-        )
+        y_packed = np.column_stack([np.asarray(time, dtype=float).ravel(), np.asarray(event, dtype=float).ravel()])
         self._feature_nuisance = self._make_feature_nuisance()
         self._feature_nuisance.train(
             False,
@@ -385,40 +382,32 @@ class ConditionalCensoringFinalCensoredModel(FinalCensoredModel):
             y_packed,
             np.asarray(A, dtype=float).ravel(),
             X=x,
-            W=w_nuis,
-            Z=z_nuis,
+            W=raw_w,
+            Z=raw_z,
         )
         return self
 
+    def effect_from_components(self, X, W, Z):
+        if self._dml_model is None or self._feature_nuisance is None:
+            raise RuntimeError("Model must be fit before calling effect_from_components.")
 
-FinalModelConditionalCensoredSurvivalForest = ConditionalCensoringFinalCensoredModel
+        x = _ensure_2d(X).astype(float)
+        raw_w = _ensure_2d(W).astype(float)
+        raw_z = _ensure_2d(Z).astype(float)
 
-
-class ConditionalCensoringFinalPCISurvOnlyCensoredModel(ConditionalCensoringFinalCensoredModel):
-    """Conditional-censoring Final Model with PCI residuals and survival-only final features."""
-
-    def __init__(self, *args, **kwargs):
-        kwargs.setdefault("final_feature_mode", "surv_only")
-        super().__init__(*args, **kwargs)
-
-
-class ConditionalCensoringFinalPCIXOnlyCensoredModel(ConditionalCensoringFinalCensoredModel):
-    """Conditional-censoring Final Model with PCI residuals and X-only final features."""
-
-    def __init__(self, *args, **kwargs):
-        kwargs.setdefault("final_feature_mode", "x_only")
-        super().__init__(*args, **kwargs)
+        bridge = self._feature_nuisance.predict_bridge_outputs(
+            X=x,
+            W=raw_w,
+            Z=raw_z,
+        )
+        x_final = _build_final_features_raw_surv(x, raw_w, raw_z, bridge)
+        return self._dml_model.effect_on_final_features(x_final)
 
 
-FinalModelConditionalPCISurvOnlyCensoredSurvivalForest = ConditionalCensoringFinalPCISurvOnlyCensoredModel
-FinalModelConditionalPCIXOnlyCensoredSurvivalForest = ConditionalCensoringFinalPCIXOnlyCensoredModel
+ProperConditionalCensoredBaseline = ProperNoPCIConditionalCensoredSurvivalForest
 
 
 __all__ = [
-    "ConditionalCensoringFinalCensoredModel",
-    "FinalModelConditionalCensoredSurvivalForest",
-    "ConditionalCensoringFinalPCISurvOnlyCensoredModel",
-    "ConditionalCensoringFinalPCIXOnlyCensoredModel",
-    "FinalModelConditionalPCISurvOnlyCensoredSurvivalForest",
-    "FinalModelConditionalPCIXOnlyCensoredSurvivalForest",
+    "ProperNoPCIConditionalCensoredSurvivalForest",
+    "ProperConditionalCensoredBaseline",
 ]

@@ -166,10 +166,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--horizon-quantile",
         type=float,
-        default=0.60,
+        default=0.90,
         help=(
-            "Quantile used by the synthetic case helper when target=survival.probability. "
-            "For RMST the current helper still uses the full observed maximum horizon."
+            "Quantile of the observed follow-up time used when target=survival.probability. "
+            "The default 0.90 matches the CSF paper convention. For RMST this custom "
+            "12-case helper still uses the full observed maximum horizon."
         ),
     )
     parser.add_argument(

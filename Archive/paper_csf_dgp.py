@@ -40,7 +40,7 @@ def _sample_dataset(
     p: int,
     rng: np.random.Generator,
     *,
-    protocol: str = "archive-aligned",
+    protocol: str = "paper-exact",
 ):
     spec = _setting_spec(setting_id)
     seed = int(rng.integers(0, np.iinfo(np.int32).max))
@@ -66,7 +66,7 @@ def _sample_dataset(
     )
 
 
-def _target_horizon(setting_id: int, target: str, *, protocol: str = "archive-aligned") -> float:
+def _target_horizon(setting_id: int, target: str, *, protocol: str = "paper-exact") -> float:
     spec = _setting_spec(setting_id)
     if target == "RMST":
         return float(spec["rmst_horizon"])

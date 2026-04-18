@@ -78,7 +78,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--p-z", type=int, default=1)
     parser.add_argument("--input-csv", type=Path, default=PROJECT_ROOT / "data" / "rhc" / "raw_rhc.csv")
     parser.add_argument("--target", default="RMST")
-    parser.add_argument("--horizon-quantile", type=float, default=0.60)
+    parser.add_argument("--horizon-quantile", type=float, default=0.90)
     parser.add_argument("--rhc-horizon", type=float, default=30.0)
     parser.add_argument("--num-trees-r", type=int, default=200)
     parser.add_argument("--random-state", type=int, default=42)

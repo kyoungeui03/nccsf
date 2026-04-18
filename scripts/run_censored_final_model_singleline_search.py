@@ -34,7 +34,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-dir", type=Path, default=None)
     parser.add_argument("--case-ids", nargs="*", type=int)
     parser.add_argument("--target", default="RMST")
-    parser.add_argument("--horizon-quantile", type=float, default=0.60)
+    parser.add_argument("--horizon-quantile", type=float, default=0.90)
     parser.add_argument("--random-state", type=int, default=42)
     parser.add_argument("--workers", type=int, default=min(4, max(1, os.cpu_count() or 1)))
     parser.add_argument("--top-stage1", type=int, default=2)

@@ -7,11 +7,15 @@ to follow the full pipeline here without jumping between local modules.
 Scope
 -----
 This file reproduces the *current default* censored final model used in the
-benchmark pipeline:
+benchmark pipeline, and also exposes the final-stage ablations that keep the
+PCI residualization fixed while changing only the final forest input:
 
-    - final feature mode: "full"
+    - final feature mode: "full" (default)
+    - optional ablation modes:
+        - "surv_only" -> [X, W, Z, surv1_pred, surv0_pred, surv_diff_pred]
+        - "x_only" -> [X]
     - raw final backbone: [X, W, Z]
-    - bridge summaries passed to the final learner:
+    - bridge summaries passed to the final learner in the default mode:
         [q_pred, h1_pred, h0_pred, m_pred, surv1_pred, surv0_pred, surv_diff_pred]
     - prediction nuisance mode: "full_refit"
     - event survival estimator: Cox
@@ -20,8 +24,8 @@ benchmark pipeline:
     - final learner: EconML CausalForestDML with a custom final-feature wrapper
 
 The implementation below is deliberately focused on the default path that we
-actually benchmark. It does not try to preserve every experimental ablation
-branch from the original research files.
+actually benchmark plus the final-stage ablations that are most useful for
+separating PCI-residualization effects from split-feature effects.
 
 Notation
 --------
@@ -58,6 +62,11 @@ from sklearn.ensemble import (
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import PolynomialFeatures
+
+try:  # pragma: no cover
+    from .gpu_backends import make_xgb_classifier, make_xgb_regressor
+except ImportError:  # pragma: no cover
+    from single_file_censored_models.gpu_backends import make_xgb_classifier, make_xgb_regressor  # type: ignore
 
 
 # ---------------------------------------------------------------------------
@@ -108,8 +117,10 @@ def _prepare_target_inputs(y_time, delta, *, target, horizon):
     """Apply the same target/horizon convention as the current project code.
 
     For finite-horizon RMST, observations past the horizon are truncated to the
-    horizon and treated as event-observed at that truncation point. That is the
-    convention used consistently across our current Final Model and benchmarks.
+    horizon and treated as event-observed at that truncation point. The shared
+    survival grid is also extended to include the requested horizon so the
+    Cox-based q-hat summaries target RMST up to that horizon even when it lies
+    beyond the largest observed follow-up time.
     """
 
     y_time = np.asarray(y_time, dtype=float)
@@ -142,7 +153,7 @@ def _prepare_target_inputs(y_time, delta, *, target, horizon):
         eval_time = nuisance_time
         eval_delta = nuisance_delta
         f_y = nuisance_time
-        grid_time = nuisance_time
+        grid_time = np.concatenate([nuisance_time, np.asarray([float(horizon)], dtype=float)])
 
     return {
         "nuisance_time": nuisance_time,
@@ -166,6 +177,7 @@ def make_q_model(
     n_estimators=300,
     min_samples_leaf=20,
     poly_degree=2,
+    n_jobs=1,
 ):
     """Create the treatment nuisance model q(X, Z)."""
 
@@ -187,6 +199,22 @@ def make_q_model(
             max_iter=n_estimators,
             min_samples_leaf=min_samples_leaf,
             random_state=random_state,
+        )
+    if kind == "xgb":
+        return make_xgb_classifier(
+            random_state=random_state,
+            n_estimators=n_estimators,
+            min_samples_leaf=min_samples_leaf,
+            n_jobs=n_jobs,
+            device="cpu",
+        )
+    if kind == "xgb_gpu":
+        return make_xgb_classifier(
+            random_state=random_state,
+            n_estimators=n_estimators,
+            min_samples_leaf=min_samples_leaf,
+            n_jobs=n_jobs,
+            device="cuda",
         )
     return LogisticRegression(max_iter=10000)
 
@@ -213,6 +241,22 @@ def make_h_model(
             max_iter=n_estimators,
             min_samples_leaf=min_samples_leaf,
             random_state=random_state,
+        )
+    if kind == "xgb":
+        return make_xgb_regressor(
+            random_state=random_state,
+            n_estimators=n_estimators,
+            min_samples_leaf=min_samples_leaf,
+            n_jobs=n_jobs,
+            device="cpu",
+        )
+    if kind == "xgb_gpu":
+        return make_xgb_regressor(
+            random_state=random_state,
+            n_estimators=n_estimators,
+            min_samples_leaf=min_samples_leaf,
+            n_jobs=n_jobs,
+            device="cuda",
         )
     return RandomForestRegressor(
         n_estimators=n_estimators,
@@ -455,6 +499,46 @@ def _build_final_features_full(x, raw_w, raw_z, bridge):
             np.asarray(bridge["surv0_pred"], dtype=float).reshape(-1, 1),
             np.asarray(bridge["surv_diff_pred"], dtype=float).reshape(-1, 1),
         ]
+    )
+
+
+SUPPORTED_FINAL_FEATURE_MODES = ("full", "surv_only", "x_only")
+
+
+def _build_final_features_surv_only(x, raw_w, raw_z, bridge):
+    """Build the survival-summary-only final-stage feature block."""
+
+    return np.hstack(
+        [
+            _ensure_2d(x).astype(float),
+            _ensure_2d(raw_w).astype(float),
+            _ensure_2d(raw_z).astype(float),
+            np.asarray(bridge["surv1_pred"], dtype=float).reshape(-1, 1),
+            np.asarray(bridge["surv0_pred"], dtype=float).reshape(-1, 1),
+            np.asarray(bridge["surv_diff_pred"], dtype=float).reshape(-1, 1),
+        ]
+    )
+
+
+def _build_final_features_x_only(x, raw_w, raw_z, bridge):
+    """Build the X-only final-stage feature block."""
+
+    del raw_w, raw_z, bridge
+    return _ensure_2d(x).astype(float)
+
+
+def _build_final_features(mode, x, raw_w, raw_z, bridge):
+    """Dispatch to the requested final-stage feature construction."""
+
+    if mode == "full":
+        return _build_final_features_full(x, raw_w, raw_z, bridge)
+    if mode == "surv_only":
+        return _build_final_features_surv_only(x, raw_w, raw_z, bridge)
+    if mode == "x_only":
+        return _build_final_features_x_only(x, raw_w, raw_z, bridge)
+    raise ValueError(
+        f"Unsupported final_feature_mode={mode!r}. "
+        f"Expected one of {SUPPORTED_FINAL_FEATURE_MODES}."
     )
 
 
@@ -893,9 +977,10 @@ class _BridgeOutputNuisance(_FinalCensoredNuisance):
 class _BridgeFeatureFinalModel:
     """Translate nuisance outputs into x_final before calling EconML's final stage."""
 
-    def __init__(self, base_model_final, *, raw_proxy_supplier=None):
+    def __init__(self, base_model_final, *, raw_proxy_supplier=None, final_feature_mode="full"):
         self._base_model_final = base_model_final
         self._raw_proxy_supplier = raw_proxy_supplier
+        self._final_feature_mode = final_feature_mode
         self._train_x_final = None
 
     def _transform(self, X, W, Z, nuisances):
@@ -928,7 +1013,7 @@ class _BridgeFeatureFinalModel:
             if supplied is not None:
                 w_for_final, z_for_final = supplied
 
-        x_final = _build_final_features_full(X, w_for_final, z_for_final, bridge)
+        x_final = _build_final_features(self._final_feature_mode, X, w_for_final, z_for_final, bridge)
         return x_final, (y_res, a_res)
 
     def fit(
@@ -1025,6 +1110,7 @@ class _SinglePassBridgeFeatureCensoredSurvivalForest(CausalForestDML):
         event_survival_estimator="cox",
         m_pred_mode="bridge",
         nuisance_feature_mode="broad_dup",
+        final_feature_mode="full",
     ):
         self._q_model_template = make_q_model(
             q_kind,
@@ -1032,6 +1118,7 @@ class _SinglePassBridgeFeatureCensoredSurvivalForest(CausalForestDML):
             n_estimators=q_trees,
             min_samples_leaf=q_min_samples_leaf,
             poly_degree=q_poly_degree,
+            n_jobs=1,
         )
         self._h_model_template = make_h_model(
             h_kind,
@@ -1046,6 +1133,7 @@ class _SinglePassBridgeFeatureCensoredSurvivalForest(CausalForestDML):
         self._event_survival_estimator = event_survival_estimator
         self._m_pred_mode = m_pred_mode
         self._nuisance_feature_mode = nuisance_feature_mode
+        self._final_feature_mode = final_feature_mode
         self._custom_q_clip = float(q_clip)
         self._custom_y_tilde_clip_quantile = y_tilde_clip_quantile
         self._custom_y_res_clip_percentiles = y_res_clip_percentiles
@@ -1090,6 +1178,7 @@ class _SinglePassBridgeFeatureCensoredSurvivalForest(CausalForestDML):
         return _BridgeFeatureFinalModel(
             super()._gen_ortho_learner_model_final(),
             raw_proxy_supplier=self._raw_proxy_for_final,
+            final_feature_mode=self._final_feature_mode,
         )
 
     def fit_survival(self, X, A, time, event, Z, W, **kwargs):
@@ -1151,6 +1240,7 @@ class FinalCensoredModel:
         event_survival_estimator="cox",
         m_pred_mode="bridge",
         nuisance_feature_mode="broad_dup",
+        final_feature_mode="full",
         prediction_nuisance_mode="full_refit",
         surv_scalar_mode="full",
         observed_only=False,
@@ -1163,6 +1253,11 @@ class FinalCensoredModel:
             raise ValueError("This single-file implementation supports event_survival_estimator='cox' only.")
         if m_pred_mode != "bridge":
             raise ValueError("This single-file implementation supports m_pred_mode='bridge' only.")
+        if final_feature_mode not in SUPPORTED_FINAL_FEATURE_MODES:
+            raise ValueError(
+                f"Unsupported final_feature_mode={final_feature_mode!r}. "
+                f"Expected one of {SUPPORTED_FINAL_FEATURE_MODES}."
+            )
 
         self._target = target
         self._horizon = horizon
@@ -1184,6 +1279,7 @@ class FinalCensoredModel:
         self._event_survival_estimator = event_survival_estimator
         self._m_pred_mode = m_pred_mode
         self._nuisance_feature_mode = nuisance_feature_mode
+        self._final_feature_mode = final_feature_mode
         self._prediction_nuisance_mode = prediction_nuisance_mode
         self._observed_only = bool(observed_only)
 
@@ -1193,6 +1289,7 @@ class FinalCensoredModel:
             n_estimators=q_trees,
             min_samples_leaf=q_min_samples_leaf,
             poly_degree=q_poly_degree,
+            n_jobs=1,
         )
         self._h_model_template = make_h_model(
             h_kind,
@@ -1257,7 +1354,7 @@ class FinalCensoredModel:
         raw_z = _ensure_2d(Z).astype(float)
 
         # `raw_w` and `raw_z` are the observed proxy blocks used in the final
-        # feature representation `[X, W, Z, q, h1, h0, m, surv1, surv0, diff]`.
+        # representation selected by `final_feature_mode`.
         w_nuis, z_nuis = self._prepare_nuisance_inputs(W, Z)
 
         self._dml_model = _SinglePassBridgeFeatureCensoredSurvivalForest(
@@ -1281,6 +1378,7 @@ class FinalCensoredModel:
             event_survival_estimator=self._event_survival_estimator,
             m_pred_mode=self._m_pred_mode,
             nuisance_feature_mode=self._nuisance_feature_mode,
+            final_feature_mode=self._final_feature_mode,
         )
         # Save the raw proxy blocks so the custom final-model wrapper can
         # rebuild `x_final` inside EconML after cross-fitting the nuisances.
@@ -1326,16 +1424,39 @@ class FinalCensoredModel:
             W=w_nuis,
             Z=z_nuis,
         )
-        x_final = _build_final_features_full(x, raw_w, raw_z, bridge)
+        x_final = _build_final_features(self._final_feature_mode, x, raw_w, raw_z, bridge)
         return self._dml_model.effect_on_final_features(x_final)
+
+
+class FinalPCISurvOnlyCensoredModel(FinalCensoredModel):
+    """PCI-residualized Final Model with survival-only final splitting features."""
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("final_feature_mode", "surv_only")
+        super().__init__(*args, **kwargs)
+
+
+class FinalPCIXOnlyCensoredModel(FinalCensoredModel):
+    """PCI-residualized Final Model with X-only final splitting features."""
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("final_feature_mode", "x_only")
+        super().__init__(*args, **kwargs)
 
 
 # Backward-friendly alias. The file name distinguishes the single-file version,
 # so reusing the familiar class name makes comparisons less awkward.
 FinalModelCensoredSurvivalForest = FinalCensoredModel
+FinalModelPCISurvOnlyCensoredSurvivalForest = FinalPCISurvOnlyCensoredModel
+FinalModelPCIXOnlyCensoredSurvivalForest = FinalPCIXOnlyCensoredModel
 
 
 __all__ = [
+    "SUPPORTED_FINAL_FEATURE_MODES",
     "FinalCensoredModel",
     "FinalModelCensoredSurvivalForest",
+    "FinalPCISurvOnlyCensoredModel",
+    "FinalPCIXOnlyCensoredModel",
+    "FinalModelPCISurvOnlyCensoredSurvivalForest",
+    "FinalModelPCIXOnlyCensoredSurvivalForest",
 ]

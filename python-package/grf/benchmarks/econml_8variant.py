@@ -1184,7 +1184,8 @@ def prepare_case(
     case_spec: dict[str, object],
     *,
     target: str = "RMST",
-    horizon_quantile: float = 0.60,
+    horizon_quantile: float = 0.90,
+    horizon: float | None = None,
 ) -> CaseData:
     cfg = build_case_cfg(case_spec)
     obs_df, truth_df, params = generate_synthetic_nc_cox(cfg)
@@ -1200,13 +1201,23 @@ def prepare_case(
     Y = obs_df["time"].to_numpy()
     delta = obs_df["event"].to_numpy()
     U = truth_df["U"].to_numpy()
+    # In the CSF paper, survival probability is evaluated at the 90th
+    # percentile of the observed follow-up time. In this custom 12-case NC Cox
+    # benchmark we mirror that convention through `horizon_quantile`, while
+    # RMST defaults to the full observed follow-up horizon unless the caller
+    # supplies an explicit benchmark horizon override.
+    if horizon is not None:
+        horizon = float(horizon)
+
     if target == "survival.probability":
-        horizon = float(np.quantile(Y, horizon_quantile))
+        if horizon is None:
+            horizon = float(np.quantile(Y, horizon_quantile))
         eta0 = _event_eta(X, U, np.zeros(X.shape[0]), cfg, dgp)
         eta1 = _event_eta(X, U, np.ones(X.shape[0]), cfg, dgp)
         true_cate = survival_probability_given_eta(eta1, horizon, cfg) - survival_probability_given_eta(eta0, horizon, cfg)
     else:
-        horizon = float(np.max(Y))
+        if horizon is None:
+            horizon = float(np.max(Y))
         eta0 = _event_eta(X, U, np.zeros(X.shape[0]), cfg, dgp)
         eta1 = _event_eta(X, U, np.ones(X.shape[0]), cfg, dgp)
         true_cate = restricted_mean_survival_given_eta(eta1, horizon, cfg) - restricted_mean_survival_given_eta(eta0, horizon, cfg)
@@ -1305,7 +1316,7 @@ def run_case_benchmark(
     num_trees_b2: int = 200,
     verbose: bool = False,
     target: str = "RMST",
-    horizon_quantile: float = 0.60,
+    horizon_quantile: float = 0.90,
 ) -> pd.DataFrame:
     case = prepare_case(case_spec, target=target, horizon_quantile=horizon_quantile)
     rows: list[dict[str, object]] = []

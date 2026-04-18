@@ -1,151 +1,170 @@
 # run_5model_benchmark.py Guide
 
-This folder contains a censored synthetic benchmark runner:
+This runner evaluates the conditional-censoring 5-model suite on the
+single-file censored synthetic benchmark.
 
-- run_5model_benchmark.py
+Models:
 
-It evaluates 5 methods on a grid of:
+1. `Final Conditional`
+2. `Final Conditional Oracle`
+3. `Revised Marginal`
+4. `Revised Conditional`
+5. `Strict Conditional`
 
-- 12 case templates (CASE_SPECS)
-- 22 settings (S01-S22)
-- target = RMST and/or survival.probability
+Benchmark grid:
 
-Total model fits for a full run:
+- 12 case templates (`CASE_SPECS`)
+- 22 settings (`S01` to `S22`)
+- target = `RMST` and/or `survival.probability`
 
-- 12 x 22 x number_of_targets x 5
+Total rows for a full run with both targets:
 
-If target is both, that is:
-
-- 12 x 22 x 2 x 5 = 2640 model rows
-
-## Methods Evaluated
-
-The script runs these 5 methods per case-setting-target:
-
-1. Final Model
-2. Final Model Oracle
-3. Strict Baseline
-4. Strict Baseline Oracle
-5. R-CSF Baseline
+- `12 x 22 x 2 x 5 = 2640`
 
 ## Prerequisites
 
-From repository root, install dependencies:
+From the repository root:
 
 ```bash
 python -m pip install -r requirements.txt
 ```
 
-R-CSF baseline also requires:
+No R dependency is required for this runner.
 
-- R installation with Rscript available
-- R package grf
+Optional GPU path:
 
-If Rscript is not on PATH, set RSCRIPT environment variable.
+- install `xgboost` from `requirements.txt`
+- use `--gpu auto` or `--gpu xgboost`
+- the GPU path accelerates the nuisance learners only
+- `lifelines` Cox fitting and EconML's final causal forest remain CPU-based
 
-## How To Run
+## Main Command
 
-Run from repository root:
+Run from the repository root:
 
 ```bash
 python single_file_censored_models/run_5model_benchmark.py
 ```
 
-This runs all cases, all settings, and both targets.
+Default output directory:
+
+```bash
+outputs/single_file_censored_models_5model_conditional_suite
+```
 
 ## Useful Flags
 
-- --output-dir
-  - Output folder path.
-  - Default: outputs/single_file_censored_models_5model
-
-- --case-ids
-  - Run only selected case ids.
-  - Example: --case-ids 1 2 3
-
-- --case-slugs
-  - Run only selected case slugs.
-
-- --setting-ids
-  - Run only selected settings.
-  - Example: --setting-ids S01 S10 S22
-
-- --target
-  - Choices: RMST, survival.probability, both
-  - Default: both
-
-- --horizon-quantile
-  - Horizon quantile used in target preparation.
-  - Default: 0.60
-
-- --random-state
-  - Random seed.
-  - Default: 42
-
-- --num-trees-baseline
-  - Trees for R-CSF baseline.
-  - Default: 200
-
-- --list-cases
-  - Print available cases and exit.
-
-- --list-settings
-  - Print available settings and exit.
+- `--output-dir`
+  - Custom output folder.
+- `--case-ids`
+  - Example: `--case-ids 1 2 3`
+- `--case-slugs`
+  - Run selected case slugs instead of numeric ids.
+- `--setting-ids`
+  - Example: `--setting-ids S01 S14 S22`
+- `--target`
+  - Choices: `RMST`, `survival.probability`, `both`
+- `--horizon-quantile`
+  - Default: `0.60`
+- `--random-state`
+  - Default: `42`
+- `--num-trees`
+  - Forest size used across the five models.
+  - Default: `200`
+- `--gpu`
+  - Choices: `off`, `auto`, `xgboost`
+  - `auto` tries to enable CUDA-backed XGBoost nuisances when available
+  - `xgboost` forces the runner to request CUDA-backed XGBoost nuisances
+  - `off` disables GPU-backed nuisances
+- `--list-cases`
+  - Print case list and exit.
+- `--list-settings`
+  - Print setting list and exit.
 
 ## Common Commands
 
-List available cases:
+List cases:
 
 ```bash
 python single_file_censored_models/run_5model_benchmark.py --list-cases
 ```
 
-List available settings:
+List settings:
 
 ```bash
 python single_file_censored_models/run_5model_benchmark.py --list-settings
 ```
 
-Quick smoke run (small subset):
+Small smoke run:
 
 ```bash
 python single_file_censored_models/run_5model_benchmark.py \
-  --case-ids 1 2 \
-  --setting-ids S01 S02 \
-  --target RMST \
-  --output-dir outputs/smoke_run_5model
+  --case-ids 1 \
+  --setting-ids S01 \
+  --target both \
+  --output-dir outputs/smoke_conditional_suite
 ```
+
+GPU smoke run:
+
+```bash
+python single_file_censored_models/run_5model_benchmark.py \
+  --case-ids 1 \
+  --setting-ids S01 \
+  --target RMST \
+  --gpu auto \
+  --output-dir outputs/smoke_conditional_suite_gpu
+```
+
+## Save / Load / Resume
+
+The runner checkpoints after each completed model row.
+
+Files written into the output directory:
+
+- `results_incremental.csv`
+- `results_full.csv`
+- `run_metadata.json`
+
+Resume rule:
+
+- Re-run the exact same command with the same `--output-dir`.
+- Completed rows are loaded from `results_incremental.csv`.
+- The runner skips finished rows and continues from the remaining ones.
+
+If the metadata in `run_metadata.json` does not match the new command, the
+runner raises an error instead of silently mixing incompatible experiments.
 
 ## Output Files
 
-In the selected output dir, you will see:
+Inside the output directory:
 
-- results_incremental.csv
-  - Checkpoint file updated during run.
+- `results_incremental.csv`
+  - checkpoint table updated row by row
+- `results_full.csv`
+  - latest full results table
+- `run_metadata.json`
+  - run signature used for resume validation
+- `case_XX_<case_slug>_<setting_id>_<target>.csv`
+  - one table per case-setting-target
+- `case_XX_<case_slug>_<setting_id>_<target>.png`
+  - rendered PNG version of the same table
+- `basic12_conditional_suite_RMST_summary.csv`
+- `basic12_conditional_suite_RMST_summary.png`
+- `basic12_conditional_suite_survival_probability_summary.csv`
+- `basic12_conditional_suite_survival_probability_summary.png`
 
-- results_full.csv
-  - Full combined results table.
+## Server Notes
 
-- run_metadata.json
-  - Metadata used to validate resume compatibility.
+Recommended workflow on the server:
 
-- Per case-setting-target files:
-  - case_XX_<case_slug>_<setting_id>_<target>.csv
-  - case_XX_<case_slug>_<setting_id>_<target>.png
+```bash
+cd /path/to/csf_grf_new
+python -m pip install -r requirements.txt
+python single_file_censored_models/run_5model_benchmark.py \
+  --target both \
+  --gpu auto \
+  --output-dir /path/to/output_dir
+```
 
-- Aggregated summaries per target:
-  - basic12_RMST_summary.csv
-  - basic12_RMST_top5.csv
-  - basic12_survival_probability_summary.csv
-  - basic12_survival_probability_top5.csv
-  - and corresponding PNG tables
-
-Note:
-
-- summary and top5 are identical when only 5 models are present.
-
-## Tips
-
-- Start with a subset using --case-ids and --setting-ids.
-- Use a dedicated output dir per experiment.
-- Keep the same output dir when you want resume behavior.
+If the process is interrupted, run the same command again to resume.
