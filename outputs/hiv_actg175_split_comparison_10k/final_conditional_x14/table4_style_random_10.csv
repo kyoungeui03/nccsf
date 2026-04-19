@@ -1,0 +1,11 @@
+subject_id,hemo,gender,homo,str2,model_name,display_name,cate_days
+92,No,Male,Yes,Naive,final_conditional_x14,Final Conditional (All 14 in X),0.23066722365424955
+95,No,Male,Yes,Experienced,final_conditional_x14,Final Conditional (All 14 in X),30.284899391528082
+101,No,Male,Yes,Experienced,final_conditional_x14,Final Conditional (All 14 in X),-3.9659239134878703
+217,No,Male,Yes,Experienced,final_conditional_x14,Final Conditional (All 14 in X),-4.593413715620906
+466,No,Male,No,Naive,final_conditional_x14,Final Conditional (All 14 in X),-3.4459553752730305
+472,No,Female,No,Experienced,final_conditional_x14,Final Conditional (All 14 in X),28.30653143754781
+704,No,Male,Yes,Experienced,final_conditional_x14,Final Conditional (All 14 in X),-1.7156823181464915
+753,No,Male,Yes,Naive,final_conditional_x14,Final Conditional (All 14 in X),-11.470929840380386
+832,No,Female,No,Experienced,final_conditional_x14,Final Conditional (All 14 in X),19.18179776966198
+926,No,Male,Yes,Experienced,final_conditional_x14,Final Conditional (All 14 in X),7.218181464202194

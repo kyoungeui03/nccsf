@@ -1,0 +1,11 @@
+subject_id,hemo,gender,homo,str2,model_name,display_name,cate_days
+92,No,Male,Yes,Naive,final_conditional_rec_b,"Final Conditional (Rec B: broad X, lab W, decision Z)",0.8014504917260865
+95,No,Male,Yes,Experienced,final_conditional_rec_b,"Final Conditional (Rec B: broad X, lab W, decision Z)",45.17947382495519
+101,No,Male,Yes,Experienced,final_conditional_rec_b,"Final Conditional (Rec B: broad X, lab W, decision Z)",6.587096793469871
+217,No,Male,Yes,Experienced,final_conditional_rec_b,"Final Conditional (Rec B: broad X, lab W, decision Z)",-2.7438941374339385
+466,No,Male,No,Naive,final_conditional_rec_b,"Final Conditional (Rec B: broad X, lab W, decision Z)",-1.986331099981394
+472,No,Female,No,Experienced,final_conditional_rec_b,"Final Conditional (Rec B: broad X, lab W, decision Z)",43.12129975486799
+704,No,Male,Yes,Experienced,final_conditional_rec_b,"Final Conditional (Rec B: broad X, lab W, decision Z)",6.498019019409639
+753,No,Male,Yes,Naive,final_conditional_rec_b,"Final Conditional (Rec B: broad X, lab W, decision Z)",30.647491147929202
+832,No,Female,No,Experienced,final_conditional_rec_b,"Final Conditional (Rec B: broad X, lab W, decision Z)",13.687879284094306
+926,No,Male,Yes,Experienced,final_conditional_rec_b,"Final Conditional (Rec B: broad X, lab W, decision Z)",9.476496792556889

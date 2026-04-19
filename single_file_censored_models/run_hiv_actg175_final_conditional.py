@@ -15,10 +15,16 @@ Core dataset / setup choices mirrored from the paper:
 Model variants:
     1. final_conditional_x14:
        our Final Conditional model with all 14 paper covariates passed via X.
-    2. final_conditional_split10_w2_z2:
-       our Final Conditional model with a structured X/W/Z split over the same
-       14 paper covariates.
-    3. r_csf_x14:
+    2. final_conditional_x12_w2_z2:
+       a clinical split with 12 baseline covariates in X, 2 follow-up immune
+       markers in W, and 2 treatment-selection proxies in Z.
+    3. final_conditional_rec_a:
+       recommendation A: stable patient profile in X, severity / progression
+       markers in W, and treatment-selection history in Z.
+    4. final_conditional_rec_b:
+       recommendation B: broad demographic / behavior profile in X, lab markers
+       in W, and clinician decision proxies in Z.
+    5. r_csf_x14:
        installed R grf::causal_survival_forest baseline on the same 14
        covariates.
 
@@ -127,30 +133,62 @@ MODEL_SPECS = [
         ),
     },
     {
-        "model_name": "final_conditional_split10_w2_z2",
-        "display_name": "Final Conditional (X=10, W=2, Z=2)",
+        "model_name": "final_conditional_x12_w2_z2",
+        "display_name": "Final Conditional (X=12 baseline, W=2 immune, Z=2 selection)",
         "model_kind": "final_conditional",
         "x_cols": [
             "age",
             "wtkg",
             "karnof",
-            "hemo",
-            "homo",
-            "drugs",
+            "cd40",
+            "cd80",
             "gender",
+            "homo",
+            "race",
             "symptom",
-            "cd420",
-            "cd820",
+            "drugs",
+            "hemo",
+            "str2",
         ],
-        "w_cols": ["cd40", "cd80"],
+        "w_cols": ["cd420", "cd820"],
         "z_cols": ["race", "str2"],
         "w_placeholder_zero": False,
         "z_placeholder_zero": False,
         "notes": (
-            "Exploratory PCI split: W uses baseline immune-status markers (CD4/CD8 at baseline) "
-            "as outcome-side severity proxies; Z uses race and antiretroviral history as "
-            "treatment-selection proxies. This is not paper-exact PCI identification, but a "
-            "structured application of our Final Conditional model on the same 14 paper covariates."
+            "Clinical baseline split: X keeps the 12 baseline paper covariates, W uses the two "
+            "20-week immune markers (cd420, cd820) as outcome-side progression proxies, and Z "
+            "uses race and prior antiretroviral history as treatment-selection proxies. This "
+            "keeps all 14 paper covariates while exposing explicit PCI channels."
+        ),
+    },
+    {
+        "model_name": "final_conditional_rec_a",
+        "display_name": "Final Conditional (Rec A: profile X, severity W, history Z)",
+        "model_kind": "final_conditional",
+        "x_cols": ["age", "wtkg", "gender", "homo", "race"],
+        "w_cols": ["karnof", "symptom", "cd40", "cd80", "cd420", "cd820"],
+        "z_cols": ["str2", "drugs", "hemo"],
+        "w_placeholder_zero": False,
+        "z_placeholder_zero": False,
+        "notes": (
+            "Recommendation A: X holds relatively stable background descriptors, W holds disease "
+            "severity and immune progression summaries, and Z holds variables that a clinician "
+            "could plausibly use when choosing regimen intensity or anticipating adherence risk."
+        ),
+    },
+    {
+        "model_name": "final_conditional_rec_b",
+        "display_name": "Final Conditional (Rec B: broad X, lab W, decision Z)",
+        "model_kind": "final_conditional",
+        "x_cols": ["age", "wtkg", "gender", "homo", "race", "drugs"],
+        "w_cols": ["cd40", "cd80", "cd420", "cd820"],
+        "z_cols": ["karnof", "symptom", "str2", "hemo"],
+        "w_placeholder_zero": False,
+        "z_placeholder_zero": False,
+        "notes": (
+            "Recommendation B: X keeps broad patient profile features, W isolates lab-based immune "
+            "measurements, and Z concentrates variables that can drive treatment assignment or "
+            "physician concern at decision time."
         ),
     },
     {
@@ -167,6 +205,13 @@ MODEL_SPECS = [
             "as ordinary forest inputs."
         ),
     },
+]
+
+DEFAULT_MODEL_NAMES = [
+    "final_conditional_x14",
+    "final_conditional_x12_w2_z2",
+    "final_conditional_rec_a",
+    "final_conditional_rec_b",
 ]
 
 
@@ -714,7 +759,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--models",
         nargs="+",
-        default=[spec["model_name"] for spec in MODEL_SPECS],
+        default=DEFAULT_MODEL_NAMES,
         choices=[spec["model_name"] for spec in MODEL_SPECS],
         help="Which model specs to run.",
     )

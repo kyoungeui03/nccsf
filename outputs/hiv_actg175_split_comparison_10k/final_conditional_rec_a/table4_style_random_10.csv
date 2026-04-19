@@ -1,0 +1,11 @@
+subject_id,hemo,gender,homo,str2,model_name,display_name,cate_days
+92,No,Male,Yes,Naive,final_conditional_rec_a,"Final Conditional (Rec A: profile X, severity W, history Z)",1.8625551820606137
+95,No,Male,Yes,Experienced,final_conditional_rec_a,"Final Conditional (Rec A: profile X, severity W, history Z)",40.31688107542331
+101,No,Male,Yes,Experienced,final_conditional_rec_a,"Final Conditional (Rec A: profile X, severity W, history Z)",16.141206404113635
+217,No,Male,Yes,Experienced,final_conditional_rec_a,"Final Conditional (Rec A: profile X, severity W, history Z)",-1.8727425420214503
+466,No,Male,No,Naive,final_conditional_rec_a,"Final Conditional (Rec A: profile X, severity W, history Z)",-1.4905929600714842
+472,No,Female,No,Experienced,final_conditional_rec_a,"Final Conditional (Rec A: profile X, severity W, history Z)",36.338293968246155
+704,No,Male,Yes,Experienced,final_conditional_rec_a,"Final Conditional (Rec A: profile X, severity W, history Z)",9.149349650949617
+753,No,Male,Yes,Naive,final_conditional_rec_a,"Final Conditional (Rec A: profile X, severity W, history Z)",21.165912120417577
+832,No,Female,No,Experienced,final_conditional_rec_a,"Final Conditional (Rec A: profile X, severity W, history Z)",18.76608410730544
+926,No,Male,Yes,Experienced,final_conditional_rec_a,"Final Conditional (Rec A: profile X, severity W, history Z)",10.516675204638897

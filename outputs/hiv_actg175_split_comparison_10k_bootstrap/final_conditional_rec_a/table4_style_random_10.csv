@@ -1,0 +1,11 @@
+subject_id,hemo,gender,homo,str2,model_name,display_name,cate_days,cate_bootstrap_se,cate_ci_lower,cate_ci_upper
+92,No,Male,Yes,Naive,final_conditional_rec_a,"Final Conditional (Rec A: profile X, severity W, history Z)",1.8625551820606125,20.268320174399328,-23.636192293265392,55.00036411352346
+95,No,Male,Yes,Experienced,final_conditional_rec_a,"Final Conditional (Rec A: profile X, severity W, history Z)",40.31688107542332,28.17959821862414,-46.74287420724797,63.20362824869312
+101,No,Male,Yes,Experienced,final_conditional_rec_a,"Final Conditional (Rec A: profile X, severity W, history Z)",16.141206404113632,16.686287625972824,-37.58320004227485,27.068649927728238
+217,No,Male,Yes,Experienced,final_conditional_rec_a,"Final Conditional (Rec A: profile X, severity W, history Z)",-1.8727425420214487,18.6907369753958,-26.085989759939864,47.81403511376473
+466,No,Male,No,Naive,final_conditional_rec_a,"Final Conditional (Rec A: profile X, severity W, history Z)",-1.4905929600714845,19.80736804550753,-30.871356188734392,45.65836942106818
+472,No,Female,No,Experienced,final_conditional_rec_a,"Final Conditional (Rec A: profile X, severity W, history Z)",36.33829396824616,29.44391388462668,-36.17628511366224,79.18771765495185
+704,No,Male,Yes,Experienced,final_conditional_rec_a,"Final Conditional (Rec A: profile X, severity W, history Z)",9.149349650949622,20.73593473507098,-39.302738592736254,39.461097439623835
+753,No,Male,Yes,Naive,final_conditional_rec_a,"Final Conditional (Rec A: profile X, severity W, history Z)",21.16591212041758,40.748946309250215,-78.72074879848071,73.75464652323764
+832,No,Female,No,Experienced,final_conditional_rec_a,"Final Conditional (Rec A: profile X, severity W, history Z)",18.766084107305453,23.92696612092293,-36.424006687835785,54.88115567331084
+926,No,Male,Yes,Experienced,final_conditional_rec_a,"Final Conditional (Rec A: profile X, severity W, history Z)",10.516675204638915,21.990013309717767,-22.307791585861455,62.22073115997415
