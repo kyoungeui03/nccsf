@@ -1,8 +1,0 @@
-__pycache__/
-*.pyc
-.DS_Store
-.cache/
-.mplconfig/
-.mmenv311/
-outputs/
-non_censored/outputs/

@@ -1,0 +1,13 @@
+target,metric,model_a,model_b,cells,win_count_a,win_count_b,tie_count,win_rate_a_pct,win_rate_b_pct,tie_rate_pct,avg_margin_a,median_margin_a
+RMST,subgroup_abs_bias,Final Conditional,Final Conditional Oracle,5280,1774,3506,0,33.59848484848485,66.40151515151516,0.0,-0.028895072314476845,-0.009200350500951698
+RMST,subgroup_abs_bias,Final Conditional,Revised Conditional,5280,3430,1850,0,64.96212121212122,35.03787878787879,0.0,0.029611464853599133,0.015409218416489859
+RMST,subgroup_abs_bias,Final Conditional Oracle,Revised Conditional,5280,4055,1225,0,76.79924242424242,23.200757575757574,0.0,0.058506537168075974,0.03420669609880295
+RMST,subgroup_abs_relative_bias,Final Conditional,Final Conditional Oracle,5280,1774,3506,0,33.59848484848485,66.40151515151516,0.0,-0.2246959262596087,-0.10890280293292824
+RMST,subgroup_abs_relative_bias,Final Conditional,Revised Conditional,5280,3430,1850,0,64.96212121212122,35.03787878787879,0.0,0.6387850984041431,0.15557128006849416
+RMST,subgroup_abs_relative_bias,Final Conditional Oracle,Revised Conditional,5280,4055,1225,0,76.79924242424242,23.200757575757574,0.0,0.8634810246637518,0.3455341501123753
+survival.probability,subgroup_abs_bias,Final Conditional,Final Conditional Oracle,5280,1864,3416,0,35.303030303030305,64.6969696969697,0.0,-0.013519487234110783,-0.004568423750335551
+survival.probability,subgroup_abs_bias,Final Conditional,Revised Conditional,5280,2795,2485,0,52.93560606060606,47.06439393939394,0.0,0.005241054480798953,0.0010533580658793002
+survival.probability,subgroup_abs_bias,Final Conditional Oracle,Revised Conditional,5280,3479,1801,0,65.89015151515152,34.109848484848484,0.0,0.01876054171490974,0.007901985430953249
+survival.probability,subgroup_abs_relative_bias,Final Conditional,Final Conditional Oracle,5241,1841,3400,0,35.126884182407935,64.87311581759207,0.0,348.84124979592167,-0.08301689897538794
+survival.probability,subgroup_abs_relative_bias,Final Conditional,Revised Conditional,5241,2768,2473,0,52.8143484067926,47.1856515932074,0.0,780.4744523250911,0.014816736793772378
+survival.probability,subgroup_abs_relative_bias,Final Conditional Oracle,Revised Conditional,5241,3455,1786,0,65.92253386758252,34.07746613241748,0.0,431.6332025291692,0.13559574570949234

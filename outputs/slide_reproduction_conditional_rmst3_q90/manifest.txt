@@ -1,0 +1,4 @@
+slide_reproduction_outputs
+benchmark_dir=/project2/ruishanl_1185/kyoungeui_project/csf_grf_new/outputs/slide_reproduction_conditional_rmst3_q90/benchmark
+diagnostics_dir=/project2/ruishanl_1185/kyoungeui_project/csf_grf_new/outputs/slide_reproduction_conditional_rmst3_q90/diagnostics
+subgroup_dir=/project2/ruishanl_1185/kyoungeui_project/csf_grf_new/outputs/slide_reproduction_conditional_rmst3_q90/subgroup_bias

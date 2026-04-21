@@ -1,0 +1,27 @@
+{
+  "output_dir": "/project2/ruishanl_1185/kyoungeui_project/csf_grf_new/outputs/slide_reproduction_conditional_rmst3_q90/subgroup_bias",
+  "setting_ids": null,
+  "case_ids": null,
+  "target": "both",
+  "rmst_horizon": 3.0,
+  "horizon_quantile": 0.9,
+  "train_seed": 42,
+  "test_seed_base": 20270000,
+  "test_n": 20000,
+  "min_subgroup_size": 200,
+  "x_quantiles": 3,
+  "tau_quantiles": 5,
+  "x_subgroup_cols": [
+    0,
+    1
+  ],
+  "skip_cross": false,
+  "models": [
+    "Final Conditional Oracle",
+    "Final Conditional",
+    "Revised Conditional"
+  ],
+  "model_seed": 42,
+  "num_trees": 200,
+  "target_censor_rate": 0.35
+}

@@ -1,0 +1,7 @@
+target,model,cells,negative_cells,positive_cells,zero_cells,negative_pct,positive_pct,zero_pct
+RMST,Final Conditional Oracle,5280,2604,2676,0,49.31818181818182,50.68181818181818,0.0
+RMST,Final Conditional,5280,3274,2006,0,62.00757575757576,37.99242424242424,0.0
+RMST,Revised Conditional,5280,2771,2509,0,52.48106060606061,47.51893939393939,0.0
+survival.probability,Final Conditional Oracle,5280,2679,2601,0,50.73863636363637,49.26136363636363,0.0
+survival.probability,Final Conditional,5280,3426,1854,0,64.88636363636364,35.11363636363637,0.0
+survival.probability,Revised Conditional,5280,3202,2078,0,60.64393939393939,39.35606060606061,0.0
