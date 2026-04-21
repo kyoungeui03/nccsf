@@ -87,7 +87,7 @@ except ImportError:  # pragma: no cover
 
 
 TARGETS = ["RMST", "survival.probability"]
-MODEL_COUNT = 5
+MODEL_COUNT = 3
 CHECKPOINT_RESULTS_FILE = "results_incremental.csv"
 RUN_METADATA_FILE = "run_metadata.json"
 
@@ -593,9 +593,7 @@ class SingleFileFinalOracleCensoredSurvivalForest(_SinglePassBridgeFeatureCensor
 MODEL_NAMES = {
     "final_conditional": "Final Conditional",
     "final_conditional_oracle": "Final Conditional Oracle",
-    "revised_marginal": "Revised Marginal",
     "revised_conditional": "Revised Conditional",
-    "strict_conditional": "Strict Conditional",
 }
 
 
@@ -608,7 +606,18 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--case-slugs", nargs="*", default=None)
     parser.add_argument("--setting-ids", nargs="*", default=None)
     parser.add_argument("--target", choices=["RMST", "survival.probability", "both"], default="both")
-    parser.add_argument("--horizon-quantile", type=float, default=0.90)
+    parser.add_argument(
+        "--rmst-horizon",
+        type=float,
+        default=3.0,
+        help="Fixed RMST horizon used for every RMST benchmark cell.",
+    )
+    parser.add_argument(
+        "--horizon-quantile",
+        type=float,
+        default=0.90,
+        help="Survival-probability horizon quantile; q90 by default.",
+    )
     parser.add_argument("--random-state", type=int, default=42)
     parser.add_argument("--num-trees", "--num-trees-baseline", dest="num_trees", type=int, default=200)
     parser.add_argument("--gpu", choices=["off", "auto", "xgboost"], default="auto")
@@ -684,6 +693,7 @@ def _make_run_metadata(
         "case_slugs": [str(spec["slug"]) for spec in case_specs],
         "setting_ids": [str(setting["setting_id"]) for setting in settings],
         "targets": list(targets),
+        "rmst_horizon": float(args.rmst_horizon),
         "horizon_quantile": float(args.horizon_quantile),
         "random_state": int(args.random_state),
         "num_trees": int(args.num_trees),
@@ -1067,28 +1077,6 @@ def _evaluate_case_target(
 
     run_or_resume(MODEL_NAMES["final_conditional_oracle"], run_final_conditional_oracle)
 
-    def run_revised_marginal():
-        revised_model = RevisedBaselineCensoredSurvivalForest(
-            target=target,
-            horizon=horizon,
-            random_state=random_state,
-            n_estimators=num_trees,
-            censoring_estimator="nelson-aalen",
-            propensity_kind=propensity_kind,
-        )
-        t0 = time.time()
-        revised_model.fit_components(x, a, time_obs, event, z, w)
-        revised_preds = np.asarray(revised_model.effect_from_components(x, w, z), dtype=float).ravel()
-        return _evaluate_predictions(
-            MODEL_NAMES["revised_marginal"],
-            revised_preds,
-            case.true_cate,
-            time.time() - t0,
-            backend=revised_model.__class__.__name__,
-        )
-
-    run_or_resume(MODEL_NAMES["revised_marginal"], run_revised_marginal)
-
     def run_revised_conditional():
         revised_model = RevisedBaselineCensoredSurvivalForest(
             target=target,
@@ -1110,44 +1098,6 @@ def _evaluate_case_target(
         )
 
     run_or_resume(MODEL_NAMES["revised_conditional"], run_revised_conditional)
-
-    def run_strict_conditional():
-        strict_kwargs = {}
-        if use_gpu:
-            strict_kwargs["model_y"] = make_xgb_regressor(
-                random_state=random_state,
-                n_estimators=num_trees,
-                min_samples_leaf=20,
-                n_jobs=1,
-                device="cuda",
-            )
-            strict_kwargs["model_t"] = make_xgb_classifier(
-                random_state=random_state,
-                n_estimators=num_trees,
-                min_samples_leaf=20,
-                n_jobs=1,
-                device="cuda",
-            )
-        strict_model = StrictEconmlXWZCensoredSurvivalForest(
-            target=target,
-            horizon=horizon,
-            n_estimators=num_trees,
-            random_state=random_state,
-            censoring_estimator="cox",
-            **strict_kwargs,
-        )
-        t0 = time.time()
-        strict_model.fit_components(x, a, time_obs, event, z, w)
-        strict_preds = np.asarray(strict_model.effect_from_components(x, w, z), dtype=float).ravel()
-        return _evaluate_predictions(
-            MODEL_NAMES["strict_conditional"],
-            strict_preds,
-            case.true_cate,
-            time.time() - t0,
-            backend=strict_model.__class__.__name__,
-        )
-
-    run_or_resume(MODEL_NAMES["strict_conditional"], run_strict_conditional)
     return rows
 
 
@@ -1327,7 +1277,14 @@ def main() -> int:
                 setting_id = str(setting["setting_id"])
                 case_with_setting = _case_spec_with_setting(case_spec, setting)
                 for target in targets:
-                    case = prepare_case(case_with_setting, target=target, horizon_quantile=args.horizon_quantile)
+                    if target == "RMST":
+                        case = prepare_case(case_with_setting, target=target, horizon=float(args.rmst_horizon))
+                    else:
+                        case = prepare_case(
+                            case_with_setting,
+                            target=target,
+                            horizon_quantile=float(args.horizon_quantile),
+                        )
 
                     existing_rows_by_name = {
                         name: row

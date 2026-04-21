@@ -99,8 +99,18 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--horizon-quantile",
         type=float,
-        default=0.90,
-        help="Observed follow-up quantile used for survival.probability. Default: 0.90.",
+        default=None,
+        help=(
+            "Legacy single survival quantile used for survival.probability. "
+            "Defaults to 0.90 unless --survival-horizon-quantiles is provided."
+        ),
+    )
+    parser.add_argument(
+        "--survival-horizon-quantiles",
+        nargs="*",
+        type=float,
+        default=None,
+        help="Optional space-separated survival quantiles, e.g. 0.7 0.8.",
     )
     parser.add_argument("--random-state", type=int, default=42)
     parser.add_argument("--num-trees", type=int, default=200)
@@ -143,6 +153,23 @@ def _resolve_targets(target_arg: str) -> list[str]:
     return [target_arg]
 
 
+def _resolve_survival_horizon_quantiles(
+    values: list[float] | None,
+    legacy_value: float | None,
+) -> list[float]:
+    if values:
+        resolved = sorted({round(float(v), 4) for v in values})
+    elif legacy_value is not None:
+        resolved = [round(float(legacy_value), 4)]
+    else:
+        resolved = [0.90]
+
+    for value in resolved:
+        if not (0.0 < value <= 1.0):
+            raise ValueError(f"Each survival horizon quantile must lie in (0, 1]. Received {value}.")
+    return resolved
+
+
 def _case_spec_with_setting(case_spec: dict[str, object], setting: dict[str, int | str]) -> dict[str, object]:
     case_copy = dict(case_spec)
     cfg = dict(case_spec["cfg"])
@@ -158,17 +185,18 @@ def _case_spec_with_setting(case_spec: dict[str, object], setting: dict[str, int
     return case_copy
 
 
-def _target_horizon_specs(target: str, *, survival_quantile: float) -> list[dict[str, object]]:
+def _target_horizon_specs(target: str, *, survival_quantiles: list[float]) -> list[dict[str, object]]:
     if target == "RMST":
         return [dict(spec) for spec in RMST_PAPER_HORIZONS]
     return [
         {
             "label": f"SURV-Q{int(round(100 * survival_quantile)):02d}",
-            "order": 1,
+            "order": idx,
             "horizon": None,
             "description": f"Observed follow-up quantile q={survival_quantile:.2f}",
             "horizon_quantile": float(survival_quantile),
         }
+        for idx, survival_quantile in enumerate(survival_quantiles, start=1)
     ]
 
 
@@ -178,8 +206,9 @@ def _make_run_metadata(
     case_specs: list[dict[str, object]],
     settings: list[dict[str, int | str]],
     targets: list[str],
+    survival_horizon_quantiles: list[float],
 ) -> dict[str, object]:
-    return {
+    metadata = {
         "script": THIS_FILE.name,
         "runner_version": 1,
         "case_ids": [int(spec["case_id"]) for spec in case_specs],
@@ -187,12 +216,16 @@ def _make_run_metadata(
         "setting_ids": [str(setting["setting_id"]) for setting in settings],
         "targets": list(targets),
         "rmst_paper_horizons": [float(spec["horizon"]) for spec in RMST_PAPER_HORIZONS],
-        "survival_horizon_quantile": float(args.horizon_quantile),
         "random_state": int(args.random_state),
         "num_trees": int(args.num_trees),
         "gpu_mode": str(args.gpu),
         "model_count": MODEL_COUNT,
     }
+    if len(survival_horizon_quantiles) == 1:
+        metadata["survival_horizon_quantile"] = float(survival_horizon_quantiles[0])
+    else:
+        metadata["survival_horizon_quantiles"] = [float(v) for v in survival_horizon_quantiles]
+    return metadata
 
 
 def _metadata_path(output_dir: Path) -> Path:
@@ -558,8 +591,10 @@ def main() -> int:
             "--num-trees must be divisible by 4 for the EconML causal forest backend "
             f"(received {args.num_trees})."
         )
-    if not (0.0 < float(args.horizon_quantile) <= 1.0):
-        raise ValueError("--horizon-quantile must lie in (0, 1].")
+    survival_horizon_quantiles = _resolve_survival_horizon_quantiles(
+        args.survival_horizon_quantiles,
+        args.horizon_quantile,
+    )
 
     use_gpu, gpu_reason = resolve_xgboost_gpu_mode(args.gpu)
     gpu_config = {
@@ -578,6 +613,7 @@ def main() -> int:
         case_specs=case_specs,
         settings=settings,
         targets=targets,
+        survival_horizon_quantiles=survival_horizon_quantiles,
     )
     checkpoint_results = _validate_or_initialize_resume_state(output_dir=output_dir, metadata=run_metadata)
     checkpoint_results = _sort_results_frame(checkpoint_results)
@@ -594,7 +630,10 @@ def main() -> int:
             )
         ] = dict(row)
 
-    total_target_horizon_runs = sum(len(_target_horizon_specs(target, survival_quantile=args.horizon_quantile)) for target in targets)
+    total_target_horizon_runs = sum(
+        len(_target_horizon_specs(target, survival_quantiles=survival_horizon_quantiles))
+        for target in targets
+    )
     total_steps = len(case_specs) * len(settings) * total_target_horizon_runs * MODEL_COUNT
     completed_steps = len(completed_lookup)
 
@@ -627,7 +666,10 @@ def main() -> int:
                 setting_id = str(setting["setting_id"])
                 case_with_setting = _case_spec_with_setting(case_spec, setting)
                 for target in targets:
-                    for horizon_spec in _target_horizon_specs(target, survival_quantile=args.horizon_quantile):
+                    for horizon_spec in _target_horizon_specs(
+                        target,
+                        survival_quantiles=survival_horizon_quantiles,
+                    ):
                         if target == "RMST":
                             case = prepare_case(case_with_setting, target=target, horizon=float(horizon_spec["horizon"]))
                         else:

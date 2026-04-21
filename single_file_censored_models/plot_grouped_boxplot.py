@@ -19,11 +19,9 @@ from matplotlib.patches import Patch
 
 
 PREFERRED_MODEL_ORDER = [
-    "Final Model",
-    "Final Model Oracle",
-    "R-CSF Baseline",
-    "Strict Baseline",
-    "Strict Baseline Oracle",
+    "Final Conditional Oracle",
+    "Final Conditional",
+    "Revised Conditional",
 ]
 
 
@@ -38,7 +36,7 @@ def _setting_sort_key(setting_id: str) -> tuple[int, str]:
 def parse_args() -> argparse.Namespace:
     script_dir = Path(__file__).resolve().parent
     project_root = script_dir.parent
-    default_output_dir = project_root / "outputs" / "single_file_censored_models_5model"
+    default_output_dir = project_root / "outputs" / "single_file_censored_models_5model_conditional_suite"
 
     parser = argparse.ArgumentParser(description="Plot grouped boxplots by setting and model.")
     parser.add_argument(
@@ -78,6 +76,12 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Hide outlier points in the boxplots",
     )
+    parser.add_argument(
+        "--models",
+        nargs="*",
+        default=None,
+        help="Optional subset/order of model names to plot.",
+    )
     return parser.parse_args()
 
 
@@ -108,18 +112,14 @@ def main() -> int:
     settings = sorted(data["setting_id"].astype(str).unique().tolist(), key=_setting_sort_key)
 
     present_models = data["name"].astype(str).unique().tolist()
-    model_order = [m for m in PREFERRED_MODEL_ORDER if m in present_models]
-    extra_models = sorted(set(present_models) - set(model_order))
-    model_order.extend(extra_models)
+    requested_order = args.models if args.models else PREFERRED_MODEL_ORDER
+    model_order = [m for m in requested_order if m in present_models]
 
-    if len(model_order) < 5:
+    if not model_order:
         raise ValueError(
-            "Expected at least 5 models for grouped plot, found "
-            f"{len(model_order)}: {model_order}"
+            "No requested models are present in the input file. "
+            f"Available models: {sorted(present_models)}"
         )
-
-    # Use exactly 5 models per setting.
-    model_order = model_order[:5]
 
     box_data: list[np.ndarray] = []
     box_positions: list[float] = []
@@ -142,8 +142,16 @@ def main() -> int:
             box_data.append(values)
             box_positions.append(base + j)
 
+    preferred_colors = {
+        "Final Conditional Oracle": "#6aaed6",
+        "Final Conditional": "#f28e2b",
+        "Revised Conditional": "#59a14f",
+    }
     cmap = plt.get_cmap("tab10")
-    model_colors = {model_name: cmap(i % 10) for i, model_name in enumerate(model_order)}
+    model_colors = {
+        model_name: preferred_colors.get(model_name, cmap(i % 10))
+        for i, model_name in enumerate(model_order)
+    }
 
     fig, ax = plt.subplots(figsize=(args.figsize[0], args.figsize[1]))
     bp = ax.boxplot(
