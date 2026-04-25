@@ -1,0 +1,65 @@
+{
+  "canonical_output_dir": "/Users/kyoungeuihong/Desktop/csf_grf_new/outputs/hiv_actg175_5model_10k_bootstrap_final",
+  "source_final_models_dir": "/Users/kyoungeuihong/Desktop/csf_grf_new/outputs/hiv_actg175_split_comparison_10k_bootstrap",
+  "source_rcsf_dir": "/Users/kyoungeuihong/Desktop/csf_grf_new/outputs/hiv_actg175_r_csf_split_comparison_10k_bootstrap_10k_rerun",
+  "models": [
+    "final_conditional_x14",
+    "final_conditional_x12_w2_z2",
+    "final_conditional_rec_a",
+    "final_conditional_rec_b",
+    "r_csf_x14"
+  ],
+  "shared_setup": {
+    "dataset": "AIDS Clinical Trials Group Study 175",
+    "subset_n": 1083,
+    "treated_label": "ZDV+ddI",
+    "control_label": "ddI",
+    "treated_n": 522,
+    "control_n": 561,
+    "target": "RMST",
+    "horizon_days": 1000.0,
+    "bootstrap_reps": 200,
+    "sample_seed": 42,
+    "table4_subject_ids": [
+      92,
+      95,
+      101,
+      217,
+      466,
+      472,
+      704,
+      753,
+      832,
+      926
+    ]
+  },
+  "rcsf_recorded_hyperparameters": {
+    "grf_num_trees": 10000,
+    "grf_min_node_size": 5,
+    "random_state": 42,
+    "bootstrap_seed": 2026
+  },
+  "defensive_note": "Final models are collected from the 10k bootstrap run folder; the output metadata records common setup/bootstrap/model summaries but does not store the Final --num-trees argument explicitly. R-CSF records --grf-num-trees 10000 in wrapper_run_config.json.",
+  "combined_csv_shapes": {
+    "model_summary_5models.csv": [
+      5,
+      22
+    ],
+    "table4_style_comparison_5models.csv": [
+      50,
+      11
+    ],
+    "table5_style_blp_comparison_5models.csv": [
+      85,
+      10
+    ],
+    "age_profile_comparison_5models.csv": [
+      295,
+      7
+    ],
+    "feature_splits_5models.csv": [
+      5,
+      7
+    ]
+  }
+}

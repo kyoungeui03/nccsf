@@ -23,6 +23,8 @@ if str(PYTHON_PACKAGE_ROOT) not in sys.path:
 ROOT_SCRIPTS = PROJECT_ROOT / "scripts"
 if str(ROOT_SCRIPTS) not in sys.path:
     sys.path.insert(0, str(ROOT_SCRIPTS))
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 from _direct_grf_imports import import_grf_module  # noqa: E402
 from paper_csf_dgp import (  # noqa: E402
@@ -36,8 +38,10 @@ from paper_csf_dgp import (  # noqa: E402
 
 _censored_methods = import_grf_module(PROJECT_ROOT, "grf.methods.econml_oldc3_ablation_survival")
 _r_runtime = import_grf_module(PROJECT_ROOT, "grf.r_runtime")
+from single_file_censored_models.final_censored_model_conditional import (  # noqa: E402
+    FinalModelConditionalCensoredSurvivalForest,
+)
 
-FinalModelCensoredSurvivalForest = _censored_methods.FinalModelCensoredSurvivalForest
 FinalModelNoPCICensoredSurvivalForest = _censored_methods.FinalModelNoPCICensoredSurvivalForest
 FinalModelRawCensoredSurvivalForest = _censored_methods.FinalModelRawCensoredSurvivalForest
 resolve_rscript = _r_runtime.resolve_rscript
@@ -45,7 +49,7 @@ resolve_rscript = _r_runtime.resolve_rscript
 R_CSF_SCRIPT = PROJECT_ROOT / "Archive" / "run_paper_grf_csf_direct.R"
 
 MODEL_SPECS = {
-    "final": {"name": "Final Model (PCI)", "kind": "python", "cls": FinalModelCensoredSurvivalForest},
+    "final": {"name": "Final Conditional Model", "kind": "python", "cls": FinalModelConditionalCensoredSurvivalForest},
     "no-pci": {"name": "Final Model (No PCI)", "kind": "python", "cls": FinalModelNoPCICensoredSurvivalForest},
     "raw": {"name": "Final Model (Raw)", "kind": "python", "cls": FinalModelRawCensoredSurvivalForest},
     "r-csf": {"name": "R-CSF Baseline", "kind": "r_grf", "cls": None},
@@ -88,6 +92,30 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--proxy-dim-z", type=int, default=1)
     parser.add_argument("--proxy-layout", choices=sorted(PROXY_LAYOUTS), default="zero")
     parser.add_argument("--num-trees-r", type=int, default=None)
+    parser.add_argument("--final-num-trees", type=int, default=None)
+    parser.add_argument("--final-min-node-size", type=int, default=None)
+    parser.add_argument("--h-trees", type=int, default=None)
+    parser.add_argument("--h-min-node-size", type=int, default=None)
+    parser.add_argument("--save-every", type=int, default=10, help="Save partial results every N completed replications.")
+    parser.add_argument(
+        "--progress-every",
+        type=int,
+        default=5,
+        help="Print a progress update every N completed replications.",
+    )
+    parser.add_argument(
+        "--resume",
+        dest="resume",
+        action="store_true",
+        help="Resume from an existing replication_results.csv in the output directory if present.",
+    )
+    parser.add_argument(
+        "--no-resume",
+        dest="resume",
+        action="store_false",
+        help="Ignore any existing replication_results.csv and start the run from scratch.",
+    )
+    parser.set_defaults(resume=True)
     parser.add_argument(
         "--output-dir",
         type=Path,
@@ -152,6 +180,10 @@ def _evaluate_replication(
     proxy_layout: str,
     protocol: str,
     num_trees_r: int,
+    final_num_trees: int,
+    final_min_node_size: int,
+    h_trees: int,
+    h_min_node_size: int,
 ) -> dict[str, float | int | str]:
     rng = np.random.default_rng(seed)
     x_train_full, a_train, y_train, d_train = _sample_dataset(setting_id, n_train, p, rng, protocol=protocol)
@@ -188,10 +220,15 @@ def _evaluate_replication(
         )
     else:
         model_kwargs = dict(target=target, horizon=horizon, random_state=seed)
-        if model_cls is FinalModelCensoredSurvivalForest:
+        if model_cls is FinalModelConditionalCensoredSurvivalForest:
             # Be explicit here so the archive experiment always uses the current
-            # finalized model with surv1/surv0/surv_diff passed to the final stage.
+            # single-file Final Conditional model with the full learned summary
+            # representation at the final stage.
             model_kwargs["surv_scalar_mode"] = "full"
+        model_kwargs["n_estimators"] = int(final_num_trees)
+        model_kwargs["min_samples_leaf"] = int(final_min_node_size)
+        model_kwargs["h_n_estimators"] = int(h_trees)
+        model_kwargs["h_min_samples_leaf"] = int(h_min_node_size)
         model = model_cls(**model_kwargs)
         model.fit_components(x_train, a_train, y_train, d_train, z_train, w_train)
         preds = np.asarray(model.effect_from_components(x_test, w_test, z_test), dtype=float).ravel()
@@ -290,17 +327,20 @@ def _summarize(results: pd.DataFrame) -> pd.DataFrame:
             bias=("bias", "mean"),
             pearson=("pearson", "mean"),
             fit_time_sec=("fit_time_sec", "mean"),
+            excess_mse=("excess_mse_rep", "mean"),
         )
         .sort_values(["target", "setting_id"])
         .reset_index(drop=True)
     )
 
 
-def _add_excess_mse(summary: pd.DataFrame) -> pd.DataFrame:
-    summary = summary.copy()
-    best = summary.groupby(["protocol", "proxy_layout", "setting_id", "target"])["mse_x100"].transform("min")
-    summary["excess_mse"] = summary["mse_x100"] / best
-    return summary
+def _attach_repwise_excess_mse(results: pd.DataFrame) -> pd.DataFrame:
+    results = results.copy()
+    best_rep_mse = results.groupby(
+        ["protocol", "proxy_layout", "setting_id", "target", "rep_seed"]
+    )["mse_x100"].transform("min")
+    results["excess_mse_rep"] = results["mse_x100"] / best_rep_mse
+    return results
 
 
 def _build_paper_table(summary: pd.DataFrame) -> pd.DataFrame:
@@ -318,11 +358,10 @@ def _build_paper_table(summary: pd.DataFrame) -> pd.DataFrame:
 
 
 def _build_compare_table1(summary: pd.DataFrame) -> pd.DataFrame:
-    summary = _add_excess_mse(summary)
     rows: list[dict[str, float | int | str]] = []
     targets = ["RMST", "survival.probability"]
-    models = ["Final Model (PCI)", "R-CSF Baseline"]
-    labels = {"Final Model (PCI)": "Final", "R-CSF Baseline": "CSF"}
+    models = ["Final Conditional Model", "R-CSF Baseline"]
+    labels = {"Final Conditional Model": "Final", "R-CSF Baseline": "CSF"}
     for target in targets:
         panel = "Panel A: RMST" if target == "RMST" else "Panel B: Survival probability"
         sub = summary[summary["target"] == target]
@@ -344,8 +383,8 @@ def _build_compare_table1(summary: pd.DataFrame) -> pd.DataFrame:
 def _build_compare_table2(summary: pd.DataFrame) -> pd.DataFrame:
     rows: list[dict[str, float | int | str]] = []
     targets = ["RMST", "survival.probability"]
-    models = ["Final Model (PCI)", "R-CSF Baseline"]
-    labels = {"Final Model (PCI)": "Final", "R-CSF Baseline": "CSF"}
+    models = ["Final Conditional Model", "R-CSF Baseline"]
+    labels = {"Final Conditional Model": "Final", "R-CSF Baseline": "CSF"}
     for target in targets:
         panel = "Panel A: RMST" if target == "RMST" else "Panel B: Survival probability"
         sub = summary[summary["target"] == target]
@@ -416,8 +455,12 @@ def _resolve_protocol_settings(args: argparse.Namespace) -> dict[str, int | str]
             "n_train": int(2000 if args.n_train is None else args.n_train),
             "n_test": int(2000 if args.n_test is None else args.n_test),
             "p": int(15 if args.p is None else args.p),
-            "proxy_layout": "zero",
-            "num_trees_r": int(500 if args.num_trees_r is None else args.num_trees_r),
+            "proxy_layout": args.proxy_layout,
+            "num_trees_r": int(2000 if args.num_trees_r is None else args.num_trees_r),
+            "final_num_trees": int(2000 if args.final_num_trees is None else args.final_num_trees),
+            "final_min_node_size": int(5 if args.final_min_node_size is None else args.final_min_node_size),
+            "h_trees": int(500 if args.h_trees is None else args.h_trees),
+            "h_min_node_size": int(15 if args.h_min_node_size is None else args.h_min_node_size),
         }
     return {
         "reps": int(10 if args.reps is None else args.reps),
@@ -426,7 +469,223 @@ def _resolve_protocol_settings(args: argparse.Namespace) -> dict[str, int | str]
         "p": int(15 if args.p is None else args.p),
         "proxy_layout": args.proxy_layout,
         "num_trees_r": int(200 if args.num_trees_r is None else args.num_trees_r),
+        "final_num_trees": int(200 if args.final_num_trees is None else args.final_num_trees),
+        "final_min_node_size": int(20 if args.final_min_node_size is None else args.final_min_node_size),
+        "h_trees": int(600 if args.h_trees is None else args.h_trees),
+        "h_min_node_size": int(5 if args.h_min_node_size is None else args.h_min_node_size),
     }
+
+
+RESULT_KEY_COLS = ["model", "proxy_layout", "protocol", "setting_id", "target", "rep_seed"]
+RESUME_COMPAT_KEYS = [
+    "model",
+    "selected_models",
+    "protocol",
+    "proxy_layout",
+    "n_train",
+    "n_test",
+    "p",
+    "seed",
+    "proxy_dim_w",
+    "proxy_dim_z",
+    "final_num_trees",
+    "final_min_node_size",
+    "h_trees",
+    "h_min_node_size",
+    "num_trees_r",
+]
+
+
+def _empty_results_frame() -> pd.DataFrame:
+    return pd.DataFrame(
+        columns=[
+            "model",
+            "proxy_layout",
+            "proxy_layout_label",
+            "protocol",
+            "setting_id",
+            "target",
+            "rep_seed",
+            "horizon",
+            "n_train",
+            "n_test",
+            "proxy_dim_w",
+            "proxy_dim_z",
+            "mse",
+            "mse_x100",
+            "rmse",
+            "mae",
+            "sign_acc",
+            "class_error",
+            "mean_pred",
+            "mean_true",
+            "bias",
+            "pearson",
+            "fit_time_sec",
+        ]
+    )
+
+
+def _load_existing_results(path: Path) -> pd.DataFrame:
+    if not path.exists():
+        return _empty_results_frame()
+    results = pd.read_csv(path)
+    if results.empty:
+        return _empty_results_frame()
+    results = results.drop_duplicates(subset=RESULT_KEY_COLS, keep="last").reset_index(drop=True)
+    return results
+
+
+def _load_existing_metadata(path: Path) -> dict[str, object] | None:
+    if not path.exists():
+        return None
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _assert_resume_compatible(existing_metadata: dict[str, object] | None, current_metadata: dict[str, object]) -> None:
+    if not existing_metadata:
+        return
+
+    mismatches: list[str] = []
+    for key in RESUME_COMPAT_KEYS:
+        existing_value = existing_metadata.get(key)
+        current_value = current_metadata.get(key)
+        if existing_value != current_value:
+            mismatches.append(f"{key}: existing={existing_value!r}, current={current_value!r}")
+
+    if mismatches:
+        mismatch_text = "; ".join(mismatches)
+        raise ValueError(
+            "Resume requested, but the existing output directory was created with different run settings. "
+            f"Use a new --output-dir or pass --no-resume. Differences: {mismatch_text}"
+        )
+
+
+def _filter_results_to_requested_tasks(results: pd.DataFrame, requested_keys: set[tuple[str, str, str, int, str, int]]) -> pd.DataFrame:
+    if results.empty:
+        return _empty_results_frame()
+
+    key_frame = results.loc[:, RESULT_KEY_COLS].copy()
+    key_frame["setting_id"] = key_frame["setting_id"].astype(int)
+    key_frame["rep_seed"] = key_frame["rep_seed"].astype(int)
+    mask = [
+        (
+            str(row["model"]),
+            str(row["proxy_layout"]),
+            str(row["protocol"]),
+            int(row["setting_id"]),
+            str(row["target"]),
+            int(row["rep_seed"]),
+        )
+        in requested_keys
+        for _, row in key_frame.iterrows()
+    ]
+    filtered = results.loc[mask].copy()
+    if filtered.empty:
+        return _empty_results_frame()
+    return filtered.reset_index(drop=True)
+
+
+def _format_seconds(seconds: float) -> str:
+    seconds = max(0.0, float(seconds))
+    hours = int(seconds // 3600)
+    minutes = int((seconds % 3600) // 60)
+    secs = int(seconds % 60)
+    if hours > 0:
+        return f"{hours:d}:{minutes:02d}:{secs:02d}"
+    return f"{minutes:02d}:{secs:02d}"
+
+
+def _save_progress_outputs(
+    *,
+    results: pd.DataFrame,
+    output_dir: Path,
+    selected_models: list[str],
+    metadata_base: dict[str, object],
+    elapsed_sec: float,
+    total_tasks: int,
+    completed_tasks: int,
+    status: str,
+    last_completed: dict[str, object] | None = None,
+    render_png: bool = False,
+) -> None:
+    results_path = output_dir / "replication_results.csv"
+    summary_path = output_dir / "summary.csv"
+    png_path = output_dir / "summary.png"
+    metadata_path = output_dir / "metadata.json"
+    progress_path = output_dir / "progress.json"
+
+    if results.empty:
+        results = _empty_results_frame()
+        summary = pd.DataFrame()
+    else:
+        results = results.drop_duplicates(subset=RESULT_KEY_COLS, keep="last").reset_index(drop=True)
+        results = _attach_repwise_excess_mse(results)
+        summary = _summarize(results)
+
+    results.to_csv(results_path, index=False)
+    summary.to_csv(summary_path, index=False)
+    if render_png and not summary.empty:
+        _render_summary_png(summary, png_path)
+
+    extra_outputs: list[str] = []
+    if not summary.empty:
+        if len(selected_models) > 1:
+            table1 = _build_compare_table1(summary)
+            table2 = _build_compare_table2(summary)
+            table1_path = output_dir / "table1_mse_excess.csv"
+            table1_png_path = output_dir / "table1_mse_excess.png"
+            table2_path = output_dir / "table2_classification.csv"
+            table2_png_path = output_dir / "table2_classification.png"
+            table1.to_csv(table1_path, index=False)
+            table2.to_csv(table2_path, index=False)
+            if render_png:
+                _render_paper_table_png(table1, table1_png_path, title="Table 1. MSE and Excess MSE")
+                _render_paper_table_png(table2, table2_png_path, title="Table 2. Classification Error")
+            extra_outputs.extend([str(table1_path), str(table2_path)])
+            if render_png:
+                extra_outputs.extend([str(table1_png_path), str(table2_png_path)])
+        else:
+            paper_table = _build_paper_table(summary)
+            paper_table_path = output_dir / "paper_table.csv"
+            paper_table_png_path = output_dir / "paper_table.png"
+            paper_table.to_csv(paper_table_path, index=False)
+            if render_png:
+                _render_paper_table_png(
+                    paper_table,
+                    paper_table_png_path,
+                    title=f"Paper-Style Final Model Table: {selected_models[0]}",
+                )
+            extra_outputs.append(str(paper_table_path))
+            if render_png:
+                extra_outputs.append(str(paper_table_png_path))
+
+    metadata = dict(metadata_base)
+    metadata.update(
+        {
+            "elapsed_sec": float(elapsed_sec),
+            "completed_tasks": int(completed_tasks),
+            "total_tasks": int(total_tasks),
+            "remaining_tasks": int(total_tasks - completed_tasks),
+            "status": status,
+            "generated_outputs": extra_outputs,
+        }
+    )
+    if last_completed is not None:
+        metadata["last_completed"] = last_completed
+    metadata_path.write_text(json.dumps(metadata, indent=2), encoding="utf-8")
+
+    progress = {
+        "status": status,
+        "completed_tasks": int(completed_tasks),
+        "total_tasks": int(total_tasks),
+        "remaining_tasks": int(total_tasks - completed_tasks),
+        "percent_complete": float(100.0 * completed_tasks / max(total_tasks, 1)),
+        "elapsed_sec": float(elapsed_sec),
+        "elapsed_pretty": _format_seconds(elapsed_sec),
+        "last_completed": last_completed,
+    }
+    progress_path.write_text(json.dumps(progress, indent=2), encoding="utf-8")
 
 
 def main() -> int:
@@ -437,6 +696,10 @@ def main() -> int:
     n_test = int(resolved["n_test"])
     p = int(resolved["p"])
     proxy_layout = str(resolved["proxy_layout"])
+    final_num_trees = int(resolved["final_num_trees"])
+    final_min_node_size = int(resolved["final_min_node_size"])
+    h_trees = int(resolved["h_trees"])
+    h_min_node_size = int(resolved["h_min_node_size"])
 
     if p < 3:
         raise ValueError("p must be at least 3 because the paper settings use X1, X2, and X3.")
@@ -448,10 +711,45 @@ def main() -> int:
     selected_models = ["final", "r-csf"] if args.model == "compare-final-rcsf" else [args.model]
     output_dir = args.output_dir.resolve() / args.model / args.protocol / proxy_layout
     output_dir.mkdir(parents=True, exist_ok=True)
+    results_path = output_dir / "replication_results.csv"
 
     targets = ["RMST", "survival.probability"] if args.target == "both" else [args.target]
-    rows: list[dict[str, float | int | str]] = []
     started = time.time()
+    metadata_base = {
+        "script": str(Path(__file__).resolve()),
+        "model": args.model,
+        "selected_models": selected_models,
+        "protocol": args.protocol,
+        "proxy_layout": proxy_layout,
+        "settings": args.settings,
+        "target": args.target,
+        "reps": reps,
+        "n_train": n_train,
+        "n_test": n_test,
+        "p": p,
+        "seed": int(args.seed),
+        "proxy_dim_w": int(args.proxy_dim_w),
+        "proxy_dim_z": int(args.proxy_dim_z),
+        "final_num_trees": final_num_trees,
+        "final_min_node_size": final_min_node_size,
+        "h_trees": h_trees,
+        "h_min_node_size": h_min_node_size,
+        "num_trees_r": int(resolved["num_trees_r"]),
+        "notes": [
+            "This script uses the paper-style CSF DGP defined locally in Archive/paper_csf_dgp.py, built on grf.synthetic.grf type1-type4.",
+            f"Protocol for this run: {PROTOCOLS[args.protocol]}",
+            f"Proxy layout for this run: {PROXY_LAYOUTS[proxy_layout]}.",
+            "The Final path is pinned to the current single-file Final Conditional model with surv_scalar_mode='full'.",
+            "For paper-exact runs, we align the final-stage forest scale to the paper where possible: 2,000 trees and minimum node size 5, and we set the h-forest scale to 500 trees with minimum node size 15.",
+            "The R-CSF path is pinned directly to Archive/run_paper_grf_csf_direct.R, which now sets num.trees=2,000, min.node.size=5, sample.fraction=0.5, and mtry=min(p, ceil(sqrt(p))+20) for paper-exact runs.",
+            "When proxy_layout='zero', this is the closest paper-style replication because all observed covariates are passed through X and W/Z are zero placeholders.",
+            "When proxy_layout='split-5-5-5', the DGP, horizons, sample sizes, and evaluation protocol remain paper-matched, but the X/W/Z split should be interpreted as our proxy extension rather than an exact paper replication.",
+            "Excess MSE is computed using the paper definition: for each replication, divide by the best method's MSE within that setting/target, then average those ratios across replications.",
+            "Reported MSE is computed against the known test-set true CATE from the closed-form DGP.",
+        ],
+    }
+
+    tasks: list[dict[str, object]] = []
     for model_key in selected_models:
         model_spec = MODEL_SPECS[model_key]
         model_name = model_spec["name"]
@@ -461,99 +759,219 @@ def main() -> int:
             for setting_id in args.settings:
                 for rep in range(reps):
                     seed = int(args.seed + 1000 * setting_id + 10000 * (0 if target == "RMST" else 1) + rep)
-                    rows.append(
-                        _evaluate_replication(
-                            model_name=model_name,
-                            model_kind=model_kind,
-                            model_cls=model_cls,
-                            setting_id=setting_id,
-                            target=target,
-                            n_train=n_train,
-                            n_test=n_test,
-                            p=p,
-                            seed=seed,
-                            proxy_dim_w=args.proxy_dim_w,
-                            proxy_dim_z=args.proxy_dim_z,
-                            proxy_layout=proxy_layout,
-                            protocol=args.protocol,
-                            num_trees_r=int(resolved["num_trees_r"]),
-                        )
+                    tasks.append(
+                        {
+                            "model_name": model_name,
+                            "model_kind": model_kind,
+                            "model_cls": model_cls,
+                            "setting_id": int(setting_id),
+                            "target": target,
+                            "seed": seed,
+                        }
                     )
 
-    results = pd.DataFrame(rows)
-    summary = _summarize(results)
-    summary = _add_excess_mse(summary)
+    total_tasks = len(tasks)
+    requested_keys = {
+        (
+            str(task["model_name"]),
+            proxy_layout,
+            args.protocol,
+            int(task["setting_id"]),
+            str(task["target"]),
+            int(task["seed"]),
+        )
+        for task in tasks
+    }
+    metadata_path = output_dir / "metadata.json"
+    if args.resume:
+        _assert_resume_compatible(_load_existing_metadata(metadata_path), metadata_base)
+        existing_results = _filter_results_to_requested_tasks(_load_existing_results(results_path), requested_keys)
+    else:
+        existing_results = _empty_results_frame()
+    completed_keys = {
+        (
+            str(row["model"]),
+            str(row["proxy_layout"]),
+            str(row["protocol"]),
+            int(row["setting_id"]),
+            str(row["target"]),
+            int(row["rep_seed"]),
+        )
+        for _, row in existing_results.iterrows()
+    }
 
-    results_path = output_dir / "replication_results.csv"
+    if existing_results.empty:
+        print(f"Starting fresh run with {total_tasks} replications.", flush=True)
+    else:
+        print(
+            f"Resuming from {len(completed_keys)} completed replications out of {total_tasks}.",
+            flush=True,
+        )
+
+    pending_tasks = [
+        task
+        for task in tasks
+        if (
+            str(task["model_name"]),
+            proxy_layout,
+            args.protocol,
+            int(task["setting_id"]),
+            str(task["target"]),
+            int(task["seed"]),
+        )
+        not in completed_keys
+    ]
+    print(f"Pending replications: {len(pending_tasks)}", flush=True)
+
+    completed_tasks = len(completed_keys)
+    last_completed: dict[str, object] | None = None
+    results = existing_results.copy()
+
+    _save_progress_outputs(
+        results=results,
+        output_dir=output_dir,
+        selected_models=selected_models,
+        metadata_base=metadata_base,
+        elapsed_sec=time.time() - started,
+        total_tasks=total_tasks,
+        completed_tasks=completed_tasks,
+        status="running",
+        last_completed=None,
+        render_png=False,
+    )
+
+    try:
+        for index, task in enumerate(pending_tasks, start=1):
+            task_started = time.time()
+            row = _evaluate_replication(
+                model_name=str(task["model_name"]),
+                model_kind=str(task["model_kind"]),
+                model_cls=task["model_cls"],
+                setting_id=int(task["setting_id"]),
+                target=str(task["target"]),
+                n_train=n_train,
+                n_test=n_test,
+                p=p,
+                seed=int(task["seed"]),
+                proxy_dim_w=args.proxy_dim_w,
+                proxy_dim_z=args.proxy_dim_z,
+                proxy_layout=proxy_layout,
+                protocol=args.protocol,
+                num_trees_r=int(resolved["num_trees_r"]),
+                final_num_trees=final_num_trees,
+                final_min_node_size=final_min_node_size,
+                h_trees=h_trees,
+                h_min_node_size=h_min_node_size,
+            )
+            row_frame = pd.DataFrame([row])
+            if results.empty:
+                results = row_frame.copy()
+            else:
+                results = pd.concat([results, row_frame], ignore_index=True)
+            completed_tasks += 1
+            last_completed = {
+                "model": row["model"],
+                "target": row["target"],
+                "setting_id": int(row["setting_id"]),
+                "rep_seed": int(row["rep_seed"]),
+                "fit_time_sec": float(row["fit_time_sec"]),
+                "task_elapsed_sec": float(time.time() - task_started),
+            }
+
+            if completed_tasks % max(args.progress_every, 1) == 0 or completed_tasks == total_tasks:
+                elapsed = time.time() - started
+                avg_time = elapsed / max(completed_tasks - len(completed_keys), 1)
+                remaining = total_tasks - completed_tasks
+                eta = avg_time * remaining
+                print(
+                    (
+                        f"[progress] {completed_tasks}/{total_tasks} "
+                        f"({100.0 * completed_tasks / max(total_tasks, 1):.1f}%) "
+                        f"completed | last={row['model']} {row['target']} "
+                        f"setting={row['setting_id']} seed={row['rep_seed']} "
+                        f"| elapsed={_format_seconds(elapsed)} ETA={_format_seconds(eta)}"
+                    ),
+                    flush=True,
+                )
+
+            if completed_tasks % max(args.save_every, 1) == 0 or completed_tasks == total_tasks:
+                _save_progress_outputs(
+                    results=results,
+                    output_dir=output_dir,
+                    selected_models=selected_models,
+                    metadata_base=metadata_base,
+                    elapsed_sec=time.time() - started,
+                    total_tasks=total_tasks,
+                    completed_tasks=completed_tasks,
+                    status="running",
+                    last_completed=last_completed,
+                    render_png=False,
+                )
+                print(
+                    f"[checkpoint] Saved partial results after {completed_tasks} / {total_tasks} replications.",
+                    flush=True,
+                )
+    except KeyboardInterrupt:
+        _save_progress_outputs(
+            results=results,
+            output_dir=output_dir,
+            selected_models=selected_models,
+            metadata_base=metadata_base,
+            elapsed_sec=time.time() - started,
+            total_tasks=total_tasks,
+            completed_tasks=completed_tasks,
+            status="interrupted",
+            last_completed=last_completed,
+            render_png=False,
+        )
+        print("[interrupted] Partial results saved before exit.", flush=True)
+        raise
+    except Exception:
+        _save_progress_outputs(
+            results=results,
+            output_dir=output_dir,
+            selected_models=selected_models,
+            metadata_base=metadata_base,
+            elapsed_sec=time.time() - started,
+            total_tasks=total_tasks,
+            completed_tasks=completed_tasks,
+            status="failed",
+            last_completed=last_completed,
+            render_png=False,
+        )
+        print("[failed] Partial results saved before propagating the error.", flush=True)
+        raise
+
+    _save_progress_outputs(
+        results=results,
+        output_dir=output_dir,
+        selected_models=selected_models,
+        metadata_base=metadata_base,
+        elapsed_sec=time.time() - started,
+        total_tasks=total_tasks,
+        completed_tasks=completed_tasks,
+        status="completed",
+        last_completed=last_completed,
+        render_png=True,
+    )
+
+    final_results = _attach_repwise_excess_mse(results.drop_duplicates(subset=RESULT_KEY_COLS, keep="last"))
+    final_summary = _summarize(final_results)
+    metadata_path = output_dir / "metadata.json"
     summary_path = output_dir / "summary.csv"
     png_path = output_dir / "summary.png"
-    metadata_path = output_dir / "metadata.json"
 
-    results.to_csv(results_path, index=False)
-    summary.to_csv(summary_path, index=False)
-    _render_summary_png(summary, png_path)
-
-    extra_outputs: list[str] = []
+    print(f"Saved replication results: {results_path}", flush=True)
+    print(f"Saved summary: {summary_path}", flush=True)
+    print(f"Saved summary PNG: {png_path}", flush=True)
+    print(f"Saved metadata: {metadata_path}", flush=True)
+    print(final_summary.to_string(index=False), flush=True)
     if len(selected_models) > 1:
-        table1 = _build_compare_table1(summary)
-        table2 = _build_compare_table2(summary)
-        table1_path = output_dir / "table1_mse_excess.csv"
-        table1_png_path = output_dir / "table1_mse_excess.png"
-        table2_path = output_dir / "table2_classification.csv"
-        table2_png_path = output_dir / "table2_classification.png"
-        table1.to_csv(table1_path, index=False)
-        table2.to_csv(table2_path, index=False)
-        _render_paper_table_png(table1, table1_png_path, title="Table 1. MSE and Excess MSE")
-        _render_paper_table_png(table2, table2_png_path, title="Table 2. Classification Error")
-        extra_outputs.extend([str(table1_path), str(table1_png_path), str(table2_path), str(table2_png_path)])
+        print("\nTable 1 / Table 2 outputs saved.", flush=True)
     else:
-        paper_table = _build_paper_table(summary)
-        paper_table_path = output_dir / "paper_table.csv"
-        paper_table_png_path = output_dir / "paper_table.png"
-        paper_table.to_csv(paper_table_path, index=False)
-        _render_paper_table_png(paper_table, paper_table_png_path, title=f"Paper-Style Final Model Table: {selected_models[0]}")
-        extra_outputs.extend([str(paper_table_path), str(paper_table_png_path)])
-
-    metadata = {
-            "script": str(Path(__file__).resolve()),
-            "model": args.model,
-            "selected_models": selected_models,
-            "protocol": args.protocol,
-            "proxy_layout": proxy_layout,
-            "settings": args.settings,
-            "target": args.target,
-            "reps": reps,
-        "n_train": n_train,
-        "n_test": n_test,
-        "p": p,
-        "seed": int(args.seed),
-        "proxy_dim_w": int(args.proxy_dim_w),
-        "proxy_dim_z": int(args.proxy_dim_z),
-        "elapsed_sec": float(time.time() - started),
-        "notes": [
-            "This script uses the paper-style CSF DGP defined locally in Archive/paper_csf_dgp.py, built on grf.synthetic.grf type1-type4.",
-            f"Protocol for this run: {PROTOCOLS[args.protocol]}",
-            f"Proxy layout for this run: {PROXY_LAYOUTS[proxy_layout]}.",
-            "The Final Model (PCI) path is pinned to the current surv_scalar_mode='full' implementation, including surv_diff in the final-stage representation.",
-            "The R-CSF path is pinned directly to Archive/run_paper_grf_csf_direct.R, which imports installed R grf::causal_survival_forest and performs out-of-sample prediction using only the original observed X covariates.",
-            "Reported MSE is computed against the known test-set true CATE from the closed-form DGP.",
-        ],
-        "generated_outputs": extra_outputs,
-    }
-    metadata_path.write_text(json.dumps(metadata, indent=2), encoding="utf-8")
-
-    print(f"Saved replication results: {results_path}")
-    print(f"Saved summary: {summary_path}")
-    print(f"Saved summary PNG: {png_path}")
-    for path in extra_outputs:
-        print(f"Saved table output: {path}")
-    print(f"Saved metadata: {metadata_path}")
-    print(summary.to_string(index=False))
-    if len(selected_models) > 1:
-        print("\nTable 1 / Table 2 outputs saved.")
-    else:
-        print("\nPaper-style table")
-        print(paper_table.to_string(index=False))
+        paper_table = _build_paper_table(final_summary)
+        print("\nPaper-style table", flush=True)
+        print(paper_table.to_string(index=False), flush=True)
     return 0
 
 

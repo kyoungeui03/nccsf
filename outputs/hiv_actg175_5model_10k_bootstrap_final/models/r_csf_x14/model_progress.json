@@ -1,0 +1,7 @@
+{
+  "model_name": "r_csf_x14",
+  "display_name": "R-CSF Baseline (All 14 in X)",
+  "status": "completed",
+  "fit_time_sec": 21.320449590682983,
+  "bootstrap_reps": 200
+}

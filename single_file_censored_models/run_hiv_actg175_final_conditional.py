@@ -41,8 +41,10 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import os
 import sys
 import time
+import zlib
 from pathlib import Path
 
 import matplotlib
@@ -213,6 +215,105 @@ DEFAULT_MODEL_NAMES = [
     "final_conditional_rec_a",
     "final_conditional_rec_b",
 ]
+
+RUN_PROGRESS_BASENAME = "run_progress.json"
+
+
+def _stable_model_seed_offset(model_name: str) -> int:
+    return int(zlib.crc32(model_name.encode("utf-8")) & 0x7FFFFFFF)
+
+
+def _bootstrap_rep_seed(base_seed: int, model_name: str, rep: int) -> int:
+    return int((int(base_seed) + _stable_model_seed_offset(model_name) + 1_000_003 * int(rep)) % (2**31 - 1))
+
+
+def _write_json(path: Path, payload: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = path.with_name(f"{path.name}.{os.getpid()}.tmp")
+    tmp_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    tmp_path.replace(path)
+
+
+def _write_csv(df: pd.DataFrame, path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = path.with_name(f"{path.name}.{os.getpid()}.tmp")
+    df.to_csv(tmp_path, index=False)
+    tmp_path.replace(path)
+
+
+def _empty_blp_frame() -> pd.DataFrame:
+    return pd.DataFrame(
+        columns=[
+            "model_name",
+            "display_name",
+            "design",
+            "term",
+            "coef",
+            "se",
+            "tvalue",
+            "pvalue",
+            "ci_lower",
+            "ci_upper",
+        ]
+    )
+
+
+def _save_run_progress(
+    *,
+    output_dir: Path,
+    selected_model_names: list[str],
+    completed_model_names: list[str],
+    status: str,
+    current_model_name: str | None = None,
+    model_step: str | None = None,
+) -> None:
+    payload = {
+        "status": status,
+        "selected_model_names": selected_model_names,
+        "completed_model_names": completed_model_names,
+        "completed_models": int(len(completed_model_names)),
+        "total_models": int(len(selected_model_names)),
+        "remaining_models": int(len(selected_model_names) - len(completed_model_names)),
+        "current_model_name": current_model_name,
+        "model_step": model_step,
+    }
+    _write_json(output_dir / RUN_PROGRESS_BASENAME, payload)
+
+
+def _load_completed_model_artifacts(model_dir: Path) -> tuple[dict[str, float], pd.DataFrame, pd.DataFrame, pd.DataFrame] | None:
+    summary_path = model_dir / "model_summary.json"
+    age_path = model_dir / "age_profile.csv"
+    table4_path = model_dir / "table4_style_random_10.csv"
+    if not (summary_path.exists() and age_path.exists() and table4_path.exists()):
+        return None
+
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    age_df = pd.read_csv(age_path)
+    table4_df = pd.read_csv(table4_path)
+    blp_path = model_dir / "table5_style_blp.csv"
+    blp_df = pd.read_csv(blp_path) if blp_path.exists() else _empty_blp_frame()
+    return summary, age_df, table4_df, blp_df
+
+
+def _save_bootstrap_progress(
+    *,
+    model_dir: Path,
+    spec: dict,
+    completed_reps: int,
+    total_reps: int,
+    status: str,
+    last_completed_rep: int | None,
+) -> None:
+    payload = {
+        "model_name": spec["model_name"],
+        "display_name": spec["display_name"],
+        "status": status,
+        "completed_reps": int(completed_reps),
+        "total_reps": int(total_reps),
+        "remaining_reps": int(total_reps - completed_reps),
+        "last_completed_rep": None if last_completed_rep is None else int(last_completed_rep),
+    }
+    _write_json(model_dir / "bootstrap_progress.json", payload)
 
 
 def _empty_block(n_rows: int) -> np.ndarray:
@@ -524,29 +625,62 @@ def bootstrap_predictions(
     age_profile_frame: pd.DataFrame,
     table4_frame: pd.DataFrame,
     args: argparse.Namespace,
+    model_dir: Path,
 ) -> tuple[pd.DataFrame | None, pd.DataFrame | None, pd.DataFrame | None, pd.DataFrame | None]:
     """Bootstrap the age profile and Table-4 subject predictions."""
 
     if args.bootstrap_reps <= 0:
         return None, None, None, None
 
-    rng = np.random.default_rng(args.bootstrap_seed + abs(hash(spec["model_name"])) % (2**31))
     n = len(subset)
-    age_draws = []
-    table4_draws = []
+    age_draws_path = model_dir / "bootstrap_age_draws.csv"
+    table4_draws_path = model_dir / "bootstrap_table4_draws.csv"
+    age_draws_df = pd.read_csv(age_draws_path) if args.resume and age_draws_path.exists() else pd.DataFrame()
+    table4_draws_df = pd.read_csv(table4_draws_path) if args.resume and table4_draws_path.exists() else pd.DataFrame()
 
-    for rep in range(args.bootstrap_reps):
-        boot_idx = rng.integers(0, n, size=n)
-        boot_df = subset.iloc[boot_idx].reset_index(drop=True)
-        model = fit_model(spec, boot_df, args)
-        try:
-            age_tau = predict_effects(spec, model, age_profile_frame)
-            table_tau = predict_effects(spec, model, table4_frame)
-        finally:
-            _cleanup_model(model)
+    completed_age_reps = set()
+    completed_table_reps = set()
+    if not age_draws_df.empty and {"rep", "age_years"}.issubset(age_draws_df.columns):
+        age_counts = age_draws_df.groupby("rep")["age_years"].size()
+        completed_age_reps = set(age_counts[age_counts == len(age_profile_frame)].index.astype(int).tolist())
+    if not table4_draws_df.empty and {"rep", "subject_id"}.issubset(table4_draws_df.columns):
+        table_counts = table4_draws_df.groupby("rep")["subject_id"].size()
+        completed_table_reps = set(table_counts[table_counts == len(table4_frame)].index.astype(int).tolist())
 
-        age_draws.append(
-            pd.DataFrame(
+    completed_reps = completed_age_reps & completed_table_reps
+    if args.resume and completed_reps:
+        age_draws_df = age_draws_df.loc[age_draws_df["rep"].isin(sorted(completed_reps)), :].reset_index(drop=True)
+        table4_draws_df = table4_draws_df.loc[table4_draws_df["rep"].isin(sorted(completed_reps)), :].reset_index(drop=True)
+        print(
+            f"[resume-bootstrap] {spec['display_name']} | reusing {len(completed_reps)} / {args.bootstrap_reps} bootstrap reps",
+            flush=True,
+        )
+
+    _save_bootstrap_progress(
+        model_dir=model_dir,
+        spec=spec,
+        completed_reps=len(completed_reps),
+        total_reps=args.bootstrap_reps,
+        status="running",
+        last_completed_rep=max(completed_reps) if completed_reps else None,
+    )
+
+    try:
+        for rep in range(args.bootstrap_reps):
+            if rep in completed_reps:
+                continue
+
+            rep_rng = np.random.default_rng(_bootstrap_rep_seed(args.bootstrap_seed, spec["model_name"], rep))
+            boot_idx = rep_rng.integers(0, n, size=n)
+            boot_df = subset.iloc[boot_idx].reset_index(drop=True)
+            model = fit_model(spec, boot_df, args)
+            try:
+                age_tau = predict_effects(spec, model, age_profile_frame)
+                table_tau = predict_effects(spec, model, table4_frame)
+            finally:
+                _cleanup_model(model)
+
+            age_rep_df = pd.DataFrame(
                 {
                     "model_name": spec["model_name"],
                     "rep": rep,
@@ -554,9 +688,7 @@ def bootstrap_predictions(
                     "cate_days": age_tau,
                 }
             )
-        )
-        table4_draws.append(
-            pd.DataFrame(
+            table4_rep_df = pd.DataFrame(
                 {
                     "model_name": spec["model_name"],
                     "rep": rep,
@@ -564,10 +696,76 @@ def bootstrap_predictions(
                     "cate_days": table_tau,
                 }
             )
-        )
+            if age_draws_df.empty:
+                age_draws_df = age_rep_df.copy()
+            else:
+                age_draws_df = pd.concat([age_draws_df, age_rep_df], ignore_index=True)
+            if table4_draws_df.empty:
+                table4_draws_df = table4_rep_df.copy()
+            else:
+                table4_draws_df = pd.concat([table4_draws_df, table4_rep_df], ignore_index=True)
 
-    age_draws_df = pd.concat(age_draws, ignore_index=True)
-    table4_draws_df = pd.concat(table4_draws, ignore_index=True)
+            completed_reps.add(rep)
+            completed_count = len(completed_reps)
+
+            if completed_count % max(args.progress_every_bootstrap, 1) == 0 or completed_count == args.bootstrap_reps:
+                print(
+                    f"[bootstrap] {spec['display_name']} | {completed_count}/{args.bootstrap_reps} reps completed",
+                    flush=True,
+                )
+
+            if completed_count % max(args.save_every_bootstrap, 1) == 0 or completed_count == args.bootstrap_reps:
+                _write_csv(age_draws_df, age_draws_path)
+                _write_csv(table4_draws_df, table4_draws_path)
+                _save_bootstrap_progress(
+                    model_dir=model_dir,
+                    spec=spec,
+                    completed_reps=completed_count,
+                    total_reps=args.bootstrap_reps,
+                    status="running",
+                    last_completed_rep=rep,
+                )
+                print(
+                    f"[bootstrap-checkpoint] {spec['display_name']} | saved after {completed_count}/{args.bootstrap_reps} reps",
+                    flush=True,
+                )
+    except KeyboardInterrupt:
+        _write_csv(age_draws_df, age_draws_path)
+        _write_csv(table4_draws_df, table4_draws_path)
+        _save_bootstrap_progress(
+            model_dir=model_dir,
+            spec=spec,
+            completed_reps=len(completed_reps),
+            total_reps=args.bootstrap_reps,
+            status="interrupted",
+            last_completed_rep=max(completed_reps) if completed_reps else None,
+        )
+        print(f"[bootstrap-interrupted] {spec['display_name']} | partial bootstrap draws saved", flush=True)
+        raise
+    except Exception:
+        _write_csv(age_draws_df, age_draws_path)
+        _write_csv(table4_draws_df, table4_draws_path)
+        _save_bootstrap_progress(
+            model_dir=model_dir,
+            spec=spec,
+            completed_reps=len(completed_reps),
+            total_reps=args.bootstrap_reps,
+            status="failed",
+            last_completed_rep=max(completed_reps) if completed_reps else None,
+        )
+        print(f"[bootstrap-failed] {spec['display_name']} | partial bootstrap draws saved", flush=True)
+        raise
+
+    _write_csv(age_draws_df, age_draws_path)
+    _write_csv(table4_draws_df, table4_draws_path)
+    _save_bootstrap_progress(
+        model_dir=model_dir,
+        spec=spec,
+        completed_reps=len(completed_reps),
+        total_reps=args.bootstrap_reps,
+        status="completed",
+        last_completed_rep=max(completed_reps) if completed_reps else None,
+    )
 
     alpha = float(args.bootstrap_alpha)
     lo_q = alpha / 2.0
@@ -606,7 +804,21 @@ def run_single_model(
     model_dir = output_dir / spec["model_name"]
     model_dir.mkdir(parents=True, exist_ok=True)
 
+    if args.resume:
+        completed = _load_completed_model_artifacts(model_dir)
+        if completed is not None:
+            print(f"[resume-model] Reusing completed outputs for {spec['display_name']}", flush=True)
+            return completed
+
     t0 = time.time()
+    _write_json(
+        model_dir / "model_progress.json",
+        {
+            "model_name": spec["model_name"],
+            "display_name": spec["display_name"],
+            "status": "fitting_base_model",
+        },
+    )
     model = fit_model(spec, subset, args)
     fit_time = float(time.time() - t0)
 
@@ -650,6 +862,7 @@ def run_single_model(
             age_profile_frame,
             table4_frame,
             args,
+            model_dir,
         )
     finally:
         _cleanup_model(model)
@@ -734,6 +947,16 @@ def run_single_model(
 
     with open(model_dir / "model_summary.json", "w", encoding="utf-8") as fp:
         json.dump(summary, fp, indent=2)
+    _write_json(
+        model_dir / "model_progress.json",
+        {
+            "model_name": spec["model_name"],
+            "display_name": spec["display_name"],
+            "status": "completed",
+            "fit_time_sec": fit_time,
+            "bootstrap_reps": int(args.bootstrap_reps),
+        },
+    )
     return summary, age_df, table4_df, blp_df
 
 
@@ -775,6 +998,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--bootstrap-reps", type=int, default=0, help="Nonparametric bootstrap repetitions for Figure 4 bands and Table 4 SEs.")
     parser.add_argument("--bootstrap-seed", type=int, default=2026, help="Seed for bootstrap resampling.")
     parser.add_argument("--bootstrap-alpha", type=float, default=0.05, help="Bootstrap central interval level, e.g. 0.05 for 95%% bands.")
+    parser.add_argument("--save-every-bootstrap", type=int, default=10, help="Save partial bootstrap draws every N completed bootstrap replications.")
+    parser.add_argument("--progress-every-bootstrap", type=int, default=5, help="Print bootstrap progress every N completed bootstrap replications.")
+    parser.add_argument("--resume", dest="resume", action="store_true", help="Resume from existing per-model outputs and bootstrap checkpoints when available.")
+    parser.add_argument("--no-resume", dest="resume", action="store_false", help="Ignore existing partial outputs and rerun from scratch.")
+    parser.set_defaults(resume=True)
     parser.add_argument("--random-state", type=int, default=42, help="Model random seed.")
     parser.add_argument("--sample-seed", type=int, default=42, help="Seed for the Table-4-style random 10 sample.")
     return parser
@@ -844,15 +1072,34 @@ def main(argv: list[str] | None = None) -> int:
     save_histogram(subset, output_dir / "followup_histogram.png")
 
     selected_specs = [spec for spec in MODEL_SPECS if spec["model_name"] in set(args.models)]
+    selected_model_names = [spec["model_name"] for spec in selected_specs]
     summaries = []
     age_tables = []
     table4_tables = []
     blp_tables = []
+    completed_model_names: list[str] = []
+
+    _save_run_progress(
+        output_dir=output_dir,
+        selected_model_names=selected_model_names,
+        completed_model_names=completed_model_names,
+        status="running",
+        current_model_name=None,
+        model_step="starting",
+    )
 
     for spec in selected_specs:
         print(
             f"[fit] {spec['display_name']} | kind={spec['model_kind']} "
             f"| X={len(spec['x_cols'])} W={len(spec['w_cols'])} Z={len(spec['z_cols'])}"
+        )
+        _save_run_progress(
+            output_dir=output_dir,
+            selected_model_names=selected_model_names,
+            completed_model_names=completed_model_names,
+            status="running",
+            current_model_name=spec["model_name"],
+            model_step="running_model",
         )
         summary, age_df, table4_df, blp_df = run_single_model(
             subset=subset,
@@ -867,6 +1114,15 @@ def main(argv: list[str] | None = None) -> int:
         table4_tables.append(table4_df)
         if not blp_df.empty:
             blp_tables.append(blp_df)
+        completed_model_names.append(spec["model_name"])
+        _save_run_progress(
+            output_dir=output_dir,
+            selected_model_names=selected_model_names,
+            completed_model_names=completed_model_names,
+            status="running",
+            current_model_name=spec["model_name"],
+            model_step="model_completed",
+        )
 
     summary_df = pd.DataFrame(summaries)
     summary_df.to_csv(output_dir / "model_summary.csv", index=False)
@@ -882,6 +1138,14 @@ def main(argv: list[str] | None = None) -> int:
         blp_comparison_df = pd.concat(blp_tables, ignore_index=True)
         blp_comparison_df.to_csv(output_dir / "table5_style_blp_comparison.csv", index=False)
 
+    _save_run_progress(
+        output_dir=output_dir,
+        selected_model_names=selected_model_names,
+        completed_model_names=completed_model_names,
+        status="completed",
+        current_model_name=None,
+        model_step="completed",
+    )
     print(f"[done] wrote outputs to {output_dir}")
     return 0
 

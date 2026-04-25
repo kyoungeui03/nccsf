@@ -70,6 +70,9 @@ fit <- causal_survival_forest(
   target = target,
   horizon = horizon,
   num.trees = num_trees,
+  min.node.size = 5,
+  sample.fraction = 0.5,
+  mtry = min(ncol(X_train), ceiling(sqrt(ncol(X_train))) + 20),
   num.threads = 1,
   seed = seed
 )
