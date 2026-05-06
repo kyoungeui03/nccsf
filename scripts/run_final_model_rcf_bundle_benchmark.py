@@ -530,6 +530,10 @@ def _run_structured14_censored(
 
 def _build_rhc_non_censored(raw_df: pd.DataFrame):
     analysis_df = build_cleaned_rhc(raw_df)
+    # Kallus et al.'s RHC analysis uses 30-day survival as the binary outcome.
+    # build_cleaned_rhc keeps t3d30 as Y for generic preprocessing, so replace it
+    # here with the paper-matched survival indicator.
+    analysis_df["Y"] = (raw_df["dth30"] != "Yes").astype(float)
     z_cols = [col for col in ["pafi1", "paco21"] if col in analysis_df.columns]
     w_cols = [col for col in ["ph1", "hema1"] if col in analysis_df.columns]
     x_cols = [col for col in analysis_df.columns if col not in {"Y", "A", *z_cols, *w_cols}]
