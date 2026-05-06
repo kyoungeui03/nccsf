@@ -1,0 +1,53 @@
+{
+  "dataset_family": "csf_section4_synthetic",
+  "source_paper": "Cui et al. (2023), Section 4 simulation study",
+  "purpose": "External validation of the Final Model against direct R-CSF in the original fully observed CSF synthetic benchmark.",
+  "latent_confounding": false,
+  "negative_control_proxies": false,
+  "covariates": {
+    "distribution": "Independent Uniform(0, 1)",
+    "p": 15
+  },
+  "simulation_protocol": {
+    "settings": [1, 2, 3, 4],
+    "targets": ["RMST", "survival.probability"],
+    "reps": 250,
+    "n_train": 2000,
+    "n_test": 2000,
+    "seed": 42,
+    "protocol": "paper-exact"
+  },
+  "horizons": {
+    "rmst": {
+      "setting_1": 1.5,
+      "setting_2": 2.0,
+      "setting_3": 15.0,
+      "setting_4": 3.0
+    },
+    "survival_probability": {
+      "setting_1": 0.8,
+      "setting_2": 1.2,
+      "setting_3": 10.0,
+      "setting_4": 2.0
+    }
+  },
+  "r_csf_hyperparameters": {
+    "num_trees": 2000,
+    "min_node_size": 5,
+    "sample_fraction": 0.5,
+    "mtry_rule": "min(p, ceil(sqrt(p)) + 20)"
+  },
+  "nuisance_survival_hyperparameters": {
+    "h_trees": 500,
+    "h_min_node_size": 15
+  },
+  "canonical_code": {
+    "dgp": "Archive/paper_csf_dgp.py",
+    "runner": "Archive/run_paper_final_model_simulation.py",
+    "r_csf_backend": "Archive/run_paper_grf_csf_direct.R"
+  },
+  "canonical_outputs": {
+    "output_dir": "outputs/final_paper_results/csf_section4_replication"
+  },
+  "materialized_csv_policy": "The Section 4 datasets are generated on the fly from deterministic seeds; this folder stores DGP metadata rather than all train/test replications."
+}
