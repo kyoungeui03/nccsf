@@ -1,0 +1,14 @@
+{
+  "status": "completed",
+  "selected_model_names": [
+    "r_csf_x14"
+  ],
+  "completed_model_names": [
+    "r_csf_x14"
+  ],
+  "completed_models": 1,
+  "total_models": 1,
+  "remaining_models": 0,
+  "current_model_name": null,
+  "model_step": "completed"
+}

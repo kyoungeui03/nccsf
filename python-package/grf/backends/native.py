@@ -459,7 +459,8 @@ class NativeSurvivalForest:
         return remapped
 
     def close(self) -> None:
-        if self.handle:
+        handle = getattr(self, "handle", None)
+        if handle:
             try:
                 _load_library().csf_grf_survival_free(self.handle)
             except Exception:

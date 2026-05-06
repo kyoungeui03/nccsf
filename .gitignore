@@ -4,5 +4,4 @@ __pycache__/
 .cache/
 .mplconfig/
 .mmenv311/
-outputs/
-non_censored/outputs/
+.venv/

@@ -1,0 +1,17 @@
+{
+  "status": "completed",
+  "completed_tasks": 2000,
+  "total_tasks": 2000,
+  "remaining_tasks": 0,
+  "percent_complete": 100.0,
+  "elapsed_sec": 33559.40197658539,
+  "elapsed_pretty": "9:19:19",
+  "last_completed": {
+    "model": "Final Conditional Model",
+    "target": "survival.probability",
+    "setting_id": 4,
+    "rep_seed": 14291,
+    "fit_time_sec": 10.914052963256836,
+    "task_elapsed_sec": 16.31563687324524
+  }
+}

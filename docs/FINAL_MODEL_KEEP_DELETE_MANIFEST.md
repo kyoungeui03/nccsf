@@ -1,109 +1,120 @@
-# Final Model Cleanup Manifest
+# Final Model Keep/Delete Manifest
 
-This manifest defines the canonical keep set for the repository cleanup.
+This manifest records the current post-refactor keep set. It is intentionally
+short; detailed result locations are maintained in
+[`FINAL_REPRODUCIBILITY_NOTE.md`](/Users/kyoungeuihong/Desktop/csf_grf_new/docs/FINAL_REPRODUCIBILITY_NOTE.md).
 
-## Cleanup Goal
-
-Preserve only the code and data required to:
-
-- run the finalized non-censored and censored `Final Model`
-- run the direct baselines
-  - `EconML Baseline`
-  - `R-CF Baseline`
-  - `R-CSF Baseline`
-- run the finalized `Final Model` ablation study
-  - `Final Model (PCI)`
-  - `Final Model (No PCI)`
-  - `Final Model (Raw)`
-- run the finalized `Final Model` variant benchmark
-- preserve synthetic dataset testing infrastructure
-- preserve reproducibility of the final basic runners
-
-## Keep: Top-Level
+## Keep: Repository Structure
 
 - `README.md`
-- `THIRD_PARTY_NOTICE.md`
+- `requirements.txt`
 - `pyproject.toml`
-- `.gitignore`
 - `core/`
 - `native/`
-- `data/rhc/`
-- `data/synthetic_scenarios/`
+- `data/`
+- `censored/`
+- `non_censored/`
+- `Archive/`
+- `scripts/`
 - `python-package/`
-- `python-package/grf/__init__.py`
+- `docs/`
+- `outputs/`
+
+## Keep: Data
+
+- `data/synthetic_scenarios/`: materialized proximal synthetic scenarios.
+- `data/csf_section4_synthetic/`: metadata for the Cui et al. Section 4
+  paper-replication DGP.
+- `data/actg175/`: canonical ACTG175 inputs and metadata.
+- `data/rhc/`: canonical RHC inputs and metadata.
+
+## Keep: Censored Model Files
+
+- `censored/final_censored_model.py`
+- `censored/final_censored_oracle.py`
+- `censored/censored_baseline.py`
+- `censored/naive_censored_baseline.py`
+- `censored/grf_censored_baseline.py`
+- `censored/gpu_backends.py`
+- `censored/plot_grouped_boxplot.py`
+
+## Keep: Censored Runners
+
+- `censored/run_5model_benchmark.py`
+- `censored/run_synthetic_benchmark.py`
+- `censored/run_conditional_ablation_addons.py`
+- `censored/run_final_marginal_rcsf_full22.py`
+- `censored/run_paper_style_horizon_conditional_triplet.py`
+- `censored/run_paper_style_horizon_marginal_triplet.py`
+- `censored/run_horizon_sweep_conditional_triplet.py`
+
+## Keep: Non-Censored Model Files
+
+- `non_censored/final_noncensored_model.py`
+- `non_censored/final_noncensored_oracle.py`
+- `non_censored/econml_noncensored_baseline.py`
+- `non_censored/grf_noncensored_baseline.py`
+
+## Keep: Non-Censored Runners
+
+- `non_censored/run_variant_benchmark.py`
+- `non_censored/run_ablation_benchmark.py`
+- `non_censored/run_rcf_variant_benchmark.py`
+
+## Keep: CSF Section 4 Replication
+
+- `Archive/paper_csf_dgp.py`
+- `Archive/run_paper_final_model_simulation.py`
+- `Archive/run_paper_grf_csf_direct.R`
+- `Archive/_direct_grf_imports.py`
+
+## Keep: Shared Scripts
+
 - `scripts/build_native.py`
 - `scripts/materialize_synthetic_datasets.py`
 - `scripts/preprocess_rhc.py`
 - `scripts/run_final_model_bundle_benchmark.py`
-- `scripts/run_final_model_variant_benchmark.py`
-- `scripts/run_final_model_ablation_benchmark.py`
-- `scripts/run_grf_cf_baseline.R`
-- `scripts/run_grf_csf_baseline.R`
-- `non_censored/scripts/run_final_model_variant_benchmark.py`
-- `non_censored/scripts/run_final_model_ablation_benchmark.py`
-- `docs/FINAL_MODEL_KEEP_DELETE_MANIFEST.md`
-- `docs/FINAL_MODEL_ARCHITECTURE.md`
-- `docs/FINAL_MODEL_EXPECTED_BASIC12.json`
 - `scripts/validate_final_model_basic12.py`
+- `scripts/run_grf_cf_baseline.R`
+- `scripts/run_grf_cf_final_forest.R`
+- `scripts/run_grf_csf_baseline.R`
+- `scripts/run_grf_csf_final_forest.R`
+- `scripts/run_grf_csf_survival_final_forest.R`
 
-## Keep: Python Package Surfaces
+## Keep: Outputs
 
-- `python-package/grf/non_censored/models.py`
-- `python-package/grf/non_censored/benchmarks.py`
-- `python-package/grf/non_censored/data_generation.py`
-- `python-package/grf/non_censored/__init__.py`
-- `python-package/grf/censored/__init__.py`
-- `python-package/grf/methods/econml_oldc3_ablation_survival.py`
-- `python-package/grf/methods/econml_mild_shrink.py`
-- `python-package/grf/methods/baseline.py`
-- `python-package/grf/methods/__init__.py`
-- `python-package/grf/benchmarks/econml_8variant.py`
-- `python-package/grf/backends/`
-- `python-package/grf/core/`
-- `python-package/grf/synthetic/`
+Canonical outputs are restricted to:
 
-## Keep: Canonical Outputs Only
+- `outputs/final_paper_results/`
+- `outputs/appendix_results/`
 
-All historical outputs are deleted.
+New exploratory runs should go under:
 
-Only the following post-cleanup validation outputs may remain:
+- `outputs/reruns/`
 
-- `outputs/validation_postcleanup_final_model_bundle_basic12/`
-- `outputs/validation_postcleanup_final_model_ablation_c_basic12/`
-- `non_censored/outputs/validation_postcleanup_final_model_ablation_nc_basic12/`
+## Delete Candidates
 
-Optional smoke outputs may be removed after validation.
+The following should not be reintroduced unless there is a specific reason:
 
-## Delete
+- Local Python environments such as `.mmenv311/`.
+- Matplotlib and Python caches.
+- `.DS_Store`, `.Rhistory`, `__pycache__/`, and `*.pyc`.
+- Historical one-off benchmark scripts.
+- Pre-refactor output folders outside `outputs/final_paper_results/` and
+  `outputs/appendix_results/`.
+- Compatibility wrappers at repository root when canonical imports under
+  `censored/` or `non_censored/` are available.
 
-- all historical benchmark outputs under:
-  - `outputs/`
-  - `non_censored/outputs/`
-  - except the post-cleanup validation directories listed above
-- all historical render scripts
-- all historical one-off benchmark scripts
-- all overnight launcher scripts
-- all comparison/report scripts unrelated to the finalized models
-- all notebooks under `notebooks/`
-- all obsolete wrapper files once canonical runners are in place
+## Validation Rule
 
-## Non-Negotiable Validation Rule
+Refactoring must not alter paper-facing results. Minimum validation:
 
-After cleanup, the preserved basic runner for the five focus models must reproduce the same metric outputs as before cleanup.
+```bash
+python3 -m compileall -q censored non_censored Archive scripts python-package
+python3 censored/run_5model_benchmark.py --help
+python3 non_censored/run_variant_benchmark.py --help
+python3 Archive/run_paper_final_model_simulation.py --help
+```
 
-The five focus outputs are:
-
-- non-censored `Final Model`
-- non-censored `EconML Baseline`
-- non-censored `R-CF Baseline`
-- censored `Final Model`
-- censored `R-CSF Baseline`
-
-These are validated through:
-
-- `scripts/run_final_model_bundle_benchmark.py --dataset basic12 --domain both`
-
-The final-model ablation runners must also remain executable on:
-
-- `basic12`
-- `structured14`
+For result integrity, compare canonical output CSV row counts and table values
+against [`FINAL_REPRODUCIBILITY_NOTE.md`](/Users/kyoungeuihong/Desktop/csf_grf_new/docs/FINAL_REPRODUCIBILITY_NOTE.md).

@@ -1,105 +1,30 @@
 # csf_grf_new
 
-Integrated research workspace for the finalized PCI+CSF pipelines.
+Research workspace for Negative-Control Causal Survival Forests (NC-CSF).
+The repository is organized around two finalized model families:
+
+- `censored/`: right-censored NC-CSF models and censored benchmark runners.
+- `non_censored/`: non-censored NC-CSF models and non-censored benchmark runners.
+
+The refactored layout keeps model code, active runners, canonical data inputs,
+and paper-facing outputs in separate folders so collaborators can reproduce or
+inspect results without chasing pre-refactor paths.
 
 ## Setup
 
-Install the Python dependencies from the repo root:
+Install Python dependencies from the repository root:
 
 ```bash
-python -m pip install -r requirements.txt
+cd /Users/kyoungeuihong/Desktop/csf_grf_new
+python3 -m pip install -r requirements.txt
 ```
 
-Direct R baselines also need an R installation and the R package `grf`.
-Setup guide:
+Direct R baselines require `Rscript` and the R package `grf`.
+On the cluster this may require:
 
-- [docs/R_BASELINE_SETUP.md](/Users/kyoungeuihong/Desktop/csf_grf_new/docs/R_BASELINE_SETUP.md)
-
-The codebase now has a simple rule:
-
-- **Default `C3` = New C3**
-- **Old C3 = legacy comparator**
-
-The default benchmark and RHC runners use the refactored `BestCurveLocal` family.
-
-## Final proposed models
-
-### Non-censored New C3
-
-- class: `grf.non_censored.BestCurveLocalNCCausalForest`
-- design: two-stage summary forest
-- final learner: `econml.grf.CausalForest`
-- final features: `X` plus bridge-derived summary features
-
-### Censored New C3
-
-- class: `grf.methods.BestCurveLocalCensoredPCISurvivalForest`
-- design: two-stage summary survival forest
-- final learner: `econml.grf.CausalForest`
-- final features: `X` plus bridge- and survival-derived curve summaries
-
-## Legacy models kept for reproducibility
-
-### Non-censored Old C3
-
-- class: `grf.non_censored.MildShrinkNCCausalForestDML`
-- final learner: `econml.CausalForestDML`
-- final features: raw `X+W+Z`
-
-### Censored Old C3
-
-- class: `grf.methods.EconmlMildShrinkNCSurvivalForest`
-- final learner: `econml.CausalForestDML`
-- final features: raw `X+W+Z`
-
-## Canonical workflows
-
-### Censored
-
-Read [censored/README.md](/Users/kyoungeuihong/Desktop/csf_grf_new/censored/README.md).
-
-- default New C3 8-variant benchmark:
-  - [censored/scripts/run_12case_8variant_benchmark.py](/Users/kyoungeuihong/Desktop/csf_grf_new/censored/scripts/run_12case_8variant_benchmark.py)
-- default New C3 RHC comparison:
-  - [censored/scripts/run_rhc_b2_vs_c3.py](/Users/kyoungeuihong/Desktop/csf_grf_new/censored/scripts/run_rhc_b2_vs_c3.py)
-- explicit Old C3 benchmark:
-  - [censored/scripts/run_12case_old_c3_8variant_benchmark.py](/Users/kyoungeuihong/Desktop/csf_grf_new/censored/scripts/run_12case_old_c3_8variant_benchmark.py)
-- explicit Old C3 RHC comparison:
-  - [censored/scripts/run_rhc_b2_vs_old_c3.py](/Users/kyoungeuihong/Desktop/csf_grf_new/censored/scripts/run_rhc_b2_vs_old_c3.py)
-- custom New C3 runner:
-  - [censored/scripts/run_c3_bestcurve.py](/Users/kyoungeuihong/Desktop/csf_grf_new/censored/scripts/run_c3_bestcurve.py)
-- custom Old C3 runner:
-  - [censored/scripts/run_c3_econml_mild_shrink.py](/Users/kyoungeuihong/Desktop/csf_grf_new/censored/scripts/run_c3_econml_mild_shrink.py)
-
-### Non-censored
-
-Read [non_censored/README.md](/Users/kyoungeuihong/Desktop/csf_grf_new/non_censored/README.md).
-
-- default New C3 8-variant benchmark:
-  - [non_censored/scripts/run_12case_8variant_benchmark.py](/Users/kyoungeuihong/Desktop/csf_grf_new/non_censored/scripts/run_12case_8variant_benchmark.py)
-- default New C3 RHC comparison:
-  - [non_censored/scripts/run_rhc_b2_vs_c3.py](/Users/kyoungeuihong/Desktop/csf_grf_new/non_censored/scripts/run_rhc_b2_vs_c3.py)
-- explicit Old C3 benchmark:
-  - [non_censored/scripts/run_12case_old_c3_8variant_benchmark.py](/Users/kyoungeuihong/Desktop/csf_grf_new/non_censored/scripts/run_12case_old_c3_8variant_benchmark.py)
-- explicit Old C3 RHC comparison:
-  - [non_censored/scripts/run_rhc_b2_vs_old_c3.py](/Users/kyoungeuihong/Desktop/csf_grf_new/non_censored/scripts/run_rhc_b2_vs_old_c3.py)
-- custom New C3 runner:
-  - [non_censored/scripts/run_c3_bestcurve.py](/Users/kyoungeuihong/Desktop/csf_grf_new/non_censored/scripts/run_c3_bestcurve.py)
-- custom Old C3 runner:
-  - [non_censored/scripts/run_c3_econml_mild_shrink.py](/Users/kyoungeuihong/Desktop/csf_grf_new/non_censored/scripts/run_c3_econml_mild_shrink.py)
-
-## Maintenance
-
-### Direct R baselines
-
-`R-CF Baseline` and `R-CSF Baseline` require:
-
-- an R installation with `Rscript`
-- the R package `grf`
-
-Setup guide:
-
-- [docs/R_BASELINE_SETUP.md](/Users/kyoungeuihong/Desktop/csf_grf_new/docs/R_BASELINE_SETUP.md)
+```bash
+module load r/4.4.2
+```
 
 If `Rscript` is not on `PATH`, set:
 
@@ -107,22 +32,117 @@ If `Rscript` is not on `PATH`, set:
 export RSCRIPT=/absolute/path/to/Rscript
 ```
 
-### Baseline parity check
+See [docs/R_BASELINE_SETUP.md](/Users/kyoungeuihong/Desktop/csf_grf_new/docs/R_BASELINE_SETUP.md).
+
+## Folder Map
+
+- [data/](/Users/kyoungeuihong/Desktop/csf_grf_new/data): canonical input datasets and dataset metadata.
+- [censored/](/Users/kyoungeuihong/Desktop/csf_grf_new/censored): censored final model, oracle, baselines, and censored runners.
+- [non_censored/](/Users/kyoungeuihong/Desktop/csf_grf_new/non_censored): non-censored final model, oracle, baselines, and non-censored runners.
+- [Archive/](/Users/kyoungeuihong/Desktop/csf_grf_new/Archive): CSF Section 4 paper-replication DGP and runner.
+- [scripts/](/Users/kyoungeuihong/Desktop/csf_grf_new/scripts): shared utilities and R helper scripts used by active code.
+- [outputs/](/Users/kyoungeuihong/Desktop/csf_grf_new/outputs): canonical final paper outputs and appendix outputs.
+- [docs/](/Users/kyoungeuihong/Desktop/csf_grf_new/docs): architecture, reproducibility, setup, and usage notes.
+
+## Final Model Entry Points
+
+### Censored NC-CSF
+
+Use [censored/final_censored_model.py](/Users/kyoungeuihong/Desktop/csf_grf_new/censored/final_censored_model.py).
+
+Primary public class:
+
+```python
+from censored.final_censored_model import FinalCensoredModel
+```
+
+Main API:
+
+```python
+model.fit_components(X, A, time, event, Z, W)
+tau_hat = model.effect_from_components(X_test, W_test, Z_test)
+```
+
+Use `censoring_mode="conditional"` for the main paper specification. The same
+class also supports `censoring_mode="marginal"` for appendix comparisons.
+
+### Non-Censored NC-CSF
+
+Use [non_censored/final_noncensored_model.py](/Users/kyoungeuihong/Desktop/csf_grf_new/non_censored/final_noncensored_model.py).
+
+Primary public class:
+
+```python
+from non_censored.final_noncensored_model import FinalNoncensoredModel
+```
+
+Main API:
+
+```python
+model.fit_components(X, A, Y, Z, W)
+tau_hat = model.effect_from_components(X_test, W_test, Z_test)
+```
+
+Detailed instructions for applying both final models to a new dataset are in
+[docs/USING_FINAL_MODELS.md](/Users/kyoungeuihong/Desktop/csf_grf_new/docs/USING_FINAL_MODELS.md).
+
+## Canonical Workflows
+
+### Censored Synthetic Experiments
+
+Read [censored/README.md](/Users/kyoungeuihong/Desktop/csf_grf_new/censored/README.md).
+
+Active runners:
+
+- [censored/run_5model_benchmark.py](/Users/kyoungeuihong/Desktop/csf_grf_new/censored/run_5model_benchmark.py): main censored synthetic benchmark.
+- [censored/run_synthetic_benchmark.py](/Users/kyoungeuihong/Desktop/csf_grf_new/censored/run_synthetic_benchmark.py): smaller censored benchmark.
+- [censored/run_paper_style_horizon_conditional_triplet.py](/Users/kyoungeuihong/Desktop/csf_grf_new/censored/run_paper_style_horizon_conditional_triplet.py): paper-style conditional horizon benchmark.
+- [censored/run_horizon_sweep_conditional_triplet.py](/Users/kyoungeuihong/Desktop/csf_grf_new/censored/run_horizon_sweep_conditional_triplet.py): survival horizon sweep.
+- [censored/run_final_marginal_rcsf_full22.py](/Users/kyoungeuihong/Desktop/csf_grf_new/censored/run_final_marginal_rcsf_full22.py): marginal Final / R-CSF full benchmark.
+
+### Non-Censored Synthetic Experiments
+
+Read [non_censored/README.md](/Users/kyoungeuihong/Desktop/csf_grf_new/non_censored/README.md).
+
+Active runners:
+
+- [non_censored/run_variant_benchmark.py](/Users/kyoungeuihong/Desktop/csf_grf_new/non_censored/run_variant_benchmark.py): final/oracle/EconML/R-CF comparison.
+- [non_censored/run_ablation_benchmark.py](/Users/kyoungeuihong/Desktop/csf_grf_new/non_censored/run_ablation_benchmark.py): final-model feature ablations.
+- [non_censored/run_rcf_variant_benchmark.py](/Users/kyoungeuihong/Desktop/csf_grf_new/non_censored/run_rcf_variant_benchmark.py): R final-forest variant benchmark.
+
+### CSF Section 4 Replication
+
+Read [Archive/README.md](/Users/kyoungeuihong/Desktop/csf_grf_new/Archive/README.md).
+
+Active files:
+
+- [Archive/run_paper_final_model_simulation.py](/Users/kyoungeuihong/Desktop/csf_grf_new/Archive/run_paper_final_model_simulation.py): paper-style CSF simulation runner.
+- [Archive/paper_csf_dgp.py](/Users/kyoungeuihong/Desktop/csf_grf_new/Archive/paper_csf_dgp.py): Section 4 synthetic DGP.
+- [Archive/run_paper_grf_csf_direct.R](/Users/kyoungeuihong/Desktop/csf_grf_new/Archive/run_paper_grf_csf_direct.R): direct R-CSF backend.
+
+## Reproducibility
+
+For collaborator-facing result locations, exact output folders, and table-source
+mapping, read:
+
+- [docs/FINAL_REPRODUCIBILITY_NOTE.md](/Users/kyoungeuihong/Desktop/csf_grf_new/docs/FINAL_REPRODUCIBILITY_NOTE.md)
+
+Canonical saved results are under:
+
+- [outputs/final_paper_results/](/Users/kyoungeuihong/Desktop/csf_grf_new/outputs/final_paper_results)
+- [outputs/appendix_results/](/Users/kyoungeuihong/Desktop/csf_grf_new/outputs/appendix_results)
+
+## Maintenance Smoke Check
+
+After refactoring or path changes, run:
 
 ```bash
 cd /Users/kyoungeuihong/Desktop/csf_grf_new
-PYTHONPATH=python-package python3 scripts/compare_with_reference.py
+python3 -m compileall -q censored non_censored Archive scripts python-package
+python3 censored/run_5model_benchmark.py --help
+python3 non_censored/run_variant_benchmark.py --help
+python3 Archive/run_paper_final_model_simulation.py --help
 ```
 
-### Rebuild the native library
-
-```bash
-cd /Users/kyoungeuihong/Desktop/csf_grf_new
-python3 scripts/build_native.py --force
-```
-
-### RHC preprocessing
-
-- [scripts/preprocess_rhc.py](/Users/kyoungeuihong/Desktop/csf_grf_new/scripts/preprocess_rhc.py)
-
-Historical notebooks and raw tables are preserved under [notebooks/rhc](/Users/kyoungeuihong/Desktop/csf_grf_new/notebooks/rhc) and [data/rhc](/Users/kyoungeuihong/Desktop/csf_grf_new/data/rhc).
+Do not overwrite canonical outputs unless intentionally regenerating paper
+tables. For exploratory reruns, write to `outputs/reruns/...`.

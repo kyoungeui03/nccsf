@@ -17,3 +17,6 @@ pandas
 scikit-learn
 scikit-survival
 scipy
+statsmodels
+ucimlrepo
+xgboost

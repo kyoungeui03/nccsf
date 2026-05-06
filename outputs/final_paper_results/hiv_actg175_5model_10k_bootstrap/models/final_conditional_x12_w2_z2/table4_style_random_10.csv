@@ -1,0 +1,11 @@
+subject_id,hemo,gender,homo,str2,model_name,display_name,cate_days,cate_bootstrap_se,cate_ci_lower,cate_ci_upper
+92,No,Male,Yes,Naive,final_conditional_x12_w2_z2,"Final Conditional (X=12 baseline, W=2 immune, Z=2 selection)",1.805523217587252,19.051265012420558,-26.8869491051608,45.78250262503708
+95,No,Male,Yes,Experienced,final_conditional_x12_w2_z2,"Final Conditional (X=12 baseline, W=2 immune, Z=2 selection)",33.160822961716825,29.049608602104925,-54.33201308815646,58.58250545424255
+101,No,Male,Yes,Experienced,final_conditional_x12_w2_z2,"Final Conditional (X=12 baseline, W=2 immune, Z=2 selection)",8.886936330828227,18.718830201930658,-42.46702221294223,31.131489474125683
+217,No,Male,Yes,Experienced,final_conditional_x12_w2_z2,"Final Conditional (X=12 baseline, W=2 immune, Z=2 selection)",-0.918258625827118,19.52546446424178,-26.659820922645846,49.139396553631734
+466,No,Male,No,Naive,final_conditional_x12_w2_z2,"Final Conditional (X=12 baseline, W=2 immune, Z=2 selection)",1.7654520904076831,21.466807366225098,-35.35339608713104,51.79830632426143
+472,No,Female,No,Experienced,final_conditional_x12_w2_z2,"Final Conditional (X=12 baseline, W=2 immune, Z=2 selection)",28.650684121963245,32.800555756574624,-43.114219775638006,87.8831183450809
+704,No,Male,Yes,Experienced,final_conditional_x12_w2_z2,"Final Conditional (X=12 baseline, W=2 immune, Z=2 selection)",-0.17014448663387188,19.337935940362236,-35.32468701039865,45.267036283146545
+753,No,Male,Yes,Naive,final_conditional_x12_w2_z2,"Final Conditional (X=12 baseline, W=2 immune, Z=2 selection)",14.047439302667122,40.42315684552411,-78.90484934636943,84.57397053768207
+832,No,Female,No,Experienced,final_conditional_x12_w2_z2,"Final Conditional (X=12 baseline, W=2 immune, Z=2 selection)",17.627457026276304,24.92097256485794,-33.813486103787106,70.85225463223873
+926,No,Male,Yes,Experienced,final_conditional_x12_w2_z2,"Final Conditional (X=12 baseline, W=2 immune, Z=2 selection)",12.48274107786851,22.848605072517703,-29.745032952122585,59.28511589436194

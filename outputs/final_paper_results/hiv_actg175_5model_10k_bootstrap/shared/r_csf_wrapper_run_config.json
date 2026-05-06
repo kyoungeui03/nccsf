@@ -1,0 +1,37 @@
+{
+  "wrapper_script": "/project2/ruishanl_1185/kyoungeui_project/csf_grf_new/single_file_censored_models/run_hiv_actg175_r_csf_split_comparison_10k_bootstrap.py",
+  "base_runner": "/project2/ruishanl_1185/kyoungeui_project/csf_grf_new/single_file_censored_models/run_hiv_actg175_final_conditional.py",
+  "fixed_model": "r_csf_x14",
+  "goal": "Match the split_comparison_10k_bootstrap HIV setup while running only the R-CSF baseline.",
+  "forwarded_args": [
+    "--models",
+    "r_csf_x14",
+    "--output-dir",
+    "/project2/ruishanl_1185/kyoungeui_project/csf_grf_new/outputs/hiv_actg175_r_csf_split_comparison_10k_bootstrap_10k_rerun",
+    "--cache-csv",
+    "/project2/ruishanl_1185/kyoungeui_project/csf_grf_new/outputs/hiv_actg175_final_conditional/actg175_ucimlrepo_cache.csv",
+    "--grf-num-trees",
+    "10000",
+    "--grf-min-node-size",
+    "5",
+    "--bootstrap-reps",
+    "200",
+    "--bootstrap-seed",
+    "2026",
+    "--bootstrap-alpha",
+    "0.05",
+    "--save-every-bootstrap",
+    "5",
+    "--progress-every-bootstrap",
+    "1",
+    "--random-state",
+    "42",
+    "--sample-seed",
+    "42",
+    "--no-resume"
+  ],
+  "assumptions": [
+    "Dataset subset, age-profile construction, Table-4 subject sampling, bootstrap logic, BLP path, and output tables are all delegated to the base HIV runner.",
+    "Only the selected model is changed to r_csf_x14; all other experiment logic is inherited from the base runner."
+  ]
+}

@@ -18,6 +18,9 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import PolynomialFeatures
 
+from ..backends import NativeSurvivalForest
+from ..core import default_mtry, expected_survival, find_interval
+
 
 def _ensure_2d(array):
     array = np.asarray(array)
@@ -74,6 +77,18 @@ def _recover_raw_x(final_x, w, z, final_feature_mode):
         p_raw = final_x.shape[1] - w.shape[1] - z.shape[1] - 6
         if p_raw <= 0:
             raise ValueError("Could not recover raw X from final X under final_feature_mode='augmented_surv_pair'.")
+        return final_x[:, :p_raw]
+    if final_feature_mode.startswith("summary_custom_"):
+        summary_count = int(final_feature_mode.split("_")[-1])
+        p_raw = final_x.shape[1] - summary_count
+        if p_raw <= 0:
+            raise ValueError(f"Could not recover raw X from final X under final_feature_mode='{final_feature_mode}'.")
+        return final_x[:, :p_raw]
+    if final_feature_mode.startswith("augmented_custom_"):
+        summary_count = int(final_feature_mode.split("_")[-1])
+        p_raw = final_x.shape[1] - w.shape[1] - z.shape[1] - summary_count
+        if p_raw <= 0:
+            raise ValueError(f"Could not recover raw X from final X under final_feature_mode='{final_feature_mode}'.")
         return final_x[:, :p_raw]
     raise ValueError(f"Unsupported final_feature_mode: {final_feature_mode}")
 
@@ -194,7 +209,20 @@ def _fit_censoring_survival(time, event, estimator="kaplan-meier"):
     return _fit_kaplan_meier_censoring(time, event)
 
 
-def _fit_censoring_model(time, event, features, estimator="kaplan-meier"):
+def _fit_censoring_model(
+    time,
+    event,
+    features,
+    estimator="kaplan-meier",
+    *,
+    failure_times=None,
+    num_trees=50,
+    min_node_size=15,
+    n_jobs=1,
+    random_state=42,
+    fast_logrank=False,
+    sample_weight=None,
+):
     if estimator == "cox":
         cox, col_names, keep_mask = _fit_event_cox(time, 1 - np.asarray(event).astype(float), features)
         return {
@@ -202,6 +230,22 @@ def _fit_censoring_model(time, event, features, estimator="kaplan-meier"):
             "model": cox,
             "col_names": col_names,
             "keep_mask": keep_mask,
+        }
+    if estimator == "survival_forest":
+        return {
+            "kind": "survival_forest",
+            "model": _fit_native_survival_forest(
+                features,
+                time,
+                1.0 - np.asarray(event).astype(float),
+                failure_times=failure_times,
+                num_trees=num_trees,
+                min_node_size=min_node_size,
+                n_jobs=n_jobs,
+                random_state=random_state,
+                fast_logrank=fast_logrank,
+                sample_weight=sample_weight,
+            ),
         }
     times, surv = _fit_censoring_survival(time, event, estimator=estimator)
     return {
@@ -215,6 +259,13 @@ def _predict_censoring_survival_at_values(censor_model, features, values, *, cli
     values = np.asarray(values, dtype=float)
     if censor_model["kind"] == "marginal":
         return _evaluate_sc(values, censor_model["times"], censor_model["surv"], clip_min=clip_min)
+
+    if censor_model["kind"] == "survival_forest":
+        eval_times = np.sort(np.unique(values))
+        surv = censor_model["model"].predict(np.asarray(features, dtype=float), failure_times=eval_times)
+        idx = np.searchsorted(eval_times, values, side="right") - 1
+        idx = np.clip(idx, 0, len(eval_times) - 1)
+        return np.clip(surv[np.arange(len(values)), idx], clip_min, 1.0)
 
     eval_times = np.sort(np.unique(values))
     surv = _predict_s_on_grid(
@@ -234,6 +285,10 @@ def _predict_censoring_survival_on_grid(censor_model, features, t_grid, *, clip_
     if censor_model["kind"] == "marginal":
         surv = _evaluate_sc(t_grid, censor_model["times"], censor_model["surv"], clip_min=clip_min)
         return np.broadcast_to(surv[None, :], (len(features), len(t_grid)))
+
+    if censor_model["kind"] == "survival_forest":
+        surv = censor_model["model"].predict(np.asarray(features, dtype=float), failure_times=t_grid)
+        return np.clip(surv, clip_min, 1.0)
 
     surv = _predict_s_on_grid(
         censor_model["model"],
@@ -344,6 +399,68 @@ def _predict_s_on_grid(cox, col_names, features, t_grid, keep_mask):
     pred_df = pd.DataFrame(np.asarray(features, dtype=float)[:, keep_mask], columns=col_names)
     surv = cox.predict_survival_function(pred_df, times=np.asarray(t_grid, dtype=float))
     return np.clip(surv.values.T, 1e-10, 1.0)
+
+
+def _fit_native_survival_forest(
+    features,
+    y_time,
+    delta,
+    *,
+    failure_times,
+    num_trees,
+    min_node_size,
+    n_jobs,
+    random_state,
+    fast_logrank=False,
+    sample_weight=None,
+):
+    features = np.asarray(features, dtype=float)
+    mtry = default_mtry(features.shape[1])
+    return NativeSurvivalForest.fit(
+        features,
+        np.asarray(y_time, dtype=float),
+        np.asarray(delta, dtype=float),
+        failure_times=np.asarray(failure_times, dtype=float),
+        num_trees=int(num_trees),
+        sample_fraction=0.5,
+        mtry=mtry,
+        min_node_size=int(min_node_size),
+        honesty=True,
+        honesty_fraction=0.5,
+        honesty_prune_leaves=True,
+        alpha=0.05,
+        prediction_type=1,
+        fast_logrank=bool(fast_logrank),
+        compute_oob_predictions=True,
+        num_threads=int(n_jobs),
+        seed=int(random_state),
+        sample_weights=None if sample_weight is None else np.asarray(sample_weight, dtype=float),
+    )
+
+
+def _predict_native_survival_counterfactuals(sf_model, surv_features, t_grid):
+    surv_features = np.asarray(surv_features, dtype=float)
+    x_w1 = np.column_stack([surv_features, np.ones(surv_features.shape[0], dtype=float)])
+    x_w0 = np.column_stack([surv_features, np.zeros(surv_features.shape[0], dtype=float)])
+    s_hat_1 = np.clip(sf_model.predict(x_w1, failure_times=t_grid), 1e-10, 1.0)
+    s_hat_0 = np.clip(sf_model.predict(x_w0, failure_times=t_grid), 1e-10, 1.0)
+    return s_hat_1, s_hat_0
+
+
+def _compute_survival_based_yhat(s_hat_1, s_hat_0, w_hat, t_grid, *, target, horizon):
+    w_hat = np.asarray(w_hat, dtype=float).ravel()
+    if target == "RMST":
+        y_hat_1 = expected_survival(s_hat_1, t_grid)
+        y_hat_0 = expected_survival(s_hat_0, t_grid)
+    else:
+        horizon_index = find_interval(np.array([float(horizon)]), np.asarray(t_grid, dtype=float))[0]
+        if horizon_index == 0:
+            y_hat_1 = np.ones(s_hat_1.shape[0], dtype=float)
+            y_hat_0 = np.ones(s_hat_0.shape[0], dtype=float)
+        else:
+            y_hat_1 = s_hat_1[:, horizon_index - 1]
+            y_hat_0 = s_hat_0[:, horizon_index - 1]
+    return w_hat * y_hat_1 + (1.0 - w_hat) * y_hat_0
 
 
 def _clip_quantile(values, q):
@@ -559,6 +676,14 @@ class _MildShrinkNCSurvivalNuisance:
         q_clip,
         y_tilde_clip_quantile,
         y_res_clip_percentiles,
+        event_survival_estimator="cox",
+        m_pred_mode="bridge",
+        survival_forest_num_trees=50,
+        survival_forest_min_node_size=15,
+        survival_fast_logrank=False,
+        n_jobs=1,
+        random_state=42,
+        enforce_finite_horizon=False,
     ):
         self._q_model_template = q_model
         self._h_model_template = h_model
@@ -570,6 +695,14 @@ class _MildShrinkNCSurvivalNuisance:
         self._q_clip = q_clip
         self._y_tilde_clip_quantile = y_tilde_clip_quantile
         self._y_res_clip_percentiles = y_res_clip_percentiles
+        self._event_survival_estimator = event_survival_estimator
+        self._m_pred_mode = m_pred_mode
+        self._survival_forest_num_trees = int(survival_forest_num_trees)
+        self._survival_forest_min_node_size = int(survival_forest_min_node_size)
+        self._survival_fast_logrank = bool(survival_fast_logrank)
+        self._n_jobs = int(n_jobs)
+        self._random_state = int(random_state)
+        self._enforce_finite_horizon = bool(enforce_finite_horizon)
 
         self._q_model = None
         self._h1_model = None
@@ -581,6 +714,7 @@ class _MildShrinkNCSurvivalNuisance:
         self._cox_col_names_0 = None
         self._cox_keep_mask_1 = None
         self._cox_keep_mask_0 = None
+        self._event_survival_model = None
         self._t_grid = None
 
     def _unpack_y(self, y):
@@ -589,15 +723,136 @@ class _MildShrinkNCSurvivalNuisance:
             return y[:, 0], y[:, 1]
         raise ValueError("Y must be a 2-column array [time, event].")
 
-    def train(self, is_selecting, folds, Y, T, X=None, W=None, Z=None, sample_weight=None, groups=None):
-        y_time, delta = self._unpack_y(Y)
-        a = np.asarray(T).ravel()
-        target_inputs = _prepare_target_inputs(
+    def __del__(self):
+        self._close_native_handles()
+
+    def __getstate__(self):
+        state = dict(self.__dict__)
+        # EconML clones the nuisance object fold-by-fold. Native handles and
+        # fitted state are not cloneable, so we drop them during deepcopy.
+        state["_q_model"] = None
+        state["_h1_model"] = None
+        state["_h0_model"] = None
+        state["_censor_model"] = None
+        state["_event_cox_1"] = None
+        state["_event_cox_0"] = None
+        state["_cox_col_names_1"] = None
+        state["_cox_col_names_0"] = None
+        state["_cox_keep_mask_1"] = None
+        state["_cox_keep_mask_0"] = None
+        state["_event_survival_model"] = None
+        state["_t_grid"] = None
+        return state
+
+    def _close_native_handles(self):
+        event_model = getattr(self, "_event_survival_model", None)
+        if event_model is not None:
+            try:
+                event_model.close()
+            except Exception:
+                pass
+            self._event_survival_model = None
+        censor_model = getattr(self, "_censor_model", None)
+        if censor_model is not None and censor_model.get("kind") == "survival_forest":
+            try:
+                censor_model["model"].close()
+            except Exception:
+                pass
+        self._censor_model = None
+
+    def _prepare_target_inputs(self, y_time, delta):
+        if self._enforce_finite_horizon and self._horizon is None:
+            raise ValueError(
+                "This survival-nuisance variant requires a finite horizon. "
+                "Pass horizon=<float> when enforce_finite_horizon=True."
+            )
+        return _prepare_target_inputs(
             y_time,
             delta,
             target=self._target,
             horizon=self._horizon,
         )
+
+    @staticmethod
+    def _augment_with_treatment(features, a):
+        return np.column_stack([np.asarray(features, dtype=float), np.asarray(a, dtype=float).reshape(-1, 1)])
+
+    def _predict_event_survival_curves(self, surv_features):
+        if self._event_survival_estimator == "survival_forest":
+            if self._event_survival_model is None:
+                raise RuntimeError("Event survival forest has not been fit.")
+            return _predict_native_survival_counterfactuals(
+                self._event_survival_model,
+                surv_features,
+                self._t_grid,
+            )
+        return (
+            _predict_s_on_grid(
+                self._event_cox_1,
+                self._cox_col_names_1,
+                surv_features,
+                self._t_grid,
+                self._cox_keep_mask_1,
+            ),
+            _predict_s_on_grid(
+                self._event_cox_0,
+                self._cox_col_names_0,
+                surv_features,
+                self._t_grid,
+                self._cox_keep_mask_0,
+            ),
+        )
+
+    def _compute_m_pred(self, q_pred, h1_pred, h0_pred, s_hat_1, s_hat_0):
+        bridge_pred = q_pred * h1_pred + (1.0 - q_pred) * h0_pred
+        if self._m_pred_mode == "bridge":
+            return bridge_pred
+        survival_pred = _compute_survival_based_yhat(
+            s_hat_1,
+            s_hat_0,
+            q_pred,
+            self._t_grid,
+            target=self._target,
+            horizon=self._horizon,
+        )
+        if self._m_pred_mode == "survival":
+            return survival_pred
+        if isinstance(self._m_pred_mode, str) and self._m_pred_mode.startswith("blend"):
+            suffix = self._m_pred_mode[len("blend") :]
+            suffix = suffix.lstrip("_")
+            try:
+                alpha = float(suffix)
+            except ValueError as exc:
+                raise ValueError(f"Unsupported m_pred_mode: {self._m_pred_mode}") from exc
+            if not (0.0 <= alpha <= 1.0):
+                raise ValueError(f"Blend weight must be in [0, 1], got {alpha}.")
+            return alpha * bridge_pred + (1.0 - alpha) * survival_pred
+        raise ValueError(f"Unsupported m_pred_mode: {self._m_pred_mode}")
+
+    def _predict_censoring_from_counterfactuals(self, censor_features, q_pred, *, values=None, on_grid=False):
+        if self._censor_model is None or self._censor_model.get("kind") != "survival_forest":
+            raise RuntimeError("Counterfactual censoring prediction requires a survival-forest censor model.")
+        c1, c0 = _predict_native_survival_counterfactuals(
+            self._censor_model["model"],
+            censor_features,
+            self._t_grid,
+        )
+        mixed = q_pred[:, None] * c1 + (1.0 - q_pred)[:, None] * c0
+        mixed = np.clip(mixed, 0.01, 1.0)
+        if on_grid:
+            return mixed
+        if values is None:
+            raise ValueError("values must be provided when on_grid=False.")
+        values = np.asarray(values, dtype=float)
+        idx = np.searchsorted(self._t_grid, values, side="right") - 1
+        idx = np.clip(idx, 0, len(self._t_grid) - 1)
+        return mixed[np.arange(len(values)), idx]
+
+    def train(self, is_selecting, folds, Y, T, X=None, W=None, Z=None, sample_weight=None, groups=None):
+        self._close_native_handles()
+        y_time, delta = self._unpack_y(Y)
+        a = np.asarray(T).ravel()
+        target_inputs = self._prepare_target_inputs(y_time, delta)
 
         w = _ensure_2d(W)
         z = _ensure_2d(Z)
@@ -609,16 +864,32 @@ class _MildShrinkNCSurvivalNuisance:
             self._nuisance_feature_mode,
         )
 
+        all_times = np.sort(np.unique(target_inputs["grid_time"]))
+        if len(all_times) > self.max_grid:
+            idx = np.linspace(0, len(all_times) - 1, self.max_grid, dtype=int)
+            all_times = all_times[idx]
+        self._t_grid = all_times
+
+        surv_features_obs = self._augment_with_treatment(surv_features, a)
+        censor_features_obs = self._augment_with_treatment(censor_features, a)
+
         self._censor_model = _fit_censoring_model(
             target_inputs["nuisance_time"],
             target_inputs["nuisance_delta"],
-            censor_features,
+            censor_features_obs if self._censoring_estimator == "survival_forest" else censor_features,
             estimator=self._censoring_estimator,
+            failure_times=self._t_grid if self._censoring_estimator == "survival_forest" else None,
+            num_trees=self._survival_forest_num_trees,
+            min_node_size=self._survival_forest_min_node_size,
+            n_jobs=self._n_jobs,
+            random_state=self._random_state,
+            fast_logrank=self._survival_fast_logrank,
+            sample_weight=sample_weight,
         )
         y_tilde_eval_time = target_inputs["eval_time"] if self._target == "survival.probability" else target_inputs["nuisance_time"]
         sc_for_y_tilde = _predict_censoring_survival_at_values(
             self._censor_model,
-            censor_features,
+            censor_features_obs if self._censoring_estimator == "survival_forest" else censor_features,
             y_tilde_eval_time,
         )
         y_tilde = _compute_target_pseudo_outcome_from_sc(
@@ -653,33 +924,45 @@ class _MildShrinkNCSurvivalNuisance:
                 **filter_none_kwargs(sample_weight=None if sample_weight is None else sample_weight[control_mask]),
             )
 
-        self._event_cox_1, self._cox_col_names_1, self._cox_keep_mask_1 = _fit_event_cox(
-            target_inputs["nuisance_time"][treated_mask],
-            target_inputs["nuisance_delta"][treated_mask],
-            surv_features[treated_mask],
-        )
-        self._event_cox_0, self._cox_col_names_0, self._cox_keep_mask_0 = _fit_event_cox(
-            target_inputs["nuisance_time"][control_mask],
-            target_inputs["nuisance_delta"][control_mask],
-            surv_features[control_mask],
-        )
-
-        all_times = np.sort(np.unique(target_inputs["grid_time"]))
-        if len(all_times) > self.max_grid:
-            idx = np.linspace(0, len(all_times) - 1, self.max_grid, dtype=int)
-            all_times = all_times[idx]
-        self._t_grid = all_times
+        if self._event_survival_estimator == "survival_forest":
+            self._event_cox_1 = None
+            self._event_cox_0 = None
+            self._cox_col_names_1 = None
+            self._cox_col_names_0 = None
+            self._cox_keep_mask_1 = None
+            self._cox_keep_mask_0 = None
+            self._event_survival_model = _fit_native_survival_forest(
+                surv_features_obs,
+                target_inputs["nuisance_time"],
+                target_inputs["nuisance_delta"],
+                failure_times=self._t_grid,
+                num_trees=self._survival_forest_num_trees,
+                min_node_size=self._survival_forest_min_node_size,
+                n_jobs=self._n_jobs,
+                random_state=self._random_state,
+                fast_logrank=self._survival_fast_logrank,
+                sample_weight=sample_weight,
+            )
+        elif self._event_survival_estimator == "cox":
+            self._event_survival_model = None
+            self._event_cox_1, self._cox_col_names_1, self._cox_keep_mask_1 = _fit_event_cox(
+                target_inputs["nuisance_time"][treated_mask],
+                target_inputs["nuisance_delta"][treated_mask],
+                surv_features[treated_mask],
+            )
+            self._event_cox_0, self._cox_col_names_0, self._cox_keep_mask_0 = _fit_event_cox(
+                target_inputs["nuisance_time"][control_mask],
+                target_inputs["nuisance_delta"][control_mask],
+                surv_features[control_mask],
+            )
+        else:
+            raise ValueError(f"Unsupported event_survival_estimator: {self._event_survival_estimator}")
         return self
 
     def predict(self, Y, T, X=None, W=None, Z=None, sample_weight=None, groups=None):
         y_time, delta = self._unpack_y(Y)
         a = np.asarray(T).ravel()
-        target_inputs = _prepare_target_inputs(
-            y_time,
-            delta,
-            target=self._target,
-            horizon=self._horizon,
-        )
+        target_inputs = self._prepare_target_inputs(y_time, delta)
 
         w = _ensure_2d(W)
         z = _ensure_2d(Z)
@@ -695,22 +978,8 @@ class _MildShrinkNCSurvivalNuisance:
         q_pred = np.clip(q_pred, self._q_clip, 1.0 - self._q_clip)
         h1_pred = self._h1_model.predict(xw)
         h0_pred = self._h0_model.predict(xw)
-        m_pred = q_pred * h1_pred + (1.0 - q_pred) * h0_pred
-
-        s_hat_1 = _predict_s_on_grid(
-            self._event_cox_1,
-            self._cox_col_names_1,
-            surv_features,
-            self._t_grid,
-            self._cox_keep_mask_1,
-        )
-        s_hat_0 = _predict_s_on_grid(
-            self._event_cox_0,
-            self._cox_col_names_0,
-            surv_features,
-            self._t_grid,
-            self._cox_keep_mask_0,
-        )
+        s_hat_1, s_hat_0 = self._predict_event_survival_curves(surv_features)
+        m_pred = self._compute_m_pred(q_pred, h1_pred, h0_pred, s_hat_1, s_hat_0)
         if self._target == "survival.probability":
             q_hat_1 = _compute_survival_probability_q_from_s(s_hat_1, self._t_grid, self._horizon)
             q_hat_0 = _compute_survival_probability_q_from_s(s_hat_0, self._t_grid, self._horizon)
@@ -719,16 +988,17 @@ class _MildShrinkNCSurvivalNuisance:
             q_hat_0 = _compute_q_from_s(s_hat_0, self._t_grid)
         q_hat = np.where((a == 1)[:, None], q_hat_1, q_hat_0)
 
+        censor_features_obs = self._augment_with_treatment(censor_features, a)
         sc_grid = _predict_censoring_survival_on_grid(
             self._censor_model,
-            censor_features,
+            censor_features_obs if self._censoring_estimator == "survival_forest" else censor_features,
             self._t_grid,
         )
 
         if self._target == "RMST" and self._horizon is None:
             sc_at_eval = _predict_censoring_survival_at_values(
                 self._censor_model,
-                censor_features,
+                censor_features_obs if self._censoring_estimator == "survival_forest" else censor_features,
                 y_time,
             )
             y_res = _compute_ipcw_3term_y_res_from_survival(
@@ -744,7 +1014,7 @@ class _MildShrinkNCSurvivalNuisance:
         else:
             sc_at_eval = _predict_censoring_survival_at_values(
                 self._censor_model,
-                censor_features,
+                censor_features_obs if self._censoring_estimator == "survival_forest" else censor_features,
                 target_inputs["eval_time"],
             )
             y_res = _compute_target_ipcw_3term_y_res_from_survival(
@@ -775,28 +1045,31 @@ class _MildShrinkNCSurvivalNuisance:
         q_pred = np.clip(q_pred, self._q_clip, 1.0 - self._q_clip)
         h1_pred = self._h1_model.predict(xw)
         h0_pred = self._h0_model.predict(xw)
-        m_pred = q_pred * h1_pred + (1.0 - q_pred) * h0_pred
-        s_hat_1 = _predict_s_on_grid(
-            self._event_cox_1,
-            self._cox_col_names_1,
-            surv_features,
+        s_hat_1, s_hat_0 = self._predict_event_survival_curves(surv_features)
+        m_bridge_pred = q_pred * h1_pred + (1.0 - q_pred) * h0_pred
+        m_survival_pred = _compute_survival_based_yhat(
+            s_hat_1,
+            s_hat_0,
+            q_pred,
             self._t_grid,
-            self._cox_keep_mask_1,
+            target=self._target,
+            horizon=self._horizon,
         )
-        s_hat_0 = _predict_s_on_grid(
-            self._event_cox_0,
-            self._cox_col_names_0,
-            surv_features,
-            self._t_grid,
-            self._cox_keep_mask_0,
-        )
+        m_pred = self._compute_m_pred(q_pred, h1_pred, h0_pred, s_hat_1, s_hat_0)
         if self._target == "survival.probability":
             q_hat_1 = _compute_survival_probability_q_from_s(s_hat_1, self._t_grid, self._horizon)
             q_hat_0 = _compute_survival_probability_q_from_s(s_hat_0, self._t_grid, self._horizon)
         else:
             q_hat_1 = _compute_q_from_s(s_hat_1, self._t_grid)
             q_hat_0 = _compute_q_from_s(s_hat_0, self._t_grid)
-        c_curve = _predict_censoring_survival_on_grid(self._censor_model, censor_features, self._t_grid)
+        if self._censoring_estimator == "survival_forest":
+            c_curve = self._predict_censoring_from_counterfactuals(
+                censor_features,
+                q_pred,
+                on_grid=True,
+            )
+        else:
+            c_curve = _predict_censoring_survival_on_grid(self._censor_model, censor_features, self._t_grid)
         surv1_pred = q_hat_1[:, 0]
         surv0_pred = q_hat_0[:, 0]
         return {
@@ -804,6 +1077,10 @@ class _MildShrinkNCSurvivalNuisance:
             "h1_pred": h1_pred,
             "h0_pred": h0_pred,
             "m_pred": m_pred,
+            "m_bridge_pred": m_bridge_pred,
+            "m_survival_pred": m_survival_pred,
+            "m_gap_pred": m_bridge_pred - m_survival_pred,
+            "h_diff_pred": h1_pred - h0_pred,
             "surv1_pred": surv1_pred,
             "surv0_pred": surv0_pred,
             "surv_diff_pred": surv1_pred - surv0_pred,
@@ -812,20 +1089,16 @@ class _MildShrinkNCSurvivalNuisance:
             "s1_curve": s_hat_1,
             "s0_curve": s_hat_0,
             "c_curve": c_curve,
+            "t_grid": np.asarray(self._t_grid, dtype=float),
         }
 
     def predict_target_pseudo_outcome(self, Y, X=None, W=None, Z=None):
         y_time, delta = self._unpack_y(Y)
-        target_inputs = _prepare_target_inputs(
-            y_time,
-            delta,
-            target=self._target,
-            horizon=self._horizon,
-        )
+        target_inputs = self._prepare_target_inputs(y_time, delta)
         w = _ensure_2d(W)
         z = _ensure_2d(Z)
         raw_x = _recover_raw_x(X, w, z, self._final_feature_mode)
-        _, _, _, censor_features = _build_nuisance_features(
+        xz, _, _, censor_features = _build_nuisance_features(
             raw_x,
             w,
             z,
@@ -836,11 +1109,21 @@ class _MildShrinkNCSurvivalNuisance:
             if self._target == "survival.probability"
             else target_inputs["nuisance_time"]
         )
-        sc_for_y_tilde = _predict_censoring_survival_at_values(
-            self._censor_model,
-            censor_features,
-            y_tilde_eval_time,
-        )
+        if self._censoring_estimator == "survival_forest":
+            q_pred = self._q_model.predict_proba(xz)[:, 1]
+            q_pred = np.clip(q_pred, self._q_clip, 1.0 - self._q_clip)
+            sc_for_y_tilde = self._predict_censoring_from_counterfactuals(
+                censor_features,
+                q_pred,
+                values=y_tilde_eval_time,
+                on_grid=False,
+            )
+        else:
+            sc_for_y_tilde = _predict_censoring_survival_at_values(
+                self._censor_model,
+                censor_features,
+                y_tilde_eval_time,
+            )
         y_tilde = _compute_target_pseudo_outcome_from_sc(
             y_time=y_time,
             target=self._target,
@@ -884,6 +1167,12 @@ class EconmlMildShrinkNCSurvivalForest(CausalForestDML):
         h_n_estimators=800,
         h_min_samples_leaf=5,
         censoring_estimator="kaplan-meier",
+        event_survival_estimator="cox",
+        m_pred_mode="bridge",
+        survival_forest_num_trees=50,
+        survival_forest_min_node_size=15,
+        survival_fast_logrank=False,
+        enforce_finite_horizon=False,
         n_jobs=1,
         **kwargs,
     ):
@@ -906,6 +1195,14 @@ class EconmlMildShrinkNCSurvivalForest(CausalForestDML):
         self._final_feature_mode = final_feature_mode
         self._nuisance_feature_mode = nuisance_feature_mode
         self._censoring_estimator = censoring_estimator
+        self._event_survival_estimator = event_survival_estimator
+        self._m_pred_mode = m_pred_mode
+        self._survival_forest_num_trees = int(survival_forest_num_trees)
+        self._survival_forest_min_node_size = int(survival_forest_min_node_size)
+        self._survival_fast_logrank = bool(survival_fast_logrank)
+        self._n_jobs = int(n_jobs)
+        self._random_state = int(random_state)
+        self._enforce_finite_horizon = bool(enforce_finite_horizon)
         self._custom_q_clip = q_clip
         self._custom_y_tilde_clip_quantile = y_tilde_clip_quantile
         self._custom_y_res_clip_percentiles = y_res_clip_percentiles
@@ -935,6 +1232,14 @@ class EconmlMildShrinkNCSurvivalForest(CausalForestDML):
             q_clip=self._custom_q_clip,
             y_tilde_clip_quantile=self._custom_y_tilde_clip_quantile,
             y_res_clip_percentiles=self._custom_y_res_clip_percentiles,
+            event_survival_estimator=self._event_survival_estimator,
+            m_pred_mode=self._m_pred_mode,
+            survival_forest_num_trees=self._survival_forest_num_trees,
+            survival_forest_min_node_size=self._survival_forest_min_node_size,
+            survival_fast_logrank=self._survival_fast_logrank,
+            n_jobs=self._n_jobs,
+            random_state=self._random_state,
+            enforce_finite_horizon=self._enforce_finite_horizon,
         )
 
     @staticmethod

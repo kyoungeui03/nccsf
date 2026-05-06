@@ -1,0 +1,17 @@
+{
+  "status": "completed",
+  "completed_tasks": 2000,
+  "total_tasks": 2000,
+  "remaining_tasks": 0,
+  "percent_complete": 100.0,
+  "elapsed_sec": 41864.98823475838,
+  "elapsed_pretty": "11:37:44",
+  "last_completed": {
+    "model": "R-CSF Baseline",
+    "target": "survival.probability",
+    "setting_id": 4,
+    "rep_seed": 14291,
+    "fit_time_sec": 12.783863306045532,
+    "task_elapsed_sec": 18.160483360290527
+  }
+}

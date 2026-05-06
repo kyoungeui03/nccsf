@@ -4,6 +4,7 @@ from .models import (
     FinalModelNCCausalForest,
     FinalModelRCFNCCausalForest,
     FinalModelNoPCINCCausalForest,
+    ProperNoPCINCCausalForest,
     FinalModelRawNCCausalForest,
     StrictEconmlXWZNCCausalForest,
 )
@@ -13,6 +14,7 @@ __all__ = [
     "FinalModelNCCausalForest",
     "FinalModelRCFNCCausalForest",
     "FinalModelNoPCINCCausalForest",
+    "ProperNoPCINCCausalForest",
     "FinalModelRawNCCausalForest",
     "StrictEconmlXWZNCCausalForest",
     "SynthConfig",
