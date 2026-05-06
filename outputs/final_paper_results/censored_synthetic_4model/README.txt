@@ -8,7 +8,7 @@ Included model outputs:
 4. R-CSF Baseline
 
 Source details:
-- Final Conditional / Revised Conditional: /Users/kyoungeuihong/Desktop/csf_grf_new/outputs/final_paper_results/censored_synthetic_5model_source/results_full.csv
+- Final Conditional / Revised Conditional: outputs/final_paper_results/censored_synthetic_5model_source/results_full.csv
 - Final Model Oracle / R-CSF Baseline: git commit 7fdc98313f1158d356daab6eabbb0e0a9946a8dd, file outputs/single_file_censored_models_5model/results_full.csv
 
 Files:

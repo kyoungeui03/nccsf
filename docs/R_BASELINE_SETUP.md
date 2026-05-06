@@ -50,9 +50,9 @@ If your installed `grf` is too old, update it.
 ### Non-censored direct R baseline
 
 ```bash
-cd /Users/kyoungeuihong/Desktop/csf_grf_new
-/Users/kyoungeuihong/Desktop/csf_grf_new/.mmenv311/bin/python \
-  /Users/kyoungeuihong/Desktop/csf_grf_new/scripts/run_final_model_bundle_benchmark.py \
+cd <REPO_ROOT>
+<REPO_ROOT>/.mmenv311/bin/python \
+  <REPO_ROOT>/scripts/run_final_model_bundle_benchmark.py \
   --dataset basic12 \
   --domain non_censored \
   --case-ids 1
@@ -61,9 +61,9 @@ cd /Users/kyoungeuihong/Desktop/csf_grf_new
 ### Censored direct R baseline
 
 ```bash
-cd /Users/kyoungeuihong/Desktop/csf_grf_new
-/Users/kyoungeuihong/Desktop/csf_grf_new/.mmenv311/bin/python \
-  /Users/kyoungeuihong/Desktop/csf_grf_new/scripts/run_final_model_bundle_benchmark.py \
+cd <REPO_ROOT>
+<REPO_ROOT>/.mmenv311/bin/python \
+  <REPO_ROOT>/scripts/run_final_model_bundle_benchmark.py \
   --dataset basic12 \
   --domain censored \
   --case-ids 1

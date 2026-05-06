@@ -31,12 +31,12 @@ For direct use on a user-provided censored dataset, call
 `effect_from_components(X_test, W_test, Z_test)`.
 
 Detailed instructions are in
-[`docs/USING_FINAL_MODELS.md`](/Users/kyoungeuihong/Desktop/csf_grf_new/docs/USING_FINAL_MODELS.md).
+[`docs/USING_FINAL_MODELS.md`](../docs/USING_FINAL_MODELS.md).
 
 ## Paper outputs
 
 Canonical saved outputs and table-source mappings are documented in
-[`docs/FINAL_REPRODUCIBILITY_NOTE.md`](/Users/kyoungeuihong/Desktop/csf_grf_new/docs/FINAL_REPRODUCIBILITY_NOTE.md).
+[`docs/FINAL_REPRODUCIBILITY_NOTE.md`](../docs/FINAL_REPRODUCIBILITY_NOTE.md).
 
 The old `single_file_censored_models/` package name has been retired. Import
 from `censored.*` instead.

@@ -2,7 +2,7 @@
 
 This manifest records the current post-refactor keep set. It is intentionally
 short; detailed result locations are maintained in
-[`FINAL_REPRODUCIBILITY_NOTE.md`](/Users/kyoungeuihong/Desktop/csf_grf_new/docs/FINAL_REPRODUCIBILITY_NOTE.md).
+[`FINAL_REPRODUCIBILITY_NOTE.md`](FINAL_REPRODUCIBILITY_NOTE.md).
 
 ## Keep: Repository Structure
 
@@ -23,7 +23,7 @@ short; detailed result locations are maintained in
 ## Keep: Data
 
 - `data/synthetic_scenarios/`: materialized proximal synthetic scenarios.
-- `data/csf_section4_synthetic/`: metadata for the Cui et al. Section 4
+- `data/csf_section4_synthetic/`: metadata for the prior work (2023) Section 4
   paper-replication DGP.
 - `data/actg175/`: canonical ACTG175 inputs and metadata.
 - `data/rhc/`: canonical RHC inputs and metadata.
@@ -117,4 +117,4 @@ python3 Archive/run_paper_final_model_simulation.py --help
 ```
 
 For result integrity, compare canonical output CSV row counts and table values
-against [`FINAL_REPRODUCIBILITY_NOTE.md`](/Users/kyoungeuihong/Desktop/csf_grf_new/docs/FINAL_REPRODUCIBILITY_NOTE.md).
+against [`FINAL_REPRODUCIBILITY_NOTE.md`](FINAL_REPRODUCIBILITY_NOTE.md).

@@ -31,8 +31,8 @@
     "linear_treatment": true,
     "linear_outcome": true
   },
-  "observed_csv": "/Users/kyoungeuihong/Desktop/csf_grf_new/data/synthetic_scenarios/survival_default/observed.csv",
-  "truth_csv": "/Users/kyoungeuihong/Desktop/csf_grf_new/data/synthetic_scenarios/survival_default/truth.csv",
+  "observed_csv": "data/synthetic_scenarios/survival_default/observed.csv",
+  "truth_csv": "data/synthetic_scenarios/survival_default/truth.csv",
   "num_rows": 2000,
   "num_features": 5,
   "actual_censor_rate": 0.35

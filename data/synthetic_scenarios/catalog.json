@@ -8,8 +8,8 @@
     "num_rows": 2000,
     "num_features": 5,
     "actual_censor_rate": 0.35,
-    "observed_csv": "/Users/kyoungeuihong/Desktop/csf_grf_new/data/synthetic_scenarios/survival_default/observed.csv",
-    "truth_csv": "/Users/kyoungeuihong/Desktop/csf_grf_new/data/synthetic_scenarios/survival_default/truth.csv"
+    "observed_csv": "data/synthetic_scenarios/survival_default/observed.csv",
+    "truth_csv": "data/synthetic_scenarios/survival_default/truth.csv"
   },
   {
     "slug": "notebook_linear_informative_strong_beneficial_large",
@@ -20,8 +20,8 @@
     "num_rows": 2000,
     "num_features": 5,
     "actual_censor_rate": 0.35,
-    "observed_csv": "/Users/kyoungeuihong/Desktop/csf_grf_new/data/synthetic_scenarios/notebook_linear_informative_strong_beneficial_large/observed.csv",
-    "truth_csv": "/Users/kyoungeuihong/Desktop/csf_grf_new/data/synthetic_scenarios/notebook_linear_informative_strong_beneficial_large/truth.csv"
+    "observed_csv": "data/synthetic_scenarios/notebook_linear_informative_strong_beneficial_large/observed.csv",
+    "truth_csv": "data/synthetic_scenarios/notebook_linear_informative_strong_beneficial_large/truth.csv"
   },
   {
     "slug": "notebook_linear_informative_weak_harmful_small",
@@ -32,8 +32,8 @@
     "num_rows": 2000,
     "num_features": 5,
     "actual_censor_rate": 0.34950000000000003,
-    "observed_csv": "/Users/kyoungeuihong/Desktop/csf_grf_new/data/synthetic_scenarios/notebook_linear_informative_weak_harmful_small/observed.csv",
-    "truth_csv": "/Users/kyoungeuihong/Desktop/csf_grf_new/data/synthetic_scenarios/notebook_linear_informative_weak_harmful_small/truth.csv"
+    "observed_csv": "data/synthetic_scenarios/notebook_linear_informative_weak_harmful_small/observed.csv",
+    "truth_csv": "data/synthetic_scenarios/notebook_linear_informative_weak_harmful_small/truth.csv"
   },
   {
     "slug": "notebook_linear_noninformative_strong_harmful_moderate",
@@ -44,8 +44,8 @@
     "num_rows": 2000,
     "num_features": 5,
     "actual_censor_rate": 0.35,
-    "observed_csv": "/Users/kyoungeuihong/Desktop/csf_grf_new/data/synthetic_scenarios/notebook_linear_noninformative_strong_harmful_moderate/observed.csv",
-    "truth_csv": "/Users/kyoungeuihong/Desktop/csf_grf_new/data/synthetic_scenarios/notebook_linear_noninformative_strong_harmful_moderate/truth.csv"
+    "observed_csv": "data/synthetic_scenarios/notebook_linear_noninformative_strong_harmful_moderate/observed.csv",
+    "truth_csv": "data/synthetic_scenarios/notebook_linear_noninformative_strong_harmful_moderate/truth.csv"
   },
   {
     "slug": "notebook_linear_noninformative_weak_harmful_nearnull",
@@ -56,8 +56,8 @@
     "num_rows": 2000,
     "num_features": 5,
     "actual_censor_rate": 0.34950000000000003,
-    "observed_csv": "/Users/kyoungeuihong/Desktop/csf_grf_new/data/synthetic_scenarios/notebook_linear_noninformative_weak_harmful_nearnull/observed.csv",
-    "truth_csv": "/Users/kyoungeuihong/Desktop/csf_grf_new/data/synthetic_scenarios/notebook_linear_noninformative_weak_harmful_nearnull/truth.csv"
+    "observed_csv": "data/synthetic_scenarios/notebook_linear_noninformative_weak_harmful_nearnull/observed.csv",
+    "truth_csv": "data/synthetic_scenarios/notebook_linear_noninformative_weak_harmful_nearnull/truth.csv"
   },
   {
     "slug": "notebook_outcome_nonlinear_informative_strong_beneficial_large",
@@ -68,8 +68,8 @@
     "num_rows": 2000,
     "num_features": 5,
     "actual_censor_rate": 0.34950000000000003,
-    "observed_csv": "/Users/kyoungeuihong/Desktop/csf_grf_new/data/synthetic_scenarios/notebook_outcome_nonlinear_informative_strong_beneficial_large/observed.csv",
-    "truth_csv": "/Users/kyoungeuihong/Desktop/csf_grf_new/data/synthetic_scenarios/notebook_outcome_nonlinear_informative_strong_beneficial_large/truth.csv"
+    "observed_csv": "data/synthetic_scenarios/notebook_outcome_nonlinear_informative_strong_beneficial_large/observed.csv",
+    "truth_csv": "data/synthetic_scenarios/notebook_outcome_nonlinear_informative_strong_beneficial_large/truth.csv"
   },
   {
     "slug": "notebook_outcome_nonlinear_informative_weak_harmful_small",
@@ -80,8 +80,8 @@
     "num_rows": 2000,
     "num_features": 5,
     "actual_censor_rate": 0.34950000000000003,
-    "observed_csv": "/Users/kyoungeuihong/Desktop/csf_grf_new/data/synthetic_scenarios/notebook_outcome_nonlinear_informative_weak_harmful_small/observed.csv",
-    "truth_csv": "/Users/kyoungeuihong/Desktop/csf_grf_new/data/synthetic_scenarios/notebook_outcome_nonlinear_informative_weak_harmful_small/truth.csv"
+    "observed_csv": "data/synthetic_scenarios/notebook_outcome_nonlinear_informative_weak_harmful_small/observed.csv",
+    "truth_csv": "data/synthetic_scenarios/notebook_outcome_nonlinear_informative_weak_harmful_small/truth.csv"
   },
   {
     "slug": "notebook_outcome_nonlinear_noninformative_strong_harmful_moderate",
@@ -92,8 +92,8 @@
     "num_rows": 2000,
     "num_features": 5,
     "actual_censor_rate": 0.34950000000000003,
-    "observed_csv": "/Users/kyoungeuihong/Desktop/csf_grf_new/data/synthetic_scenarios/notebook_outcome_nonlinear_noninformative_strong_harmful_moderate/observed.csv",
-    "truth_csv": "/Users/kyoungeuihong/Desktop/csf_grf_new/data/synthetic_scenarios/notebook_outcome_nonlinear_noninformative_strong_harmful_moderate/truth.csv"
+    "observed_csv": "data/synthetic_scenarios/notebook_outcome_nonlinear_noninformative_strong_harmful_moderate/observed.csv",
+    "truth_csv": "data/synthetic_scenarios/notebook_outcome_nonlinear_noninformative_strong_harmful_moderate/truth.csv"
   },
   {
     "slug": "notebook_outcome_nonlinear_noninformative_weak_harmful_nearnull",
@@ -104,8 +104,8 @@
     "num_rows": 2000,
     "num_features": 5,
     "actual_censor_rate": 0.34950000000000003,
-    "observed_csv": "/Users/kyoungeuihong/Desktop/csf_grf_new/data/synthetic_scenarios/notebook_outcome_nonlinear_noninformative_weak_harmful_nearnull/observed.csv",
-    "truth_csv": "/Users/kyoungeuihong/Desktop/csf_grf_new/data/synthetic_scenarios/notebook_outcome_nonlinear_noninformative_weak_harmful_nearnull/truth.csv"
+    "observed_csv": "data/synthetic_scenarios/notebook_outcome_nonlinear_noninformative_weak_harmful_nearnull/observed.csv",
+    "truth_csv": "data/synthetic_scenarios/notebook_outcome_nonlinear_noninformative_weak_harmful_nearnull/truth.csv"
   },
   {
     "slug": "notebook_fully_nonlinear_informative_strong_beneficial_large",
@@ -116,8 +116,8 @@
     "num_rows": 2000,
     "num_features": 5,
     "actual_censor_rate": 0.34950000000000003,
-    "observed_csv": "/Users/kyoungeuihong/Desktop/csf_grf_new/data/synthetic_scenarios/notebook_fully_nonlinear_informative_strong_beneficial_large/observed.csv",
-    "truth_csv": "/Users/kyoungeuihong/Desktop/csf_grf_new/data/synthetic_scenarios/notebook_fully_nonlinear_informative_strong_beneficial_large/truth.csv"
+    "observed_csv": "data/synthetic_scenarios/notebook_fully_nonlinear_informative_strong_beneficial_large/observed.csv",
+    "truth_csv": "data/synthetic_scenarios/notebook_fully_nonlinear_informative_strong_beneficial_large/truth.csv"
   },
   {
     "slug": "notebook_fully_nonlinear_informative_weak_harmful_small",
@@ -128,8 +128,8 @@
     "num_rows": 2000,
     "num_features": 5,
     "actual_censor_rate": 0.35,
-    "observed_csv": "/Users/kyoungeuihong/Desktop/csf_grf_new/data/synthetic_scenarios/notebook_fully_nonlinear_informative_weak_harmful_small/observed.csv",
-    "truth_csv": "/Users/kyoungeuihong/Desktop/csf_grf_new/data/synthetic_scenarios/notebook_fully_nonlinear_informative_weak_harmful_small/truth.csv"
+    "observed_csv": "data/synthetic_scenarios/notebook_fully_nonlinear_informative_weak_harmful_small/observed.csv",
+    "truth_csv": "data/synthetic_scenarios/notebook_fully_nonlinear_informative_weak_harmful_small/truth.csv"
   },
   {
     "slug": "notebook_fully_nonlinear_noninformative_strong_harmful_moderate",
@@ -140,8 +140,8 @@
     "num_rows": 2000,
     "num_features": 5,
     "actual_censor_rate": 0.35,
-    "observed_csv": "/Users/kyoungeuihong/Desktop/csf_grf_new/data/synthetic_scenarios/notebook_fully_nonlinear_noninformative_strong_harmful_moderate/observed.csv",
-    "truth_csv": "/Users/kyoungeuihong/Desktop/csf_grf_new/data/synthetic_scenarios/notebook_fully_nonlinear_noninformative_strong_harmful_moderate/truth.csv"
+    "observed_csv": "data/synthetic_scenarios/notebook_fully_nonlinear_noninformative_strong_harmful_moderate/observed.csv",
+    "truth_csv": "data/synthetic_scenarios/notebook_fully_nonlinear_noninformative_strong_harmful_moderate/truth.csv"
   },
   {
     "slug": "notebook_fully_nonlinear_noninformative_weak_harmful_nearnull",
@@ -152,8 +152,8 @@
     "num_rows": 2000,
     "num_features": 5,
     "actual_censor_rate": 0.34950000000000003,
-    "observed_csv": "/Users/kyoungeuihong/Desktop/csf_grf_new/data/synthetic_scenarios/notebook_fully_nonlinear_noninformative_weak_harmful_nearnull/observed.csv",
-    "truth_csv": "/Users/kyoungeuihong/Desktop/csf_grf_new/data/synthetic_scenarios/notebook_fully_nonlinear_noninformative_weak_harmful_nearnull/truth.csv"
+    "observed_csv": "data/synthetic_scenarios/notebook_fully_nonlinear_noninformative_weak_harmful_nearnull/observed.csv",
+    "truth_csv": "data/synthetic_scenarios/notebook_fully_nonlinear_noninformative_weak_harmful_nearnull/truth.csv"
   },
   {
     "slug": "legacy_comparison_default",
@@ -164,7 +164,7 @@
     "num_rows": 2000,
     "num_features": 5,
     "actual_censor_rate": 0.35,
-    "observed_csv": "/Users/kyoungeuihong/Desktop/csf_grf_new/data/synthetic_scenarios/legacy_comparison_default/observed.csv",
-    "truth_csv": "/Users/kyoungeuihong/Desktop/csf_grf_new/data/synthetic_scenarios/legacy_comparison_default/truth.csv"
+    "observed_csv": "data/synthetic_scenarios/legacy_comparison_default/observed.csv",
+    "truth_csv": "data/synthetic_scenarios/legacy_comparison_default/truth.csv"
   }
 ]

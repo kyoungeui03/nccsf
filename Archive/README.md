@@ -1,7 +1,7 @@
 # CSF Section 4 Paper Replication
 
 This folder is dedicated to reproducing the Section 4 synthetic simulation
-benchmark from Cui et al. (2023), the causal survival forest paper.
+benchmark from prior work (2023), the causal survival forest paper.
 
 ## Files
 
@@ -18,7 +18,7 @@ benchmark from Cui et al. (2023), the causal survival forest paper.
 ## Canonical Example
 
 ```bash
-cd /Users/kyoungeuihong/Desktop/csf_grf_new
+cd <REPO_ROOT>
 module load r/4.4.2  # on the cluster, if R is module-managed
 
 python3 Archive/run_paper_final_model_simulation.py \
