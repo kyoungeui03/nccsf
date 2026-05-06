@@ -1,0 +1,23 @@
+{
+  "results_csv": "/scratch1/ewu96023/nccsf-main/outputs/benchmark_final_model_bundle_structured24/non_censored/all_settings_results.csv",
+  "output_dir": "/scratch1/ewu96023/nccsf-main/outputs/subgroup_bias/non_censored",
+  "setting_ids": null,
+  "case_ids": null,
+  "train_seed": 42,
+  "test_seed_base": 20260000,
+  "test_n": 20000,
+  "min_subgroup_size": 200,
+  "x_quantiles": 3,
+  "tau_quantiles": 5,
+  "x_subgroup_cols": [
+    0,
+    1
+  ],
+  "skip_cross": false,
+  "models": [
+    "Final Model",
+    "Final Model Oracle",
+    "EconML Baseline"
+  ],
+  "model_seed": 42
+}

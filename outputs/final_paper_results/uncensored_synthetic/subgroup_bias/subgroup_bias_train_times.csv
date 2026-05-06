@@ -1,0 +1,793 @@
+setting_id,case_id,case_slug,model,train_seconds,train_n,test_n
+S01,1,linear_linear_informative_strong_beneficial_large,Final Model,3.9964942932128906,500,20000
+S01,1,linear_linear_informative_strong_beneficial_large,Final Model Oracle,0.1921827793121338,500,20000
+S01,1,linear_linear_informative_strong_beneficial_large,EconML Baseline,0.8614892959594727,500,20000
+S01,2,linear_linear_informative_weak_harmful_small,Final Model,3.8952536582946777,500,20000
+S01,2,linear_linear_informative_weak_harmful_small,Final Model Oracle,0.18168973922729492,500,20000
+S01,2,linear_linear_informative_weak_harmful_small,EconML Baseline,1.202681541442871,500,20000
+S01,3,linear_linear_weakproxy_strong_harmful_moderate,Final Model,3.9233286380767822,500,20000
+S01,3,linear_linear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.181318998336792,500,20000
+S01,3,linear_linear_weakproxy_strong_harmful_moderate,EconML Baseline,0.8677067756652832,500,20000
+S01,4,linear_linear_weakproxy_weak_nearnull_harmful,Final Model,3.9854421615600586,500,20000
+S01,4,linear_linear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.2984588146209717,500,20000
+S01,4,linear_linear_weakproxy_weak_nearnull_harmful,EconML Baseline,0.842207670211792,500,20000
+S01,5,linear_nonlinear_informative_strong_beneficial_large,Final Model,4.007214307785034,500,20000
+S01,5,linear_nonlinear_informative_strong_beneficial_large,Final Model Oracle,0.18233728408813477,500,20000
+S01,5,linear_nonlinear_informative_strong_beneficial_large,EconML Baseline,0.8472058773040771,500,20000
+S01,6,linear_nonlinear_informative_weak_harmful_small,Final Model,3.859976053237915,500,20000
+S01,6,linear_nonlinear_informative_weak_harmful_small,Final Model Oracle,0.19334101676940918,500,20000
+S01,6,linear_nonlinear_informative_weak_harmful_small,EconML Baseline,1.2358450889587402,500,20000
+S01,7,linear_nonlinear_weakproxy_strong_harmful_moderate,Final Model,3.9920103549957275,500,20000
+S01,7,linear_nonlinear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.18337559700012207,500,20000
+S01,7,linear_nonlinear_weakproxy_strong_harmful_moderate,EconML Baseline,0.8763871192932129,500,20000
+S01,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model,3.9163331985473633,500,20000
+S01,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.183197021484375,500,20000
+S01,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,EconML Baseline,0.8362815380096436,500,20000
+S01,9,nonlinear_nonlinear_informative_strong_beneficial_large,Final Model,4.025246858596802,500,20000
+S01,9,nonlinear_nonlinear_informative_strong_beneficial_large,Final Model Oracle,0.1822669506072998,500,20000
+S01,9,nonlinear_nonlinear_informative_strong_beneficial_large,EconML Baseline,0.8572249412536621,500,20000
+S01,10,nonlinear_nonlinear_informative_weak_harmful_small,Final Model,3.8719871044158936,500,20000
+S01,10,nonlinear_nonlinear_informative_weak_harmful_small,Final Model Oracle,0.1844773292541504,500,20000
+S01,10,nonlinear_nonlinear_informative_weak_harmful_small,EconML Baseline,0.8577604293823242,500,20000
+S01,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,Final Model,4.029259443283081,500,20000
+S01,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.18340039253234863,500,20000
+S01,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,EconML Baseline,0.8806025981903076,500,20000
+S01,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model,3.915282726287842,500,20000
+S01,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.1825096607208252,500,20000
+S01,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,EconML Baseline,1.0346496105194092,500,20000
+S02,1,linear_linear_informative_strong_beneficial_large,Final Model,5.17514705657959,1000,20000
+S02,1,linear_linear_informative_strong_beneficial_large,Final Model Oracle,0.19959211349487305,1000,20000
+S02,1,linear_linear_informative_strong_beneficial_large,EconML Baseline,1.3485724925994873,1000,20000
+S02,2,linear_linear_informative_weak_harmful_small,Final Model,5.051300764083862,1000,20000
+S02,2,linear_linear_informative_weak_harmful_small,Final Model Oracle,0.1977994441986084,1000,20000
+S02,2,linear_linear_informative_weak_harmful_small,EconML Baseline,1.3598592281341553,1000,20000
+S02,3,linear_linear_weakproxy_strong_harmful_moderate,Final Model,5.193019866943359,1000,20000
+S02,3,linear_linear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.19939064979553223,1000,20000
+S02,3,linear_linear_weakproxy_strong_harmful_moderate,EconML Baseline,1.4316394329071045,1000,20000
+S02,4,linear_linear_weakproxy_weak_nearnull_harmful,Final Model,5.076770305633545,1000,20000
+S02,4,linear_linear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.20128846168518066,1000,20000
+S02,4,linear_linear_weakproxy_weak_nearnull_harmful,EconML Baseline,1.4632046222686768,1000,20000
+S02,5,linear_nonlinear_informative_strong_beneficial_large,Final Model,5.0597076416015625,1000,20000
+S02,5,linear_nonlinear_informative_strong_beneficial_large,Final Model Oracle,0.20020484924316406,1000,20000
+S02,5,linear_nonlinear_informative_strong_beneficial_large,EconML Baseline,1.3369190692901611,1000,20000
+S02,6,linear_nonlinear_informative_weak_harmful_small,Final Model,5.032936096191406,1000,20000
+S02,6,linear_nonlinear_informative_weak_harmful_small,Final Model Oracle,0.19901037216186523,1000,20000
+S02,6,linear_nonlinear_informative_weak_harmful_small,EconML Baseline,1.472914695739746,1000,20000
+S02,7,linear_nonlinear_weakproxy_strong_harmful_moderate,Final Model,5.065937280654907,1000,20000
+S02,7,linear_nonlinear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.19946503639221191,1000,20000
+S02,7,linear_nonlinear_weakproxy_strong_harmful_moderate,EconML Baseline,1.4783222675323486,1000,20000
+S02,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model,5.151293039321899,1000,20000
+S02,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.19173073768615723,1000,20000
+S02,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,EconML Baseline,1.5251176357269287,1000,20000
+S02,9,nonlinear_nonlinear_informative_strong_beneficial_large,Final Model,5.045076608657837,1000,20000
+S02,9,nonlinear_nonlinear_informative_strong_beneficial_large,Final Model Oracle,0.20493650436401367,1000,20000
+S02,9,nonlinear_nonlinear_informative_strong_beneficial_large,EconML Baseline,1.4135875701904297,1000,20000
+S02,10,nonlinear_nonlinear_informative_weak_harmful_small,Final Model,5.035167455673218,1000,20000
+S02,10,nonlinear_nonlinear_informative_weak_harmful_small,Final Model Oracle,0.20345115661621094,1000,20000
+S02,10,nonlinear_nonlinear_informative_weak_harmful_small,EconML Baseline,1.593740463256836,1000,20000
+S02,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,Final Model,5.208122253417969,1000,20000
+S02,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.20162677764892578,1000,20000
+S02,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,EconML Baseline,1.6696431636810303,1000,20000
+S02,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model,5.0717267990112305,1000,20000
+S02,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.2076120376586914,1000,20000
+S02,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,EconML Baseline,1.895214557647705,1000,20000
+S03,1,linear_linear_informative_strong_beneficial_large,Final Model,7.524337530136108,2000,20000
+S03,1,linear_linear_informative_strong_beneficial_large,Final Model Oracle,0.23894047737121582,2000,20000
+S03,1,linear_linear_informative_strong_beneficial_large,EconML Baseline,3.356886148452759,2000,20000
+S03,2,linear_linear_informative_weak_harmful_small,Final Model,7.853471517562866,2000,20000
+S03,2,linear_linear_informative_weak_harmful_small,Final Model Oracle,0.24163150787353516,2000,20000
+S03,2,linear_linear_informative_weak_harmful_small,EconML Baseline,3.51428484916687,2000,20000
+S03,3,linear_linear_weakproxy_strong_harmful_moderate,Final Model,7.668463230133057,2000,20000
+S03,3,linear_linear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.24496865272521973,2000,20000
+S03,3,linear_linear_weakproxy_strong_harmful_moderate,EconML Baseline,2.63461971282959,2000,20000
+S03,4,linear_linear_weakproxy_weak_nearnull_harmful,Final Model,7.7615625858306885,2000,20000
+S03,4,linear_linear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.36274123191833496,2000,20000
+S03,4,linear_linear_weakproxy_weak_nearnull_harmful,EconML Baseline,3.410599946975708,2000,20000
+S03,5,linear_nonlinear_informative_strong_beneficial_large,Final Model,7.550728797912598,2000,20000
+S03,5,linear_nonlinear_informative_strong_beneficial_large,Final Model Oracle,0.25185322761535645,2000,20000
+S03,5,linear_nonlinear_informative_strong_beneficial_large,EconML Baseline,2.43151593208313,2000,20000
+S03,6,linear_nonlinear_informative_weak_harmful_small,Final Model,7.720803499221802,2000,20000
+S03,6,linear_nonlinear_informative_weak_harmful_small,Final Model Oracle,0.3893470764160156,2000,20000
+S03,6,linear_nonlinear_informative_weak_harmful_small,EconML Baseline,2.4738199710845947,2000,20000
+S03,7,linear_nonlinear_weakproxy_strong_harmful_moderate,Final Model,7.625958681106567,2000,20000
+S03,7,linear_nonlinear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.2425546646118164,2000,20000
+S03,7,linear_nonlinear_weakproxy_strong_harmful_moderate,EconML Baseline,2.5710062980651855,2000,20000
+S03,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model,7.738892555236816,2000,20000
+S03,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.24603033065795898,2000,20000
+S03,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,EconML Baseline,2.4842286109924316,2000,20000
+S03,9,nonlinear_nonlinear_informative_strong_beneficial_large,Final Model,7.64506196975708,2000,20000
+S03,9,nonlinear_nonlinear_informative_strong_beneficial_large,Final Model Oracle,0.26001548767089844,2000,20000
+S03,9,nonlinear_nonlinear_informative_strong_beneficial_large,EconML Baseline,4.028310060501099,2000,20000
+S03,10,nonlinear_nonlinear_informative_weak_harmful_small,Final Model,7.9012768268585205,2000,20000
+S03,10,nonlinear_nonlinear_informative_weak_harmful_small,Final Model Oracle,0.2623448371887207,2000,20000
+S03,10,nonlinear_nonlinear_informative_weak_harmful_small,EconML Baseline,4.057371139526367,2000,20000
+S03,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,Final Model,7.782627105712891,2000,20000
+S03,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.25698280334472656,2000,20000
+S03,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,EconML Baseline,2.8476998805999756,2000,20000
+S03,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model,8.012133836746216,2000,20000
+S03,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.25139617919921875,2000,20000
+S03,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,EconML Baseline,3.2154526710510254,2000,20000
+S04,1,linear_linear_informative_strong_beneficial_large,Final Model,12.919344902038574,4000,20000
+S04,1,linear_linear_informative_strong_beneficial_large,Final Model Oracle,0.318523645401001,4000,20000
+S04,1,linear_linear_informative_strong_beneficial_large,EconML Baseline,6.759086847305298,4000,20000
+S04,2,linear_linear_informative_weak_harmful_small,Final Model,13.283617734909058,4000,20000
+S04,2,linear_linear_informative_weak_harmful_small,Final Model Oracle,0.3495168685913086,4000,20000
+S04,2,linear_linear_informative_weak_harmful_small,EconML Baseline,4.883716821670532,4000,20000
+S04,3,linear_linear_weakproxy_strong_harmful_moderate,Final Model,13.314128398895264,4000,20000
+S04,3,linear_linear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.33307623863220215,4000,20000
+S04,3,linear_linear_weakproxy_strong_harmful_moderate,EconML Baseline,5.344160318374634,4000,20000
+S04,4,linear_linear_weakproxy_weak_nearnull_harmful,Final Model,13.31578540802002,4000,20000
+S04,4,linear_linear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.33893632888793945,4000,20000
+S04,4,linear_linear_weakproxy_weak_nearnull_harmful,EconML Baseline,4.976788282394409,4000,20000
+S04,5,linear_nonlinear_informative_strong_beneficial_large,Final Model,13.152058601379395,4000,20000
+S04,5,linear_nonlinear_informative_strong_beneficial_large,Final Model Oracle,0.3223116397857666,4000,20000
+S04,5,linear_nonlinear_informative_strong_beneficial_large,EconML Baseline,6.5878214836120605,4000,20000
+S04,6,linear_nonlinear_informative_weak_harmful_small,Final Model,13.056121826171875,4000,20000
+S04,6,linear_nonlinear_informative_weak_harmful_small,Final Model Oracle,0.3236255645751953,4000,20000
+S04,6,linear_nonlinear_informative_weak_harmful_small,EconML Baseline,6.449434757232666,4000,20000
+S04,7,linear_nonlinear_weakproxy_strong_harmful_moderate,Final Model,13.40501880645752,4000,20000
+S04,7,linear_nonlinear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.3376021385192871,4000,20000
+S04,7,linear_nonlinear_weakproxy_strong_harmful_moderate,EconML Baseline,5.269786357879639,4000,20000
+S04,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model,13.34243893623352,4000,20000
+S04,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.335310697555542,4000,20000
+S04,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,EconML Baseline,6.611835241317749,4000,20000
+S04,9,nonlinear_nonlinear_informative_strong_beneficial_large,Final Model,13.115307092666626,4000,20000
+S04,9,nonlinear_nonlinear_informative_strong_beneficial_large,Final Model Oracle,0.5020878314971924,4000,20000
+S04,9,nonlinear_nonlinear_informative_strong_beneficial_large,EconML Baseline,7.458110570907593,4000,20000
+S04,10,nonlinear_nonlinear_informative_weak_harmful_small,Final Model,13.240689754486084,4000,20000
+S04,10,nonlinear_nonlinear_informative_weak_harmful_small,Final Model Oracle,0.3387281894683838,4000,20000
+S04,10,nonlinear_nonlinear_informative_weak_harmful_small,EconML Baseline,8.176257610321045,4000,20000
+S04,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,Final Model,13.332228660583496,4000,20000
+S04,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.5066087245941162,4000,20000
+S04,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,EconML Baseline,6.106907844543457,4000,20000
+S04,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model,13.425176620483398,4000,20000
+S04,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.3443887233734131,4000,20000
+S04,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,EconML Baseline,7.306596040725708,4000,20000
+S05,1,linear_linear_informative_strong_beneficial_large,Final Model,24.95983123779297,8000,20000
+S05,1,linear_linear_informative_strong_beneficial_large,Final Model Oracle,0.4764845371246338,8000,20000
+S05,1,linear_linear_informative_strong_beneficial_large,EconML Baseline,14.841654300689697,8000,20000
+S05,2,linear_linear_informative_weak_harmful_small,Final Model,25.22678828239441,8000,20000
+S05,2,linear_linear_informative_weak_harmful_small,Final Model Oracle,0.48402857780456543,8000,20000
+S05,2,linear_linear_informative_weak_harmful_small,EconML Baseline,10.891966819763184,8000,20000
+S05,3,linear_linear_weakproxy_strong_harmful_moderate,Final Model,25.539013147354126,8000,20000
+S05,3,linear_linear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.6838123798370361,8000,20000
+S05,3,linear_linear_weakproxy_strong_harmful_moderate,EconML Baseline,12.26544713973999,8000,20000
+S05,4,linear_linear_weakproxy_weak_nearnull_harmful,Final Model,25.411674737930298,8000,20000
+S05,4,linear_linear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.46934032440185547,8000,20000
+S05,4,linear_linear_weakproxy_weak_nearnull_harmful,EconML Baseline,11.015068769454956,8000,20000
+S05,5,linear_nonlinear_informative_strong_beneficial_large,Final Model,24.65877914428711,8000,20000
+S05,5,linear_nonlinear_informative_strong_beneficial_large,Final Model Oracle,0.4759073257446289,8000,20000
+S05,5,linear_nonlinear_informative_strong_beneficial_large,EconML Baseline,11.400184392929077,8000,20000
+S05,6,linear_nonlinear_informative_weak_harmful_small,Final Model,25.239030122756958,8000,20000
+S05,6,linear_nonlinear_informative_weak_harmful_small,Final Model Oracle,0.4676330089569092,8000,20000
+S05,6,linear_nonlinear_informative_weak_harmful_small,EconML Baseline,10.91938304901123,8000,20000
+S05,7,linear_nonlinear_weakproxy_strong_harmful_moderate,Final Model,25.6873562335968,8000,20000
+S05,7,linear_nonlinear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.472902774810791,8000,20000
+S05,7,linear_nonlinear_weakproxy_strong_harmful_moderate,EconML Baseline,12.351593971252441,8000,20000
+S05,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model,25.457656383514404,8000,20000
+S05,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.48955798149108887,8000,20000
+S05,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,EconML Baseline,11.216897964477539,8000,20000
+S05,9,nonlinear_nonlinear_informative_strong_beneficial_large,Final Model,24.729400873184204,8000,20000
+S05,9,nonlinear_nonlinear_informative_strong_beneficial_large,Final Model Oracle,0.48632359504699707,8000,20000
+S05,9,nonlinear_nonlinear_informative_strong_beneficial_large,EconML Baseline,15.853826999664307,8000,20000
+S05,10,nonlinear_nonlinear_informative_weak_harmful_small,Final Model,24.613592624664307,8000,20000
+S05,10,nonlinear_nonlinear_informative_weak_harmful_small,Final Model Oracle,0.4639606475830078,8000,20000
+S05,10,nonlinear_nonlinear_informative_weak_harmful_small,EconML Baseline,15.424511432647705,8000,20000
+S05,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,Final Model,24.773741483688354,8000,20000
+S05,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.475020170211792,8000,20000
+S05,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,EconML Baseline,18.424668073654175,8000,20000
+S05,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model,24.784557104110718,8000,20000
+S05,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.6035144329071045,8000,20000
+S05,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,EconML Baseline,15.34497618675232,8000,20000
+S06,1,linear_linear_informative_strong_beneficial_large,Final Model,49.532686948776245,16000,20000
+S06,1,linear_linear_informative_strong_beneficial_large,Final Model Oracle,0.7543900012969971,16000,20000
+S06,1,linear_linear_informative_strong_beneficial_large,EconML Baseline,34.902844190597534,16000,20000
+S06,2,linear_linear_informative_weak_harmful_small,Final Model,50.46949076652527,16000,20000
+S06,2,linear_linear_informative_weak_harmful_small,Final Model Oracle,0.774735689163208,16000,20000
+S06,2,linear_linear_informative_weak_harmful_small,EconML Baseline,27.159465312957764,16000,20000
+S06,3,linear_linear_weakproxy_strong_harmful_moderate,Final Model,50.23865270614624,16000,20000
+S06,3,linear_linear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.8013207912445068,16000,20000
+S06,3,linear_linear_weakproxy_strong_harmful_moderate,EconML Baseline,27.267908811569214,16000,20000
+S06,4,linear_linear_weakproxy_weak_nearnull_harmful,Final Model,50.97406768798828,16000,20000
+S06,4,linear_linear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.8139586448669434,16000,20000
+S06,4,linear_linear_weakproxy_weak_nearnull_harmful,EconML Baseline,25.072263479232788,16000,20000
+S06,5,linear_nonlinear_informative_strong_beneficial_large,Final Model,50.0606734752655,16000,20000
+S06,5,linear_nonlinear_informative_strong_beneficial_large,Final Model Oracle,0.7556045055389404,16000,20000
+S06,5,linear_nonlinear_informative_strong_beneficial_large,EconML Baseline,36.77255892753601,16000,20000
+S06,6,linear_nonlinear_informative_weak_harmful_small,Final Model,50.87494206428528,16000,20000
+S06,6,linear_nonlinear_informative_weak_harmful_small,Final Model Oracle,0.9882183074951172,16000,20000
+S06,6,linear_nonlinear_informative_weak_harmful_small,EconML Baseline,40.2375705242157,16000,20000
+S06,7,linear_nonlinear_weakproxy_strong_harmful_moderate,Final Model,52.36146855354309,16000,20000
+S06,7,linear_nonlinear_weakproxy_strong_harmful_moderate,Final Model Oracle,1.13499116897583,16000,20000
+S06,7,linear_nonlinear_weakproxy_strong_harmful_moderate,EconML Baseline,30.5978045463562,16000,20000
+S06,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model,53.894729137420654,16000,20000
+S06,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model Oracle,1.3424012660980225,16000,20000
+S06,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,EconML Baseline,29.50038766860962,16000,20000
+S06,9,nonlinear_nonlinear_informative_strong_beneficial_large,Final Model,52.980578660964966,16000,20000
+S06,9,nonlinear_nonlinear_informative_strong_beneficial_large,Final Model Oracle,0.7908897399902344,16000,20000
+S06,9,nonlinear_nonlinear_informative_strong_beneficial_large,EconML Baseline,43.01474642753601,16000,20000
+S06,10,nonlinear_nonlinear_informative_weak_harmful_small,Final Model,51.01629114151001,16000,20000
+S06,10,nonlinear_nonlinear_informative_weak_harmful_small,Final Model Oracle,0.9810755252838135,16000,20000
+S06,10,nonlinear_nonlinear_informative_weak_harmful_small,EconML Baseline,43.813413858413696,16000,20000
+S06,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,Final Model,52.262874364852905,16000,20000
+S06,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.7986674308776855,16000,20000
+S06,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,EconML Baseline,34.62248373031616,16000,20000
+S06,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model,51.749696493148804,16000,20000
+S06,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.7979485988616943,16000,20000
+S06,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,EconML Baseline,42.741658449172974,16000,20000
+S07,1,linear_linear_informative_strong_beneficial_large,Final Model,6.26897120475769,2000,20000
+S07,1,linear_linear_informative_strong_beneficial_large,Final Model Oracle,0.24100327491760254,2000,20000
+S07,1,linear_linear_informative_strong_beneficial_large,EconML Baseline,1.8975200653076172,2000,20000
+S07,2,linear_linear_informative_weak_harmful_small,Final Model,6.249279499053955,2000,20000
+S07,2,linear_linear_informative_weak_harmful_small,Final Model Oracle,0.3524456024169922,2000,20000
+S07,2,linear_linear_informative_weak_harmful_small,EconML Baseline,2.015820026397705,2000,20000
+S07,3,linear_linear_weakproxy_strong_harmful_moderate,Final Model,6.2511818408966064,2000,20000
+S07,3,linear_linear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.24476099014282227,2000,20000
+S07,3,linear_linear_weakproxy_strong_harmful_moderate,EconML Baseline,2.0656120777130127,2000,20000
+S07,4,linear_linear_weakproxy_weak_nearnull_harmful,Final Model,6.354086875915527,2000,20000
+S07,4,linear_linear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.4049191474914551,2000,20000
+S07,4,linear_linear_weakproxy_weak_nearnull_harmful,EconML Baseline,2.077601194381714,2000,20000
+S07,5,linear_nonlinear_informative_strong_beneficial_large,Final Model,6.312474012374878,2000,20000
+S07,5,linear_nonlinear_informative_strong_beneficial_large,Final Model Oracle,0.2446441650390625,2000,20000
+S07,5,linear_nonlinear_informative_strong_beneficial_large,EconML Baseline,2.0303328037261963,2000,20000
+S07,6,linear_nonlinear_informative_weak_harmful_small,Final Model,6.336686849594116,2000,20000
+S07,6,linear_nonlinear_informative_weak_harmful_small,Final Model Oracle,0.23568105697631836,2000,20000
+S07,6,linear_nonlinear_informative_weak_harmful_small,EconML Baseline,2.800286054611206,2000,20000
+S07,7,linear_nonlinear_weakproxy_strong_harmful_moderate,Final Model,6.300356388092041,2000,20000
+S07,7,linear_nonlinear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.24277377128601074,2000,20000
+S07,7,linear_nonlinear_weakproxy_strong_harmful_moderate,EconML Baseline,2.1695711612701416,2000,20000
+S07,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model,6.578952074050903,2000,20000
+S07,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.24208807945251465,2000,20000
+S07,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,EconML Baseline,2.283282995223999,2000,20000
+S07,9,nonlinear_nonlinear_informative_strong_beneficial_large,Final Model,6.394104480743408,2000,20000
+S07,9,nonlinear_nonlinear_informative_strong_beneficial_large,Final Model Oracle,0.2697892189025879,2000,20000
+S07,9,nonlinear_nonlinear_informative_strong_beneficial_large,EconML Baseline,2.1187193393707275,2000,20000
+S07,10,nonlinear_nonlinear_informative_weak_harmful_small,Final Model,6.416182518005371,2000,20000
+S07,10,nonlinear_nonlinear_informative_weak_harmful_small,Final Model Oracle,0.24210071563720703,2000,20000
+S07,10,nonlinear_nonlinear_informative_weak_harmful_small,EconML Baseline,2.105499267578125,2000,20000
+S07,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,Final Model,6.2782347202301025,2000,20000
+S07,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.24327540397644043,2000,20000
+S07,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,EconML Baseline,2.15400767326355,2000,20000
+S07,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model,6.463683843612671,2000,20000
+S07,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.23604702949523926,2000,20000
+S07,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,EconML Baseline,2.1470627784729004,2000,20000
+S08,1,linear_linear_informative_strong_beneficial_large,Final Model,7.675148963928223,2000,20000
+S08,1,linear_linear_informative_strong_beneficial_large,Final Model Oracle,0.25690531730651855,2000,20000
+S08,1,linear_linear_informative_strong_beneficial_large,EconML Baseline,3.3367860317230225,2000,20000
+S08,2,linear_linear_informative_weak_harmful_small,Final Model,7.976828098297119,2000,20000
+S08,2,linear_linear_informative_weak_harmful_small,Final Model Oracle,0.2516167163848877,2000,20000
+S08,2,linear_linear_informative_weak_harmful_small,EconML Baseline,3.4190306663513184,2000,20000
+S08,3,linear_linear_weakproxy_strong_harmful_moderate,Final Model,7.751221179962158,2000,20000
+S08,3,linear_linear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.2523825168609619,2000,20000
+S08,3,linear_linear_weakproxy_strong_harmful_moderate,EconML Baseline,2.6573495864868164,2000,20000
+S08,4,linear_linear_weakproxy_weak_nearnull_harmful,Final Model,7.871381521224976,2000,20000
+S08,4,linear_linear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.261333703994751,2000,20000
+S08,4,linear_linear_weakproxy_weak_nearnull_harmful,EconML Baseline,3.3597586154937744,2000,20000
+S08,5,linear_nonlinear_informative_strong_beneficial_large,Final Model,7.511955499649048,2000,20000
+S08,5,linear_nonlinear_informative_strong_beneficial_large,Final Model Oracle,0.25083208084106445,2000,20000
+S08,5,linear_nonlinear_informative_strong_beneficial_large,EconML Baseline,2.4576220512390137,2000,20000
+S08,6,linear_nonlinear_informative_weak_harmful_small,Final Model,7.684063911437988,2000,20000
+S08,6,linear_nonlinear_informative_weak_harmful_small,Final Model Oracle,0.25040650367736816,2000,20000
+S08,6,linear_nonlinear_informative_weak_harmful_small,EconML Baseline,2.4479832649230957,2000,20000
+S08,7,linear_nonlinear_weakproxy_strong_harmful_moderate,Final Model,7.707772493362427,2000,20000
+S08,7,linear_nonlinear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.37494730949401855,2000,20000
+S08,7,linear_nonlinear_weakproxy_strong_harmful_moderate,EconML Baseline,2.6845271587371826,2000,20000
+S08,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model,7.936514854431152,2000,20000
+S08,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.2769157886505127,2000,20000
+S08,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,EconML Baseline,2.553574800491333,2000,20000
+S08,9,nonlinear_nonlinear_informative_strong_beneficial_large,Final Model,7.798699617385864,2000,20000
+S08,9,nonlinear_nonlinear_informative_strong_beneficial_large,Final Model Oracle,0.41402745246887207,2000,20000
+S08,9,nonlinear_nonlinear_informative_strong_beneficial_large,EconML Baseline,4.1192755699157715,2000,20000
+S08,10,nonlinear_nonlinear_informative_weak_harmful_small,Final Model,7.767143726348877,2000,20000
+S08,10,nonlinear_nonlinear_informative_weak_harmful_small,Final Model Oracle,0.2629516124725342,2000,20000
+S08,10,nonlinear_nonlinear_informative_weak_harmful_small,EconML Baseline,4.041048526763916,2000,20000
+S08,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,Final Model,7.819747447967529,2000,20000
+S08,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.28215670585632324,2000,20000
+S08,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,EconML Baseline,2.92195987701416,2000,20000
+S08,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model,7.975853443145752,2000,20000
+S08,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.26285600662231445,2000,20000
+S08,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,EconML Baseline,3.2024781703948975,2000,20000
+S09,1,linear_linear_informative_strong_beneficial_large,Final Model,9.792555809020996,2000,20000
+S09,1,linear_linear_informative_strong_beneficial_large,Final Model Oracle,0.2629873752593994,2000,20000
+S09,1,linear_linear_informative_strong_beneficial_large,EconML Baseline,3.8502018451690674,2000,20000
+S09,2,linear_linear_informative_weak_harmful_small,Final Model,9.747508525848389,2000,20000
+S09,2,linear_linear_informative_weak_harmful_small,Final Model Oracle,0.26494526863098145,2000,20000
+S09,2,linear_linear_informative_weak_harmful_small,EconML Baseline,3.5736966133117676,2000,20000
+S09,3,linear_linear_weakproxy_strong_harmful_moderate,Final Model,9.886768579483032,2000,20000
+S09,3,linear_linear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.2777225971221924,2000,20000
+S09,3,linear_linear_weakproxy_strong_harmful_moderate,EconML Baseline,4.33067774772644,2000,20000
+S09,4,linear_linear_weakproxy_weak_nearnull_harmful,Final Model,9.650119304656982,2000,20000
+S09,4,linear_linear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.2658882141113281,2000,20000
+S09,4,linear_linear_weakproxy_weak_nearnull_harmful,EconML Baseline,3.5925843715667725,2000,20000
+S09,5,linear_nonlinear_informative_strong_beneficial_large,Final Model,10.056047201156616,2000,20000
+S09,5,linear_nonlinear_informative_strong_beneficial_large,Final Model Oracle,0.26464104652404785,2000,20000
+S09,5,linear_nonlinear_informative_strong_beneficial_large,EconML Baseline,4.674124479293823,2000,20000
+S09,6,linear_nonlinear_informative_weak_harmful_small,Final Model,10.188332557678223,2000,20000
+S09,6,linear_nonlinear_informative_weak_harmful_small,Final Model Oracle,0.2594318389892578,2000,20000
+S09,6,linear_nonlinear_informative_weak_harmful_small,EconML Baseline,6.082390308380127,2000,20000
+S09,7,linear_nonlinear_weakproxy_strong_harmful_moderate,Final Model,10.265262842178345,2000,20000
+S09,7,linear_nonlinear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.2625906467437744,2000,20000
+S09,7,linear_nonlinear_weakproxy_strong_harmful_moderate,EconML Baseline,4.958271265029907,2000,20000
+S09,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model,9.96915316581726,2000,20000
+S09,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.27078795433044434,2000,20000
+S09,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,EconML Baseline,6.284769535064697,2000,20000
+S09,9,nonlinear_nonlinear_informative_strong_beneficial_large,Final Model,9.713388204574585,2000,20000
+S09,9,nonlinear_nonlinear_informative_strong_beneficial_large,Final Model Oracle,0.2777998447418213,2000,20000
+S09,9,nonlinear_nonlinear_informative_strong_beneficial_large,EconML Baseline,4.499447345733643,2000,20000
+S09,10,nonlinear_nonlinear_informative_weak_harmful_small,Final Model,9.793663501739502,2000,20000
+S09,10,nonlinear_nonlinear_informative_weak_harmful_small,Final Model Oracle,0.4062161445617676,2000,20000
+S09,10,nonlinear_nonlinear_informative_weak_harmful_small,EconML Baseline,4.431666374206543,2000,20000
+S09,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,Final Model,9.796756267547607,2000,20000
+S09,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.27413153648376465,2000,20000
+S09,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,EconML Baseline,4.836081027984619,2000,20000
+S09,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model,9.762436151504517,2000,20000
+S09,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.4161837100982666,2000,20000
+S09,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,EconML Baseline,4.433599948883057,2000,20000
+S10,1,linear_linear_informative_strong_beneficial_large,Final Model,13.895599365234375,2000,20000
+S10,1,linear_linear_informative_strong_beneficial_large,Final Model Oracle,0.3092169761657715,2000,20000
+S10,1,linear_linear_informative_strong_beneficial_large,EconML Baseline,7.657384157180786,2000,20000
+S10,2,linear_linear_informative_weak_harmful_small,Final Model,13.804410457611084,2000,20000
+S10,2,linear_linear_informative_weak_harmful_small,Final Model Oracle,0.2910759449005127,2000,20000
+S10,2,linear_linear_informative_weak_harmful_small,EconML Baseline,6.9047791957855225,2000,20000
+S10,3,linear_linear_weakproxy_strong_harmful_moderate,Final Model,13.870293617248535,2000,20000
+S10,3,linear_linear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.30012965202331543,2000,20000
+S10,3,linear_linear_weakproxy_strong_harmful_moderate,EconML Baseline,7.437775135040283,2000,20000
+S10,4,linear_linear_weakproxy_weak_nearnull_harmful,Final Model,13.79462742805481,2000,20000
+S10,4,linear_linear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.40604090690612793,2000,20000
+S10,4,linear_linear_weakproxy_weak_nearnull_harmful,EconML Baseline,6.766955852508545,2000,20000
+S10,5,linear_nonlinear_informative_strong_beneficial_large,Final Model,13.899871826171875,2000,20000
+S10,5,linear_nonlinear_informative_strong_beneficial_large,Final Model Oracle,0.2944793701171875,2000,20000
+S10,5,linear_nonlinear_informative_strong_beneficial_large,EconML Baseline,7.47404670715332,2000,20000
+S10,6,linear_nonlinear_informative_weak_harmful_small,Final Model,13.898448705673218,2000,20000
+S10,6,linear_nonlinear_informative_weak_harmful_small,Final Model Oracle,0.4353373050689697,2000,20000
+S10,6,linear_nonlinear_informative_weak_harmful_small,EconML Baseline,6.907311677932739,2000,20000
+S10,7,linear_nonlinear_weakproxy_strong_harmful_moderate,Final Model,13.871769428253174,2000,20000
+S10,7,linear_nonlinear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.2770664691925049,2000,20000
+S10,7,linear_nonlinear_weakproxy_strong_harmful_moderate,EconML Baseline,7.5807085037231445,2000,20000
+S10,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model,13.861180782318115,2000,20000
+S10,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.29035353660583496,2000,20000
+S10,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,EconML Baseline,6.729113817214966,2000,20000
+S10,9,nonlinear_nonlinear_informative_strong_beneficial_large,Final Model,14.065883159637451,2000,20000
+S10,9,nonlinear_nonlinear_informative_strong_beneficial_large,Final Model Oracle,0.30464696884155273,2000,20000
+S10,9,nonlinear_nonlinear_informative_strong_beneficial_large,EconML Baseline,7.78507924079895,2000,20000
+S10,10,nonlinear_nonlinear_informative_weak_harmful_small,Final Model,14.175959587097168,2000,20000
+S10,10,nonlinear_nonlinear_informative_weak_harmful_small,Final Model Oracle,0.28600192070007324,2000,20000
+S10,10,nonlinear_nonlinear_informative_weak_harmful_small,EconML Baseline,7.282221794128418,2000,20000
+S10,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,Final Model,14.062076330184937,2000,20000
+S10,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.29607629776000977,2000,20000
+S10,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,EconML Baseline,7.8559958934783936,2000,20000
+S10,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model,14.210831642150879,2000,20000
+S10,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.3009607791900635,2000,20000
+S10,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,EconML Baseline,10.862242460250854,2000,20000
+S11,1,linear_linear_informative_strong_beneficial_large,Final Model,22.034761905670166,2000,20000
+S11,1,linear_linear_informative_strong_beneficial_large,Final Model Oracle,0.35778379440307617,2000,20000
+S11,1,linear_linear_informative_strong_beneficial_large,EconML Baseline,15.986982345581055,2000,20000
+S11,2,linear_linear_informative_weak_harmful_small,Final Model,21.934584856033325,2000,20000
+S11,2,linear_linear_informative_weak_harmful_small,Final Model Oracle,0.32161593437194824,2000,20000
+S11,2,linear_linear_informative_weak_harmful_small,EconML Baseline,14.607964754104614,2000,20000
+S11,3,linear_linear_weakproxy_strong_harmful_moderate,Final Model,22.24600338935852,2000,20000
+S11,3,linear_linear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.45470476150512695,2000,20000
+S11,3,linear_linear_weakproxy_strong_harmful_moderate,EconML Baseline,16.429579496383667,2000,20000
+S11,4,linear_linear_weakproxy_weak_nearnull_harmful,Final Model,22.132609367370605,2000,20000
+S11,4,linear_linear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.3551976680755615,2000,20000
+S11,4,linear_linear_weakproxy_weak_nearnull_harmful,EconML Baseline,14.543493270874023,2000,20000
+S11,5,linear_nonlinear_informative_strong_beneficial_large,Final Model,22.135398387908936,2000,20000
+S11,5,linear_nonlinear_informative_strong_beneficial_large,Final Model Oracle,0.5003917217254639,2000,20000
+S11,5,linear_nonlinear_informative_strong_beneficial_large,EconML Baseline,16.982620000839233,2000,20000
+S11,6,linear_nonlinear_informative_weak_harmful_small,Final Model,22.13765788078308,2000,20000
+S11,6,linear_nonlinear_informative_weak_harmful_small,Final Model Oracle,0.35523509979248047,2000,20000
+S11,6,linear_nonlinear_informative_weak_harmful_small,EconML Baseline,15.355623960494995,2000,20000
+S11,7,linear_nonlinear_weakproxy_strong_harmful_moderate,Final Model,22.41848587989807,2000,20000
+S11,7,linear_nonlinear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.36729001998901367,2000,20000
+S11,7,linear_nonlinear_weakproxy_strong_harmful_moderate,EconML Baseline,16.892725706100464,2000,20000
+S11,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model,22.072959423065186,2000,20000
+S11,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.34677553176879883,2000,20000
+S11,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,EconML Baseline,15.464961051940918,2000,20000
+S11,9,nonlinear_nonlinear_informative_strong_beneficial_large,Final Model,22.79495930671692,2000,20000
+S11,9,nonlinear_nonlinear_informative_strong_beneficial_large,Final Model Oracle,0.3525354862213135,2000,20000
+S11,9,nonlinear_nonlinear_informative_strong_beneficial_large,EconML Baseline,18.55369997024536,2000,20000
+S11,10,nonlinear_nonlinear_informative_weak_harmful_small,Final Model,22.92842435836792,2000,20000
+S11,10,nonlinear_nonlinear_informative_weak_harmful_small,Final Model Oracle,0.36016297340393066,2000,20000
+S11,10,nonlinear_nonlinear_informative_weak_harmful_small,EconML Baseline,16.241990566253662,2000,20000
+S11,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,Final Model,23.4134840965271,2000,20000
+S11,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.3555130958557129,2000,20000
+S11,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,EconML Baseline,19.005091905593872,2000,20000
+S11,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model,22.60409688949585,2000,20000
+S11,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.3537263870239258,2000,20000
+S11,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,EconML Baseline,22.860584020614624,2000,20000
+S12,1,linear_linear_informative_strong_beneficial_large,Final Model,9.270748138427734,2000,20000
+S12,1,linear_linear_informative_strong_beneficial_large,Final Model Oracle,0.2875492572784424,2000,20000
+S12,1,linear_linear_informative_strong_beneficial_large,EconML Baseline,3.10892653465271,2000,20000
+S12,2,linear_linear_informative_weak_harmful_small,Final Model,8.935518503189087,2000,20000
+S12,2,linear_linear_informative_weak_harmful_small,Final Model Oracle,0.25516271591186523,2000,20000
+S12,2,linear_linear_informative_weak_harmful_small,EconML Baseline,3.1262712478637695,2000,20000
+S12,3,linear_linear_weakproxy_strong_harmful_moderate,Final Model,8.960579633712769,2000,20000
+S12,3,linear_linear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.2684173583984375,2000,20000
+S12,3,linear_linear_weakproxy_strong_harmful_moderate,EconML Baseline,3.154343366622925,2000,20000
+S12,4,linear_linear_weakproxy_weak_nearnull_harmful,Final Model,9.074116230010986,2000,20000
+S12,4,linear_linear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.4088780879974365,2000,20000
+S12,4,linear_linear_weakproxy_weak_nearnull_harmful,EconML Baseline,2.9900081157684326,2000,20000
+S12,5,linear_nonlinear_informative_strong_beneficial_large,Final Model,8.671962976455688,2000,20000
+S12,5,linear_nonlinear_informative_strong_beneficial_large,Final Model Oracle,0.29697132110595703,2000,20000
+S12,5,linear_nonlinear_informative_strong_beneficial_large,EconML Baseline,3.050384044647217,2000,20000
+S12,6,linear_nonlinear_informative_weak_harmful_small,Final Model,9.264353513717651,2000,20000
+S12,6,linear_nonlinear_informative_weak_harmful_small,Final Model Oracle,0.2701859474182129,2000,20000
+S12,6,linear_nonlinear_informative_weak_harmful_small,EconML Baseline,2.9439713954925537,2000,20000
+S12,7,linear_nonlinear_weakproxy_strong_harmful_moderate,Final Model,8.961273908615112,2000,20000
+S12,7,linear_nonlinear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.26156020164489746,2000,20000
+S12,7,linear_nonlinear_weakproxy_strong_harmful_moderate,EconML Baseline,3.088092565536499,2000,20000
+S12,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model,9.240153551101685,2000,20000
+S12,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.2646815776824951,2000,20000
+S12,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,EconML Baseline,2.9534592628479004,2000,20000
+S12,9,nonlinear_nonlinear_informative_strong_beneficial_large,Final Model,8.764859676361084,2000,20000
+S12,9,nonlinear_nonlinear_informative_strong_beneficial_large,Final Model Oracle,0.2752797603607178,2000,20000
+S12,9,nonlinear_nonlinear_informative_strong_beneficial_large,EconML Baseline,3.7377631664276123,2000,20000
+S12,10,nonlinear_nonlinear_informative_weak_harmful_small,Final Model,9.254851341247559,2000,20000
+S12,10,nonlinear_nonlinear_informative_weak_harmful_small,Final Model Oracle,0.2777581214904785,2000,20000
+S12,10,nonlinear_nonlinear_informative_weak_harmful_small,EconML Baseline,3.2570645809173584,2000,20000
+S12,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,Final Model,8.948785543441772,2000,20000
+S12,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.26909303665161133,2000,20000
+S12,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,EconML Baseline,3.8292505741119385,2000,20000
+S12,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model,9.216322898864746,2000,20000
+S12,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.2760012149810791,2000,20000
+S12,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,EconML Baseline,3.2606849670410156,2000,20000
+S13,1,linear_linear_informative_strong_beneficial_large,Final Model,9.895142078399658,2000,20000
+S13,1,linear_linear_informative_strong_beneficial_large,Final Model Oracle,0.26796793937683105,2000,20000
+S13,1,linear_linear_informative_strong_beneficial_large,EconML Baseline,4.5805604457855225,2000,20000
+S13,2,linear_linear_informative_weak_harmful_small,Final Model,10.4265775680542,2000,20000
+S13,2,linear_linear_informative_weak_harmful_small,Final Model Oracle,0.28267860412597656,2000,20000
+S13,2,linear_linear_informative_weak_harmful_small,EconML Baseline,3.3293838500976562,2000,20000
+S13,3,linear_linear_weakproxy_strong_harmful_moderate,Final Model,10.136107683181763,2000,20000
+S13,3,linear_linear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.2753899097442627,2000,20000
+S13,3,linear_linear_weakproxy_strong_harmful_moderate,EconML Baseline,3.663410186767578,2000,20000
+S13,4,linear_linear_weakproxy_weak_nearnull_harmful,Final Model,10.488067626953125,2000,20000
+S13,4,linear_linear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.2717626094818115,2000,20000
+S13,4,linear_linear_weakproxy_weak_nearnull_harmful,EconML Baseline,3.432386875152588,2000,20000
+S13,5,linear_nonlinear_informative_strong_beneficial_large,Final Model,10.336181163787842,2000,20000
+S13,5,linear_nonlinear_informative_strong_beneficial_large,Final Model Oracle,0.2798178195953369,2000,20000
+S13,5,linear_nonlinear_informative_strong_beneficial_large,EconML Baseline,5.279234409332275,2000,20000
+S13,6,linear_nonlinear_informative_weak_harmful_small,Final Model,10.440903186798096,2000,20000
+S13,6,linear_nonlinear_informative_weak_harmful_small,Final Model Oracle,0.277557373046875,2000,20000
+S13,6,linear_nonlinear_informative_weak_harmful_small,EconML Baseline,5.237407445907593,2000,20000
+S13,7,linear_nonlinear_weakproxy_strong_harmful_moderate,Final Model,10.24765419960022,2000,20000
+S13,7,linear_nonlinear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.2648942470550537,2000,20000
+S13,7,linear_nonlinear_weakproxy_strong_harmful_moderate,EconML Baseline,4.317001819610596,2000,20000
+S13,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model,10.63349437713623,2000,20000
+S13,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.24975156784057617,2000,20000
+S13,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,EconML Baseline,5.3042027950286865,2000,20000
+S13,9,nonlinear_nonlinear_informative_strong_beneficial_large,Final Model,10.042481422424316,2000,20000
+S13,9,nonlinear_nonlinear_informative_strong_beneficial_large,Final Model Oracle,0.25405311584472656,2000,20000
+S13,9,nonlinear_nonlinear_informative_strong_beneficial_large,EconML Baseline,4.937754154205322,2000,20000
+S13,10,nonlinear_nonlinear_informative_weak_harmful_small,Final Model,10.041106700897217,2000,20000
+S13,10,nonlinear_nonlinear_informative_weak_harmful_small,Final Model Oracle,0.26979994773864746,2000,20000
+S13,10,nonlinear_nonlinear_informative_weak_harmful_small,EconML Baseline,4.7727227210998535,2000,20000
+S13,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,Final Model,10.117516279220581,2000,20000
+S13,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.3846416473388672,2000,20000
+S13,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,EconML Baseline,4.407301664352417,2000,20000
+S13,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model,10.268948793411255,2000,20000
+S13,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.2605125904083252,2000,20000
+S13,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,EconML Baseline,3.5934360027313232,2000,20000
+S14,1,linear_linear_informative_strong_beneficial_large,Final Model,12.164145708084106,2000,20000
+S14,1,linear_linear_informative_strong_beneficial_large,Final Model Oracle,0.41117405891418457,2000,20000
+S14,1,linear_linear_informative_strong_beneficial_large,EconML Baseline,5.882651090621948,2000,20000
+S14,2,linear_linear_informative_weak_harmful_small,Final Model,12.576649904251099,2000,20000
+S14,2,linear_linear_informative_weak_harmful_small,Final Model Oracle,0.27275753021240234,2000,20000
+S14,2,linear_linear_informative_weak_harmful_small,EconML Baseline,4.15648889541626,2000,20000
+S14,3,linear_linear_weakproxy_strong_harmful_moderate,Final Model,12.962209224700928,2000,20000
+S14,3,linear_linear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.26041555404663086,2000,20000
+S14,3,linear_linear_weakproxy_strong_harmful_moderate,EconML Baseline,4.697715520858765,2000,20000
+S14,4,linear_linear_weakproxy_weak_nearnull_harmful,Final Model,12.859394550323486,2000,20000
+S14,4,linear_linear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.2585475444793701,2000,20000
+S14,4,linear_linear_weakproxy_weak_nearnull_harmful,EconML Baseline,5.741232395172119,2000,20000
+S14,5,linear_nonlinear_informative_strong_beneficial_large,Final Model,12.334999561309814,2000,20000
+S14,5,linear_nonlinear_informative_strong_beneficial_large,Final Model Oracle,0.2586960792541504,2000,20000
+S14,5,linear_nonlinear_informative_strong_beneficial_large,EconML Baseline,5.991625547409058,2000,20000
+S14,6,linear_nonlinear_informative_weak_harmful_small,Final Model,12.379492044448853,2000,20000
+S14,6,linear_nonlinear_informative_weak_harmful_small,Final Model Oracle,0.2610652446746826,2000,20000
+S14,6,linear_nonlinear_informative_weak_harmful_small,EconML Baseline,4.164681911468506,2000,20000
+S14,7,linear_nonlinear_weakproxy_strong_harmful_moderate,Final Model,13.202380418777466,2000,20000
+S14,7,linear_nonlinear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.2533426284790039,2000,20000
+S14,7,linear_nonlinear_weakproxy_strong_harmful_moderate,EconML Baseline,4.717731237411499,2000,20000
+S14,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model,12.818422555923462,2000,20000
+S14,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.24885320663452148,2000,20000
+S14,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,EconML Baseline,5.8834123611450195,2000,20000
+S14,9,nonlinear_nonlinear_informative_strong_beneficial_large,Final Model,12.450987577438354,2000,20000
+S14,9,nonlinear_nonlinear_informative_strong_beneficial_large,Final Model Oracle,0.26141786575317383,2000,20000
+S14,9,nonlinear_nonlinear_informative_strong_beneficial_large,EconML Baseline,6.5961103439331055,2000,20000
+S14,10,nonlinear_nonlinear_informative_weak_harmful_small,Final Model,12.996788024902344,2000,20000
+S14,10,nonlinear_nonlinear_informative_weak_harmful_small,Final Model Oracle,0.26190781593322754,2000,20000
+S14,10,nonlinear_nonlinear_informative_weak_harmful_small,EconML Baseline,6.960761547088623,2000,20000
+S14,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,Final Model,13.062408208847046,2000,20000
+S14,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.2657015323638916,2000,20000
+S14,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,EconML Baseline,5.425271987915039,2000,20000
+S14,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model,13.28961706161499,2000,20000
+S14,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.4582479000091553,2000,20000
+S14,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,EconML Baseline,6.996294260025024,2000,20000
+S15,1,linear_linear_informative_strong_beneficial_large,Final Model,17.600895166397095,2000,20000
+S15,1,linear_linear_informative_strong_beneficial_large,Final Model Oracle,0.2636606693267822,2000,20000
+S15,1,linear_linear_informative_strong_beneficial_large,EconML Baseline,8.874001026153564,2000,20000
+S15,2,linear_linear_informative_weak_harmful_small,Final Model,17.916290760040283,2000,20000
+S15,2,linear_linear_informative_weak_harmful_small,Final Model Oracle,0.2635953426361084,2000,20000
+S15,2,linear_linear_informative_weak_harmful_small,EconML Baseline,6.275187253952026,2000,20000
+S15,3,linear_linear_weakproxy_strong_harmful_moderate,Final Model,18.58952522277832,2000,20000
+S15,3,linear_linear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.2526705265045166,2000,20000
+S15,3,linear_linear_weakproxy_strong_harmful_moderate,EconML Baseline,7.064944505691528,2000,20000
+S15,4,linear_linear_weakproxy_weak_nearnull_harmful,Final Model,19.09029769897461,2000,20000
+S15,4,linear_linear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.2648444175720215,2000,20000
+S15,4,linear_linear_weakproxy_weak_nearnull_harmful,EconML Baseline,6.479608535766602,2000,20000
+S15,5,linear_nonlinear_informative_strong_beneficial_large,Final Model,18.167081594467163,2000,20000
+S15,5,linear_nonlinear_informative_strong_beneficial_large,Final Model Oracle,0.2808349132537842,2000,20000
+S15,5,linear_nonlinear_informative_strong_beneficial_large,EconML Baseline,10.192973375320435,2000,20000
+S15,6,linear_nonlinear_informative_weak_harmful_small,Final Model,18.731860160827637,2000,20000
+S15,6,linear_nonlinear_informative_weak_harmful_small,Final Model Oracle,0.3211944103240967,2000,20000
+S15,6,linear_nonlinear_informative_weak_harmful_small,EconML Baseline,10.30769419670105,2000,20000
+S15,7,linear_nonlinear_weakproxy_strong_harmful_moderate,Final Model,18.98204278945923,2000,20000
+S15,7,linear_nonlinear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.25980091094970703,2000,20000
+S15,7,linear_nonlinear_weakproxy_strong_harmful_moderate,EconML Baseline,11.510998964309692,2000,20000
+S15,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model,19.42197060585022,2000,20000
+S15,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.25376272201538086,2000,20000
+S15,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,EconML Baseline,10.433676958084106,2000,20000
+S15,9,nonlinear_nonlinear_informative_strong_beneficial_large,Final Model,17.593289613723755,2000,20000
+S15,9,nonlinear_nonlinear_informative_strong_beneficial_large,Final Model Oracle,0.2543604373931885,2000,20000
+S15,9,nonlinear_nonlinear_informative_strong_beneficial_large,EconML Baseline,7.5712571144104,2000,20000
+S15,10,nonlinear_nonlinear_informative_weak_harmful_small,Final Model,18.00966453552246,2000,20000
+S15,10,nonlinear_nonlinear_informative_weak_harmful_small,Final Model Oracle,0.26331257820129395,2000,20000
+S15,10,nonlinear_nonlinear_informative_weak_harmful_small,EconML Baseline,7.218928813934326,2000,20000
+S15,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,Final Model,18.439961910247803,2000,20000
+S15,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.25680971145629883,2000,20000
+S15,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,EconML Baseline,8.58060097694397,2000,20000
+S15,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model,18.600749731063843,2000,20000
+S15,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.24903416633605957,2000,20000
+S15,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,EconML Baseline,7.293466806411743,2000,20000
+S16,1,linear_linear_informative_strong_beneficial_large,Final Model,29.317553997039795,2000,20000
+S16,1,linear_linear_informative_strong_beneficial_large,Final Model Oracle,0.2575111389160156,2000,20000
+S16,1,linear_linear_informative_strong_beneficial_large,EconML Baseline,15.593918800354004,2000,20000
+S16,2,linear_linear_informative_weak_harmful_small,Final Model,29.06571316719055,2000,20000
+S16,2,linear_linear_informative_weak_harmful_small,Final Model Oracle,0.2790679931640625,2000,20000
+S16,2,linear_linear_informative_weak_harmful_small,EconML Baseline,14.321218013763428,2000,20000
+S16,3,linear_linear_weakproxy_strong_harmful_moderate,Final Model,31.149478673934937,2000,20000
+S16,3,linear_linear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.2601301670074463,2000,20000
+S16,3,linear_linear_weakproxy_strong_harmful_moderate,EconML Baseline,13.021037101745605,2000,20000
+S16,4,linear_linear_weakproxy_weak_nearnull_harmful,Final Model,30.89728331565857,2000,20000
+S16,4,linear_linear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.252213716506958,2000,20000
+S16,4,linear_linear_weakproxy_weak_nearnull_harmful,EconML Baseline,15.563679456710815,2000,20000
+S16,5,linear_nonlinear_informative_strong_beneficial_large,Final Model,29.34682822227478,2000,20000
+S16,5,linear_nonlinear_informative_strong_beneficial_large,Final Model Oracle,0.5385282039642334,2000,20000
+S16,5,linear_nonlinear_informative_strong_beneficial_large,EconML Baseline,15.1882483959198,2000,20000
+S16,6,linear_nonlinear_informative_weak_harmful_small,Final Model,28.786753177642822,2000,20000
+S16,6,linear_nonlinear_informative_weak_harmful_small,Final Model Oracle,0.25197863578796387,2000,20000
+S16,6,linear_nonlinear_informative_weak_harmful_small,EconML Baseline,13.565165758132935,2000,20000
+S16,7,linear_nonlinear_weakproxy_strong_harmful_moderate,Final Model,31.058325052261353,2000,20000
+S16,7,linear_nonlinear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.45560264587402344,2000,20000
+S16,7,linear_nonlinear_weakproxy_strong_harmful_moderate,EconML Baseline,12.94700312614441,2000,20000
+S16,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model,30.946115255355835,2000,20000
+S16,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.258181095123291,2000,20000
+S16,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,EconML Baseline,11.08306884765625,2000,20000
+S16,9,nonlinear_nonlinear_informative_strong_beneficial_large,Final Model,30.15010118484497,2000,20000
+S16,9,nonlinear_nonlinear_informative_strong_beneficial_large,Final Model Oracle,0.46390271186828613,2000,20000
+S16,9,nonlinear_nonlinear_informative_strong_beneficial_large,EconML Baseline,18.922740936279297,2000,20000
+S16,10,nonlinear_nonlinear_informative_weak_harmful_small,Final Model,30.603747129440308,2000,20000
+S16,10,nonlinear_nonlinear_informative_weak_harmful_small,Final Model Oracle,0.25185108184814453,2000,20000
+S16,10,nonlinear_nonlinear_informative_weak_harmful_small,EconML Baseline,17.958755016326904,2000,20000
+S16,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,Final Model,31.659882307052612,2000,20000
+S16,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.46052098274230957,2000,20000
+S16,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,EconML Baseline,15.246185541152954,2000,20000
+S16,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model,31.985097408294678,2000,20000
+S16,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.24775004386901855,2000,20000
+S16,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,EconML Baseline,17.726503372192383,2000,20000
+S17,1,linear_linear_informative_strong_beneficial_large,Final Model,11.09622597694397,2000,20000
+S17,1,linear_linear_informative_strong_beneficial_large,Final Model Oracle,0.26134371757507324,2000,20000
+S17,1,linear_linear_informative_strong_beneficial_large,EconML Baseline,6.21587347984314,2000,20000
+S17,2,linear_linear_informative_weak_harmful_small,Final Model,11.110823392868042,2000,20000
+S17,2,linear_linear_informative_weak_harmful_small,Final Model Oracle,0.262606143951416,2000,20000
+S17,2,linear_linear_informative_weak_harmful_small,EconML Baseline,6.04259467124939,2000,20000
+S17,3,linear_linear_weakproxy_strong_harmful_moderate,Final Model,11.722580194473267,2000,20000
+S17,3,linear_linear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.31780362129211426,2000,20000
+S17,3,linear_linear_weakproxy_strong_harmful_moderate,EconML Baseline,5.073318243026733,2000,20000
+S17,4,linear_linear_weakproxy_weak_nearnull_harmful,Final Model,11.50969409942627,2000,20000
+S17,4,linear_linear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.2638723850250244,2000,20000
+S17,4,linear_linear_weakproxy_weak_nearnull_harmful,EconML Baseline,4.684800624847412,2000,20000
+S17,5,linear_nonlinear_informative_strong_beneficial_large,Final Model,11.245120286941528,2000,20000
+S17,5,linear_nonlinear_informative_strong_beneficial_large,Final Model Oracle,0.2626943588256836,2000,20000
+S17,5,linear_nonlinear_informative_strong_beneficial_large,EconML Baseline,6.380297899246216,2000,20000
+S17,6,linear_nonlinear_informative_weak_harmful_small,Final Model,10.997042894363403,2000,20000
+S17,6,linear_nonlinear_informative_weak_harmful_small,Final Model Oracle,0.25223445892333984,2000,20000
+S17,6,linear_nonlinear_informative_weak_harmful_small,EconML Baseline,6.195956707000732,2000,20000
+S17,7,linear_nonlinear_weakproxy_strong_harmful_moderate,Final Model,11.615372896194458,2000,20000
+S17,7,linear_nonlinear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.28078675270080566,2000,20000
+S17,7,linear_nonlinear_weakproxy_strong_harmful_moderate,EconML Baseline,5.353189706802368,2000,20000
+S17,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model,11.429840326309204,2000,20000
+S17,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.2590317726135254,2000,20000
+S17,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,EconML Baseline,4.744091272354126,2000,20000
+S17,9,nonlinear_nonlinear_informative_strong_beneficial_large,Final Model,11.460337162017822,2000,20000
+S17,9,nonlinear_nonlinear_informative_strong_beneficial_large,Final Model Oracle,0.25424718856811523,2000,20000
+S17,9,nonlinear_nonlinear_informative_strong_beneficial_large,EconML Baseline,8.138551950454712,2000,20000
+S17,10,nonlinear_nonlinear_informative_weak_harmful_small,Final Model,11.639010190963745,2000,20000
+S17,10,nonlinear_nonlinear_informative_weak_harmful_small,Final Model Oracle,0.2594594955444336,2000,20000
+S17,10,nonlinear_nonlinear_informative_weak_harmful_small,EconML Baseline,7.666743516921997,2000,20000
+S17,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,Final Model,11.924307584762573,2000,20000
+S17,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.29102015495300293,2000,20000
+S17,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,EconML Baseline,8.943224906921387,2000,20000
+S17,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model,12.046197175979614,2000,20000
+S17,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.263324499130249,2000,20000
+S17,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,EconML Baseline,8.412178993225098,2000,20000
+S18,1,linear_linear_informative_strong_beneficial_large,Final Model,14.477545022964478,2000,20000
+S18,1,linear_linear_informative_strong_beneficial_large,Final Model Oracle,0.2520484924316406,2000,20000
+S18,1,linear_linear_informative_strong_beneficial_large,EconML Baseline,6.263667106628418,2000,20000
+S18,2,linear_linear_informative_weak_harmful_small,Final Model,14.41862154006958,2000,20000
+S18,2,linear_linear_informative_weak_harmful_small,Final Model Oracle,0.3966178894042969,2000,20000
+S18,2,linear_linear_informative_weak_harmful_small,EconML Baseline,6.0770580768585205,2000,20000
+S18,3,linear_linear_weakproxy_strong_harmful_moderate,Final Model,14.860024690628052,2000,20000
+S18,3,linear_linear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.25394463539123535,2000,20000
+S18,3,linear_linear_weakproxy_strong_harmful_moderate,EconML Baseline,5.0051305294036865,2000,20000
+S18,4,linear_linear_weakproxy_weak_nearnull_harmful,Final Model,15.008362531661987,2000,20000
+S18,4,linear_linear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.26822710037231445,2000,20000
+S18,4,linear_linear_weakproxy_weak_nearnull_harmful,EconML Baseline,4.628662824630737,2000,20000
+S18,5,linear_nonlinear_informative_strong_beneficial_large,Final Model,14.411728143692017,2000,20000
+S18,5,linear_nonlinear_informative_strong_beneficial_large,Final Model Oracle,0.2620978355407715,2000,20000
+S18,5,linear_nonlinear_informative_strong_beneficial_large,EconML Baseline,6.471389055252075,2000,20000
+S18,6,linear_nonlinear_informative_weak_harmful_small,Final Model,14.523081302642822,2000,20000
+S18,6,linear_nonlinear_informative_weak_harmful_small,Final Model Oracle,0.2602255344390869,2000,20000
+S18,6,linear_nonlinear_informative_weak_harmful_small,EconML Baseline,6.20953893661499,2000,20000
+S18,7,linear_nonlinear_weakproxy_strong_harmful_moderate,Final Model,14.918550491333008,2000,20000
+S18,7,linear_nonlinear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.3117368221282959,2000,20000
+S18,7,linear_nonlinear_weakproxy_strong_harmful_moderate,EconML Baseline,5.350802183151245,2000,20000
+S18,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model,15.321123600006104,2000,20000
+S18,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.25101351737976074,2000,20000
+S18,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,EconML Baseline,4.707889795303345,2000,20000
+S18,9,nonlinear_nonlinear_informative_strong_beneficial_large,Final Model,14.787159204483032,2000,20000
+S18,9,nonlinear_nonlinear_informative_strong_beneficial_large,Final Model Oracle,0.27811145782470703,2000,20000
+S18,9,nonlinear_nonlinear_informative_strong_beneficial_large,EconML Baseline,7.853806972503662,2000,20000
+S18,10,nonlinear_nonlinear_informative_weak_harmful_small,Final Model,15.70091700553894,2000,20000
+S18,10,nonlinear_nonlinear_informative_weak_harmful_small,Final Model Oracle,0.2780299186706543,2000,20000
+S18,10,nonlinear_nonlinear_informative_weak_harmful_small,EconML Baseline,7.738282918930054,2000,20000
+S18,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,Final Model,15.622028112411499,2000,20000
+S18,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.43045687675476074,2000,20000
+S18,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,EconML Baseline,8.955538034439087,2000,20000
+S18,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model,15.954544067382812,2000,20000
+S18,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.2761704921722412,2000,20000
+S18,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,EconML Baseline,7.9108264446258545,2000,20000
+S19,1,linear_linear_informative_strong_beneficial_large,Final Model,14.496558427810669,2000,20000
+S19,1,linear_linear_informative_strong_beneficial_large,Final Model Oracle,0.2923569679260254,2000,20000
+S19,1,linear_linear_informative_strong_beneficial_large,EconML Baseline,6.178217172622681,2000,20000
+S19,2,linear_linear_informative_weak_harmful_small,Final Model,14.519214868545532,2000,20000
+S19,2,linear_linear_informative_weak_harmful_small,Final Model Oracle,0.2845473289489746,2000,20000
+S19,2,linear_linear_informative_weak_harmful_small,EconML Baseline,7.610680818557739,2000,20000
+S19,3,linear_linear_weakproxy_strong_harmful_moderate,Final Model,14.74304461479187,2000,20000
+S19,3,linear_linear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.28443121910095215,2000,20000
+S19,3,linear_linear_weakproxy_strong_harmful_moderate,EconML Baseline,6.496416091918945,2000,20000
+S19,4,linear_linear_weakproxy_weak_nearnull_harmful,Final Model,14.866715908050537,2000,20000
+S19,4,linear_linear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.2894580364227295,2000,20000
+S19,4,linear_linear_weakproxy_weak_nearnull_harmful,EconML Baseline,7.656932830810547,2000,20000
+S19,5,linear_nonlinear_informative_strong_beneficial_large,Final Model,14.8653883934021,2000,20000
+S19,5,linear_nonlinear_informative_strong_beneficial_large,Final Model Oracle,0.2969686985015869,2000,20000
+S19,5,linear_nonlinear_informative_strong_beneficial_large,EconML Baseline,8.80309796333313,2000,20000
+S19,6,linear_nonlinear_informative_weak_harmful_small,Final Model,14.961410760879517,2000,20000
+S19,6,linear_nonlinear_informative_weak_harmful_small,Final Model Oracle,0.299968957901001,2000,20000
+S19,6,linear_nonlinear_informative_weak_harmful_small,EconML Baseline,8.587485551834106,2000,20000
+S19,7,linear_nonlinear_weakproxy_strong_harmful_moderate,Final Model,15.43271255493164,2000,20000
+S19,7,linear_nonlinear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.2848780155181885,2000,20000
+S19,7,linear_nonlinear_weakproxy_strong_harmful_moderate,EconML Baseline,9.441571474075317,2000,20000
+S19,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model,15.344021320343018,2000,20000
+S19,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.2906358242034912,2000,20000
+S19,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,EconML Baseline,8.607858419418335,2000,20000
+S19,9,nonlinear_nonlinear_informative_strong_beneficial_large,Final Model,14.919615030288696,2000,20000
+S19,9,nonlinear_nonlinear_informative_strong_beneficial_large,Final Model Oracle,0.287853479385376,2000,20000
+S19,9,nonlinear_nonlinear_informative_strong_beneficial_large,EconML Baseline,10.094125986099243,2000,20000
+S19,10,nonlinear_nonlinear_informative_weak_harmful_small,Final Model,14.632202863693237,2000,20000
+S19,10,nonlinear_nonlinear_informative_weak_harmful_small,Final Model Oracle,0.2771732807159424,2000,20000
+S19,10,nonlinear_nonlinear_informative_weak_harmful_small,EconML Baseline,6.881068229675293,2000,20000
+S19,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,Final Model,14.963653802871704,2000,20000
+S19,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.28799962997436523,2000,20000
+S19,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,EconML Baseline,7.4802186489105225,2000,20000
+S19,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model,14.622265815734863,2000,20000
+S19,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.2951383590698242,2000,20000
+S19,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,EconML Baseline,6.778646945953369,2000,20000
+S20,1,linear_linear_informative_strong_beneficial_large,Final Model,18.5511212348938,2000,20000
+S20,1,linear_linear_informative_strong_beneficial_large,Final Model Oracle,0.28965330123901367,2000,20000
+S20,1,linear_linear_informative_strong_beneficial_large,EconML Baseline,8.204000473022461,2000,20000
+S20,2,linear_linear_informative_weak_harmful_small,Final Model,18.28263831138611,2000,20000
+S20,2,linear_linear_informative_weak_harmful_small,Final Model Oracle,0.30062198638916016,2000,20000
+S20,2,linear_linear_informative_weak_harmful_small,EconML Baseline,7.876485824584961,2000,20000
+S20,3,linear_linear_weakproxy_strong_harmful_moderate,Final Model,18.723280906677246,2000,20000
+S20,3,linear_linear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.31621551513671875,2000,20000
+S20,3,linear_linear_weakproxy_strong_harmful_moderate,EconML Baseline,9.103067636489868,2000,20000
+S20,4,linear_linear_weakproxy_weak_nearnull_harmful,Final Model,18.37509822845459,2000,20000
+S20,4,linear_linear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.2948911190032959,2000,20000
+S20,4,linear_linear_weakproxy_weak_nearnull_harmful,EconML Baseline,7.8619701862335205,2000,20000
+S20,5,linear_nonlinear_informative_strong_beneficial_large,Final Model,18.61638569831848,2000,20000
+S20,5,linear_nonlinear_informative_strong_beneficial_large,Final Model Oracle,0.3146548271179199,2000,20000
+S20,5,linear_nonlinear_informative_strong_beneficial_large,EconML Baseline,8.409509181976318,2000,20000
+S20,6,linear_nonlinear_informative_weak_harmful_small,Final Model,18.230356693267822,2000,20000
+S20,6,linear_nonlinear_informative_weak_harmful_small,Final Model Oracle,0.2854297161102295,2000,20000
+S20,6,linear_nonlinear_informative_weak_harmful_small,EconML Baseline,7.816389560699463,2000,20000
+S20,7,linear_nonlinear_weakproxy_strong_harmful_moderate,Final Model,18.66666269302368,2000,20000
+S20,7,linear_nonlinear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.2892429828643799,2000,20000
+S20,7,linear_nonlinear_weakproxy_strong_harmful_moderate,EconML Baseline,9.427326679229736,2000,20000
+S20,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model,18.336975812911987,2000,20000
+S20,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.27950429916381836,2000,20000
+S20,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,EconML Baseline,7.925327301025391,2000,20000
+S20,9,nonlinear_nonlinear_informative_strong_beneficial_large,Final Model,18.541091442108154,2000,20000
+S20,9,nonlinear_nonlinear_informative_strong_beneficial_large,Final Model Oracle,0.3117527961730957,2000,20000
+S20,9,nonlinear_nonlinear_informative_strong_beneficial_large,EconML Baseline,9.323781728744507,2000,20000
+S20,10,nonlinear_nonlinear_informative_weak_harmful_small,Final Model,18.23518204689026,2000,20000
+S20,10,nonlinear_nonlinear_informative_weak_harmful_small,Final Model Oracle,0.45182371139526367,2000,20000
+S20,10,nonlinear_nonlinear_informative_weak_harmful_small,EconML Baseline,8.42789340019226,2000,20000
+S20,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,Final Model,18.8682758808136,2000,20000
+S20,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.27858638763427734,2000,20000
+S20,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,EconML Baseline,9.727886199951172,2000,20000
+S20,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model,18.545063734054565,2000,20000
+S20,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.47515106201171875,2000,20000
+S20,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,EconML Baseline,8.267081022262573,2000,20000
+S21,1,linear_linear_informative_strong_beneficial_large,Final Model,33.36435008049011,2000,20000
+S21,1,linear_linear_informative_strong_beneficial_large,Final Model Oracle,0.33356308937072754,2000,20000
+S21,1,linear_linear_informative_strong_beneficial_large,EconML Baseline,21.1019184589386,2000,20000
+S21,2,linear_linear_informative_weak_harmful_small,Final Model,34.070990800857544,2000,20000
+S21,2,linear_linear_informative_weak_harmful_small,Final Model Oracle,0.3318517208099365,2000,20000
+S21,2,linear_linear_informative_weak_harmful_small,EconML Baseline,22.400209188461304,2000,20000
+S21,3,linear_linear_weakproxy_strong_harmful_moderate,Final Model,34.27891945838928,2000,20000
+S21,3,linear_linear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.34093761444091797,2000,20000
+S21,3,linear_linear_weakproxy_strong_harmful_moderate,EconML Baseline,24.343998193740845,2000,20000
+S21,4,linear_linear_weakproxy_weak_nearnull_harmful,Final Model,34.92534255981445,2000,20000
+S21,4,linear_linear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.3725759983062744,2000,20000
+S21,4,linear_linear_weakproxy_weak_nearnull_harmful,EconML Baseline,22.765178442001343,2000,20000
+S21,5,linear_nonlinear_informative_strong_beneficial_large,Final Model,33.7263126373291,2000,20000
+S21,5,linear_nonlinear_informative_strong_beneficial_large,Final Model Oracle,0.36185431480407715,2000,20000
+S21,5,linear_nonlinear_informative_strong_beneficial_large,EconML Baseline,21.875601291656494,2000,20000
+S21,6,linear_nonlinear_informative_weak_harmful_small,Final Model,34.30466079711914,2000,20000
+S21,6,linear_nonlinear_informative_weak_harmful_small,Final Model Oracle,0.34537649154663086,2000,20000
+S21,6,linear_nonlinear_informative_weak_harmful_small,EconML Baseline,22.239412546157837,2000,20000
+S21,7,linear_nonlinear_weakproxy_strong_harmful_moderate,Final Model,34.737265825271606,2000,20000
+S21,7,linear_nonlinear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.3635439872741699,2000,20000
+S21,7,linear_nonlinear_weakproxy_strong_harmful_moderate,EconML Baseline,25.166046857833862,2000,20000
+S21,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model,34.66564869880676,2000,20000
+S21,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.3526611328125,2000,20000
+S21,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,EconML Baseline,22.928645372390747,2000,20000
+S21,9,nonlinear_nonlinear_informative_strong_beneficial_large,Final Model,33.92570471763611,2000,20000
+S21,9,nonlinear_nonlinear_informative_strong_beneficial_large,Final Model Oracle,0.33908867835998535,2000,20000
+S21,9,nonlinear_nonlinear_informative_strong_beneficial_large,EconML Baseline,23.995574474334717,2000,20000
+S21,10,nonlinear_nonlinear_informative_weak_harmful_small,Final Model,34.35602688789368,2000,20000
+S21,10,nonlinear_nonlinear_informative_weak_harmful_small,Final Model Oracle,0.379244327545166,2000,20000
+S21,10,nonlinear_nonlinear_informative_weak_harmful_small,EconML Baseline,22.864495515823364,2000,20000
+S21,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,Final Model,34.898908376693726,2000,20000
+S21,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.48630547523498535,2000,20000
+S21,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,EconML Baseline,29.26951026916504,2000,20000
+S21,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model,35.297507524490356,2000,20000
+S21,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.345930814743042,2000,20000
+S21,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,EconML Baseline,25.06743335723877,2000,20000
+S22,1,linear_linear_informative_strong_beneficial_large,Final Model,52.5603928565979,4000,20000
+S22,1,linear_linear_informative_strong_beneficial_large,Final Model Oracle,0.4924170970916748,4000,20000
+S22,1,linear_linear_informative_strong_beneficial_large,EconML Baseline,34.753098249435425,4000,20000
+S22,2,linear_linear_informative_weak_harmful_small,Final Model,51.25500273704529,4000,20000
+S22,2,linear_linear_informative_weak_harmful_small,Final Model Oracle,0.4536726474761963,4000,20000
+S22,2,linear_linear_informative_weak_harmful_small,EconML Baseline,33.909475326538086,4000,20000
+S22,3,linear_linear_weakproxy_strong_harmful_moderate,Final Model,52.6754789352417,4000,20000
+S22,3,linear_linear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.5369930267333984,4000,20000
+S22,3,linear_linear_weakproxy_strong_harmful_moderate,EconML Baseline,40.2120623588562,4000,20000
+S22,4,linear_linear_weakproxy_weak_nearnull_harmful,Final Model,51.8507604598999,4000,20000
+S22,4,linear_linear_weakproxy_weak_nearnull_harmful,Final Model Oracle,1.1218340396881104,4000,20000
+S22,4,linear_linear_weakproxy_weak_nearnull_harmful,EconML Baseline,34.136942863464355,4000,20000
+S22,5,linear_nonlinear_informative_strong_beneficial_large,Final Model,52.70858454704285,4000,20000
+S22,5,linear_nonlinear_informative_strong_beneficial_large,Final Model Oracle,0.44443678855895996,4000,20000
+S22,5,linear_nonlinear_informative_strong_beneficial_large,EconML Baseline,37.28077673912048,4000,20000
+S22,6,linear_nonlinear_informative_weak_harmful_small,Final Model,52.99103116989136,4000,20000
+S22,6,linear_nonlinear_informative_weak_harmful_small,Final Model Oracle,0.4378395080566406,4000,20000
+S22,6,linear_nonlinear_informative_weak_harmful_small,EconML Baseline,37.90434527397156,4000,20000
+S22,7,linear_nonlinear_weakproxy_strong_harmful_moderate,Final Model,53.666720151901245,4000,20000
+S22,7,linear_nonlinear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.44559621810913086,4000,20000
+S22,7,linear_nonlinear_weakproxy_strong_harmful_moderate,EconML Baseline,43.99789762496948,4000,20000
+S22,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model,52.987356424331665,4000,20000
+S22,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.4761059284210205,4000,20000
+S22,8,linear_nonlinear_weakproxy_weak_nearnull_harmful,EconML Baseline,37.05692410469055,4000,20000
+S22,9,nonlinear_nonlinear_informative_strong_beneficial_large,Final Model,50.64577603340149,4000,20000
+S22,9,nonlinear_nonlinear_informative_strong_beneficial_large,Final Model Oracle,0.46669840812683105,4000,20000
+S22,9,nonlinear_nonlinear_informative_strong_beneficial_large,EconML Baseline,30.6664776802063,4000,20000
+S22,10,nonlinear_nonlinear_informative_weak_harmful_small,Final Model,50.76070952415466,4000,20000
+S22,10,nonlinear_nonlinear_informative_weak_harmful_small,Final Model Oracle,0.4488978385925293,4000,20000
+S22,10,nonlinear_nonlinear_informative_weak_harmful_small,EconML Baseline,30.71513319015503,4000,20000
+S22,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,Final Model,51.66380453109741,4000,20000
+S22,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,Final Model Oracle,0.44664740562438965,4000,20000
+S22,11,nonlinear_nonlinear_weakproxy_strong_harmful_moderate,EconML Baseline,35.841646671295166,4000,20000
+S22,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model,51.80788254737854,4000,20000
+S22,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,Final Model Oracle,0.43024730682373047,4000,20000
+S22,12,nonlinear_nonlinear_weakproxy_weak_nearnull_harmful,EconML Baseline,30.833508014678955,4000,20000
