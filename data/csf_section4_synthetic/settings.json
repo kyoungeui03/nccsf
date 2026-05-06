@@ -1,0 +1,30 @@
+{
+  "source": "Cui et al. causal survival forest Section 4 synthetic benchmark",
+  "description": "Paper-style synthetic settings used to compare the Final Model with direct R-CSF in a fully observed causal survival benchmark without latent U or negative-control proxies.",
+  "settings": {
+    "1": {
+      "dgp": "type1",
+      "rmst_horizon": 1.5,
+      "paper_survival_horizon": 0.8,
+      "archive_aligned_survival_horizon": 1.5
+    },
+    "2": {
+      "dgp": "type2",
+      "rmst_horizon": 2.0,
+      "paper_survival_horizon": 1.2,
+      "archive_aligned_survival_horizon": 2.0
+    },
+    "3": {
+      "dgp": "type3",
+      "rmst_horizon": 15.0,
+      "paper_survival_horizon": 10.0,
+      "archive_aligned_survival_horizon": 15.0
+    },
+    "4": {
+      "dgp": "type4",
+      "rmst_horizon": 3.0,
+      "paper_survival_horizon": 2.0,
+      "archive_aligned_survival_horizon": 3.0
+    }
+  }
+}

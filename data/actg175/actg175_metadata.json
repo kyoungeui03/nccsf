@@ -1,0 +1,64 @@
+{
+  "dataset_name": "AIDS Clinical Trials Group Study 175",
+  "dataset_id": 890,
+  "source": "ucimlrepo cache used by the ACTG175 HIV analysis",
+  "canonical_files": {
+    "raw_cache_csv": "data/actg175/actg175_ucimlrepo_cache.csv",
+    "paper_subset_csv": "data/actg175/actg175_paper_subset_filtered.csv",
+    "feature_splits_csv": "data/actg175/actg175_feature_splits.csv"
+  },
+  "file_shapes": {
+    "actg175_ucimlrepo_cache.csv": [2139, 24],
+    "actg175_paper_subset_filtered.csv": [1083, 29],
+    "actg175_feature_splits.csv": [5, 7]
+  },
+  "sha256": {
+    "actg175_ucimlrepo_cache.csv": "efa9781d9c06a7a105085219986a66ed8df44761a82306529e099e387f8c7d33",
+    "actg175_paper_subset_filtered.csv": "193c0fc67b9bffa77646f77703a54c2325f9419db8336496fbc4a9b382f3e7ef",
+    "actg175_feature_splits.csv": "fe7cc5a8eb9d561ad3c1129dff99f416231f2b79a48877aeab59904d56b6b4c6"
+  },
+  "analysis_subset": {
+    "target": "RMST",
+    "horizon_days": 1000.0,
+    "subset_n": 1083,
+    "treated_label": "ZDV+ddI",
+    "control_label": "ddI",
+    "treated_n": 522,
+    "control_n": 561,
+    "event_rate": 0.21329639889196675,
+    "median_followup_days": 1007.0
+  },
+  "paper_14_covariates": [
+    "age",
+    "wtkg",
+    "karnof",
+    "cd40",
+    "cd80",
+    "gender",
+    "homo",
+    "race",
+    "symptom",
+    "drugs",
+    "hemo",
+    "str2",
+    "cd420",
+    "cd820"
+  ],
+  "experiment_defaults": {
+    "bootstrap_reps": 200,
+    "bootstrap_seed": 2026,
+    "sample_seed": 42,
+    "model_seed": 42,
+    "r_csf_num_trees": 10000,
+    "r_csf_min_node_size": 5
+  },
+  "created_from": {
+    "source_output_dir": "outputs/final_paper_results/hiv_actg175_5model_10k_bootstrap",
+    "cohort_summary": "outputs/final_paper_results/hiv_actg175_5model_10k_bootstrap/shared/cohort_summary.json",
+    "manifest": "outputs/final_paper_results/hiv_actg175_5model_10k_bootstrap/MANIFEST.json"
+  },
+  "notes": [
+    "This folder stores canonical ACTG175 dataset inputs only. Model outputs remain under outputs/.",
+    "ACTG175 does not provide designated negative-control proxies; X/W/Z split specifications are sensitivity analyses."
+  ]
+}

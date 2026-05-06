@@ -51,4 +51,3 @@ def import_grf_module(project_root: Path, module_name: str):
 
     bootstrap_grf_source_imports(project_root)
     return importlib.import_module(module_name)
-

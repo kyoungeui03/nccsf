@@ -38,7 +38,7 @@ from paper_csf_dgp import (  # noqa: E402
 
 _censored_methods = import_grf_module(PROJECT_ROOT, "grf.methods.econml_oldc3_ablation_survival")
 _r_runtime = import_grf_module(PROJECT_ROOT, "grf.r_runtime")
-from single_file_censored_models.final_censored_model_conditional import (  # noqa: E402
+from censored.final_censored_model_conditional import (  # noqa: E402
     FinalModelConditionalCensoredSurvivalForest,
 )
 
@@ -119,7 +119,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--output-dir",
         type=Path,
-        default=PROJECT_ROOT / "outputs" / "paper_final_model_simulation",
+        default=PROJECT_ROOT / "outputs" / "final_paper_results" / "csf_section4_replication",
     )
     return parser.parse_args()
 

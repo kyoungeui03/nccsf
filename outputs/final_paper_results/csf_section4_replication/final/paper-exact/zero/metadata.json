@@ -1,0 +1,57 @@
+{
+  "script": "/project2/ruishanl_1185/kyoungeui_project/csf_grf_new/Archive/run_paper_final_model_simulation.py",
+  "model": "final",
+  "selected_models": [
+    "final"
+  ],
+  "protocol": "paper-exact",
+  "proxy_layout": "zero",
+  "settings": [
+    1,
+    2,
+    3,
+    4
+  ],
+  "target": "both",
+  "reps": 250,
+  "n_train": 2000,
+  "n_test": 2000,
+  "p": 15,
+  "seed": 42,
+  "proxy_dim_w": 1,
+  "proxy_dim_z": 1,
+  "final_num_trees": 2000,
+  "final_min_node_size": 5,
+  "h_trees": 500,
+  "h_min_node_size": 15,
+  "num_trees_r": 2000,
+  "notes": [
+    "This script uses the paper-style CSF DGP defined locally in Archive/paper_csf_dgp.py, built on grf.synthetic.grf type1-type4.",
+    "Protocol for this run: Paper-exact setup (p=15 and original survival-probability thresholds).",
+    "Proxy layout for this run: X=observed covariates, W=0, Z=0.",
+    "The Final path is pinned to the current single-file Final Conditional model with surv_scalar_mode='full'.",
+    "For paper-exact runs, we align the final-stage forest scale to the paper where possible: 2,000 trees and minimum node size 5, and we set the h-forest scale to 500 trees with minimum node size 15.",
+    "The R-CSF path is pinned directly to Archive/run_paper_grf_csf_direct.R, which now sets num.trees=2,000, min.node.size=5, sample.fraction=0.5, and mtry=min(p, ceil(sqrt(p))+20) for paper-exact runs.",
+    "When proxy_layout='zero', this is the closest paper-style replication because all observed covariates are passed through X and W/Z are zero placeholders.",
+    "When proxy_layout='split-5-5-5', the DGP, horizons, sample sizes, and evaluation protocol remain paper-matched, but the X/W/Z split should be interpreted as our proxy extension rather than an exact paper replication.",
+    "Excess MSE is computed using the paper definition: for each replication, divide by the best method's MSE within that setting/target, then average those ratios across replications.",
+    "Reported MSE is computed against the known test-set true CATE from the closed-form DGP."
+  ],
+  "elapsed_sec": 31818.587696790695,
+  "completed_tasks": 2000,
+  "total_tasks": 2000,
+  "remaining_tasks": 0,
+  "status": "completed",
+  "generated_outputs": [
+    "/project2/ruishanl_1185/kyoungeui_project/csf_grf_new/outputs/paper_final_model_simulation/final/paper-exact/zero/paper_table.csv",
+    "/project2/ruishanl_1185/kyoungeui_project/csf_grf_new/outputs/paper_final_model_simulation/final/paper-exact/zero/paper_table.png"
+  ],
+  "last_completed": {
+    "model": "Final Conditional Model",
+    "target": "survival.probability",
+    "setting_id": 4,
+    "rep_seed": 14291,
+    "fit_time_sec": 9.936715841293335,
+    "task_elapsed_sec": 15.409098863601685
+  }
+}

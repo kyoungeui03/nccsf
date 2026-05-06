@@ -2,7 +2,7 @@
 
 if (!requireNamespace("grf", quietly = TRUE)) {
   stop(
-    "R package 'grf' is required for the R-CSF Baseline. Install it with install.packages('grf').",
+    "R package 'grf' is required for this legacy causal_survival_forest benchmark. Install it with install.packages('grf').",
     call. = FALSE
   )
 }

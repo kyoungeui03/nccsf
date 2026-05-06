@@ -1,0 +1,623 @@
+nohup: ignoring input
+Starting fresh run with 2000 replications.
+Pending replications: 2000
+[progress] 5/2000 (0.2%) completed | last=Final Conditional Model RMST setting=1 seed=1046 | elapsed=01:15 ETA=8:20:35
+[progress] 10/2000 (0.5%) completed | last=Final Conditional Model RMST setting=1 seed=1051 | elapsed=02:30 ETA=8:18:15
+[checkpoint] Saved partial results after 10 / 2000 replications.
+[progress] 15/2000 (0.8%) completed | last=Final Conditional Model RMST setting=1 seed=1056 | elapsed=03:45 ETA=8:17:08
+[progress] 20/2000 (1.0%) completed | last=Final Conditional Model RMST setting=1 seed=1061 | elapsed=05:00 ETA=8:15:10
+[checkpoint] Saved partial results after 20 / 2000 replications.
+[progress] 25/2000 (1.2%) completed | last=Final Conditional Model RMST setting=1 seed=1066 | elapsed=06:14 ETA=8:13:14
+[progress] 30/2000 (1.5%) completed | last=Final Conditional Model RMST setting=1 seed=1071 | elapsed=07:28 ETA=8:11:06
+[checkpoint] Saved partial results after 30 / 2000 replications.
+[progress] 35/2000 (1.8%) completed | last=Final Conditional Model RMST setting=1 seed=1076 | elapsed=08:43 ETA=8:09:46
+[progress] 40/2000 (2.0%) completed | last=Final Conditional Model RMST setting=1 seed=1081 | elapsed=09:58 ETA=8:08:38
+[checkpoint] Saved partial results after 40 / 2000 replications.
+[progress] 45/2000 (2.2%) completed | last=Final Conditional Model RMST setting=1 seed=1086 | elapsed=11:13 ETA=8:07:30
+[progress] 50/2000 (2.5%) completed | last=Final Conditional Model RMST setting=1 seed=1091 | elapsed=12:28 ETA=8:06:42
+[checkpoint] Saved partial results after 50 / 2000 replications.
+[progress] 55/2000 (2.8%) completed | last=Final Conditional Model RMST setting=1 seed=1096 | elapsed=13:43 ETA=8:05:30
+[progress] 60/2000 (3.0%) completed | last=Final Conditional Model RMST setting=1 seed=1101 | elapsed=14:59 ETA=8:04:43
+[checkpoint] Saved partial results after 60 / 2000 replications.
+[progress] 65/2000 (3.2%) completed | last=Final Conditional Model RMST setting=1 seed=1106 | elapsed=16:15 ETA=8:04:01
+[progress] 70/2000 (3.5%) completed | last=Final Conditional Model RMST setting=1 seed=1111 | elapsed=17:30 ETA=8:02:41
+[checkpoint] Saved partial results after 70 / 2000 replications.
+[progress] 75/2000 (3.8%) completed | last=Final Conditional Model RMST setting=1 seed=1116 | elapsed=18:45 ETA=8:01:15
+[progress] 80/2000 (4.0%) completed | last=Final Conditional Model RMST setting=1 seed=1121 | elapsed=20:01 ETA=8:00:26
+[checkpoint] Saved partial results after 80 / 2000 replications.
+[progress] 85/2000 (4.2%) completed | last=Final Conditional Model RMST setting=1 seed=1126 | elapsed=21:16 ETA=7:59:17
+[progress] 90/2000 (4.5%) completed | last=Final Conditional Model RMST setting=1 seed=1131 | elapsed=22:30 ETA=7:57:45
+[checkpoint] Saved partial results after 90 / 2000 replications.
+[progress] 95/2000 (4.8%) completed | last=Final Conditional Model RMST setting=1 seed=1136 | elapsed=23:44 ETA=7:56:12
+[progress] 100/2000 (5.0%) completed | last=Final Conditional Model RMST setting=1 seed=1141 | elapsed=24:58 ETA=7:54:27
+[checkpoint] Saved partial results after 100 / 2000 replications.
+[progress] 105/2000 (5.2%) completed | last=Final Conditional Model RMST setting=1 seed=1146 | elapsed=26:14 ETA=7:53:28
+[progress] 110/2000 (5.5%) completed | last=Final Conditional Model RMST setting=1 seed=1151 | elapsed=27:29 ETA=7:52:26
+[checkpoint] Saved partial results after 110 / 2000 replications.
+[progress] 115/2000 (5.8%) completed | last=Final Conditional Model RMST setting=1 seed=1156 | elapsed=28:44 ETA=7:50:59
+[progress] 120/2000 (6.0%) completed | last=Final Conditional Model RMST setting=1 seed=1161 | elapsed=29:58 ETA=7:49:31
+[checkpoint] Saved partial results after 120 / 2000 replications.
+[progress] 125/2000 (6.2%) completed | last=Final Conditional Model RMST setting=1 seed=1166 | elapsed=31:12 ETA=7:48:11
+[progress] 130/2000 (6.5%) completed | last=Final Conditional Model RMST setting=1 seed=1171 | elapsed=32:27 ETA=7:46:53
+[checkpoint] Saved partial results after 130 / 2000 replications.
+[progress] 135/2000 (6.8%) completed | last=Final Conditional Model RMST setting=1 seed=1176 | elapsed=33:43 ETA=7:45:53
+[progress] 140/2000 (7.0%) completed | last=Final Conditional Model RMST setting=1 seed=1181 | elapsed=34:57 ETA=7:44:27
+[checkpoint] Saved partial results after 140 / 2000 replications.
+[progress] 145/2000 (7.2%) completed | last=Final Conditional Model RMST setting=1 seed=1186 | elapsed=36:12 ETA=7:43:08
+[progress] 150/2000 (7.5%) completed | last=Final Conditional Model RMST setting=1 seed=1191 | elapsed=37:26 ETA=7:41:52
+[checkpoint] Saved partial results after 150 / 2000 replications.
+[progress] 155/2000 (7.8%) completed | last=Final Conditional Model RMST setting=1 seed=1196 | elapsed=38:42 ETA=7:40:46
+[progress] 160/2000 (8.0%) completed | last=Final Conditional Model RMST setting=1 seed=1201 | elapsed=39:56 ETA=7:39:25
+[checkpoint] Saved partial results after 160 / 2000 replications.
+[progress] 165/2000 (8.2%) completed | last=Final Conditional Model RMST setting=1 seed=1206 | elapsed=41:12 ETA=7:38:18
+[progress] 170/2000 (8.5%) completed | last=Final Conditional Model RMST setting=1 seed=1211 | elapsed=42:27 ETA=7:37:05
+[checkpoint] Saved partial results after 170 / 2000 replications.
+[progress] 175/2000 (8.8%) completed | last=Final Conditional Model RMST setting=1 seed=1216 | elapsed=43:43 ETA=7:35:58
+[progress] 180/2000 (9.0%) completed | last=Final Conditional Model RMST setting=1 seed=1221 | elapsed=44:58 ETA=7:34:43
+[checkpoint] Saved partial results after 180 / 2000 replications.
+[progress] 185/2000 (9.2%) completed | last=Final Conditional Model RMST setting=1 seed=1226 | elapsed=46:14 ETA=7:33:36
+[progress] 190/2000 (9.5%) completed | last=Final Conditional Model RMST setting=1 seed=1231 | elapsed=47:28 ETA=7:32:12
+[checkpoint] Saved partial results after 190 / 2000 replications.
+[progress] 195/2000 (9.8%) completed | last=Final Conditional Model RMST setting=1 seed=1236 | elapsed=48:43 ETA=7:30:58
+[progress] 200/2000 (10.0%) completed | last=Final Conditional Model RMST setting=1 seed=1241 | elapsed=49:58 ETA=7:29:44
+[checkpoint] Saved partial results after 200 / 2000 replications.
+[progress] 205/2000 (10.2%) completed | last=Final Conditional Model RMST setting=1 seed=1246 | elapsed=51:12 ETA=7:28:24
+[progress] 210/2000 (10.5%) completed | last=Final Conditional Model RMST setting=1 seed=1251 | elapsed=52:26 ETA=7:27:01
+[checkpoint] Saved partial results after 210 / 2000 replications.
+[progress] 215/2000 (10.8%) completed | last=Final Conditional Model RMST setting=1 seed=1256 | elapsed=53:43 ETA=7:26:00
+[progress] 220/2000 (11.0%) completed | last=Final Conditional Model RMST setting=1 seed=1261 | elapsed=54:57 ETA=7:24:36
+[checkpoint] Saved partial results after 220 / 2000 replications.
+[progress] 225/2000 (11.2%) completed | last=Final Conditional Model RMST setting=1 seed=1266 | elapsed=56:11 ETA=7:23:15
+[progress] 230/2000 (11.5%) completed | last=Final Conditional Model RMST setting=1 seed=1271 | elapsed=57:26 ETA=7:21:59
+[checkpoint] Saved partial results after 230 / 2000 replications.
+[progress] 235/2000 (11.8%) completed | last=Final Conditional Model RMST setting=1 seed=1276 | elapsed=58:39 ETA=7:20:33
+[progress] 240/2000 (12.0%) completed | last=Final Conditional Model RMST setting=1 seed=1281 | elapsed=59:54 ETA=7:19:16
+[checkpoint] Saved partial results after 240 / 2000 replications.
+[progress] 245/2000 (12.2%) completed | last=Final Conditional Model RMST setting=1 seed=1286 | elapsed=1:01:09 ETA=7:18:04
+[progress] 250/2000 (12.5%) completed | last=Final Conditional Model RMST setting=1 seed=1291 | elapsed=1:02:23 ETA=7:16:45
+[checkpoint] Saved partial results after 250 / 2000 replications.
+[progress] 255/2000 (12.8%) completed | last=Final Conditional Model RMST setting=2 seed=2046 | elapsed=1:03:37 ETA=7:15:21
+[progress] 260/2000 (13.0%) completed | last=Final Conditional Model RMST setting=2 seed=2051 | elapsed=1:04:51 ETA=7:14:00
+[checkpoint] Saved partial results after 260 / 2000 replications.
+[progress] 265/2000 (13.2%) completed | last=Final Conditional Model RMST setting=2 seed=2056 | elapsed=1:06:04 ETA=7:12:34
+[progress] 270/2000 (13.5%) completed | last=Final Conditional Model RMST setting=2 seed=2061 | elapsed=1:07:17 ETA=7:11:08
+[checkpoint] Saved partial results after 270 / 2000 replications.
+[progress] 275/2000 (13.8%) completed | last=Final Conditional Model RMST setting=2 seed=2066 | elapsed=1:08:31 ETA=7:09:53
+[progress] 280/2000 (14.0%) completed | last=Final Conditional Model RMST setting=2 seed=2071 | elapsed=1:09:45 ETA=7:08:32
+[checkpoint] Saved partial results after 280 / 2000 replications.
+[progress] 285/2000 (14.2%) completed | last=Final Conditional Model RMST setting=2 seed=2076 | elapsed=1:10:59 ETA=7:07:14
+[progress] 290/2000 (14.5%) completed | last=Final Conditional Model RMST setting=2 seed=2081 | elapsed=1:12:14 ETA=7:05:58
+[checkpoint] Saved partial results after 290 / 2000 replications.
+[progress] 295/2000 (14.8%) completed | last=Final Conditional Model RMST setting=2 seed=2086 | elapsed=1:13:27 ETA=7:04:33
+[progress] 300/2000 (15.0%) completed | last=Final Conditional Model RMST setting=2 seed=2091 | elapsed=1:14:41 ETA=7:03:17
+[checkpoint] Saved partial results after 300 / 2000 replications.
+[progress] 305/2000 (15.2%) completed | last=Final Conditional Model RMST setting=2 seed=2096 | elapsed=1:15:56 ETA=7:01:59
+[progress] 310/2000 (15.5%) completed | last=Final Conditional Model RMST setting=2 seed=2101 | elapsed=1:17:09 ETA=7:00:37
+[checkpoint] Saved partial results after 310 / 2000 replications.
+[progress] 315/2000 (15.8%) completed | last=Final Conditional Model RMST setting=2 seed=2106 | elapsed=1:18:23 ETA=6:59:18
+[progress] 320/2000 (16.0%) completed | last=Final Conditional Model RMST setting=2 seed=2111 | elapsed=1:19:36 ETA=6:57:54
+[checkpoint] Saved partial results after 320 / 2000 replications.
+[progress] 325/2000 (16.2%) completed | last=Final Conditional Model RMST setting=2 seed=2116 | elapsed=1:20:51 ETA=6:56:43
+[progress] 330/2000 (16.5%) completed | last=Final Conditional Model RMST setting=2 seed=2121 | elapsed=1:22:05 ETA=6:55:27
+[checkpoint] Saved partial results after 330 / 2000 replications.
+[progress] 335/2000 (16.8%) completed | last=Final Conditional Model RMST setting=2 seed=2126 | elapsed=1:23:20 ETA=6:54:10
+[progress] 340/2000 (17.0%) completed | last=Final Conditional Model RMST setting=2 seed=2131 | elapsed=1:24:34 ETA=6:52:56
+[checkpoint] Saved partial results after 340 / 2000 replications.
+[progress] 345/2000 (17.2%) completed | last=Final Conditional Model RMST setting=2 seed=2136 | elapsed=1:25:48 ETA=6:51:35
+[progress] 350/2000 (17.5%) completed | last=Final Conditional Model RMST setting=2 seed=2141 | elapsed=1:27:00 ETA=6:50:12
+[checkpoint] Saved partial results after 350 / 2000 replications.
+[progress] 355/2000 (17.8%) completed | last=Final Conditional Model RMST setting=2 seed=2146 | elapsed=1:28:14 ETA=6:48:55
+[progress] 360/2000 (18.0%) completed | last=Final Conditional Model RMST setting=2 seed=2151 | elapsed=1:29:27 ETA=6:47:32
+[checkpoint] Saved partial results after 360 / 2000 replications.
+[progress] 365/2000 (18.2%) completed | last=Final Conditional Model RMST setting=2 seed=2156 | elapsed=1:30:40 ETA=6:46:11
+[progress] 370/2000 (18.5%) completed | last=Final Conditional Model RMST setting=2 seed=2161 | elapsed=1:31:56 ETA=6:45:00
+[checkpoint] Saved partial results after 370 / 2000 replications.
+[progress] 375/2000 (18.8%) completed | last=Final Conditional Model RMST setting=2 seed=2166 | elapsed=1:33:09 ETA=6:43:40
+[progress] 380/2000 (19.0%) completed | last=Final Conditional Model RMST setting=2 seed=2171 | elapsed=1:34:23 ETA=6:42:22
+[checkpoint] Saved partial results after 380 / 2000 replications.
+[progress] 385/2000 (19.2%) completed | last=Final Conditional Model RMST setting=2 seed=2176 | elapsed=1:35:36 ETA=6:41:04
+[progress] 390/2000 (19.5%) completed | last=Final Conditional Model RMST setting=2 seed=2181 | elapsed=1:36:50 ETA=6:39:47
+[checkpoint] Saved partial results after 390 / 2000 replications.
+[progress] 395/2000 (19.8%) completed | last=Final Conditional Model RMST setting=2 seed=2186 | elapsed=1:38:05 ETA=6:38:35
+[progress] 400/2000 (20.0%) completed | last=Final Conditional Model RMST setting=2 seed=2191 | elapsed=1:39:19 ETA=6:37:16
+[checkpoint] Saved partial results after 400 / 2000 replications.
+[progress] 405/2000 (20.2%) completed | last=Final Conditional Model RMST setting=2 seed=2196 | elapsed=1:40:33 ETA=6:36:00
+[progress] 410/2000 (20.5%) completed | last=Final Conditional Model RMST setting=2 seed=2201 | elapsed=1:41:47 ETA=6:34:44
+[checkpoint] Saved partial results after 410 / 2000 replications.
+[progress] 415/2000 (20.8%) completed | last=Final Conditional Model RMST setting=2 seed=2206 | elapsed=1:43:01 ETA=6:33:28
+[progress] 420/2000 (21.0%) completed | last=Final Conditional Model RMST setting=2 seed=2211 | elapsed=1:44:14 ETA=6:32:09
+[checkpoint] Saved partial results after 420 / 2000 replications.
+[progress] 425/2000 (21.2%) completed | last=Final Conditional Model RMST setting=2 seed=2216 | elapsed=1:45:29 ETA=6:30:54
+[progress] 430/2000 (21.5%) completed | last=Final Conditional Model RMST setting=2 seed=2221 | elapsed=1:46:41 ETA=6:29:34
+[checkpoint] Saved partial results after 430 / 2000 replications.
+[progress] 435/2000 (21.8%) completed | last=Final Conditional Model RMST setting=2 seed=2226 | elapsed=1:47:56 ETA=6:28:20
+[progress] 440/2000 (22.0%) completed | last=Final Conditional Model RMST setting=2 seed=2231 | elapsed=1:49:10 ETA=6:27:03
+[checkpoint] Saved partial results after 440 / 2000 replications.
+[progress] 445/2000 (22.2%) completed | last=Final Conditional Model RMST setting=2 seed=2236 | elapsed=1:50:24 ETA=6:25:50
+[progress] 450/2000 (22.5%) completed | last=Final Conditional Model RMST setting=2 seed=2241 | elapsed=1:51:40 ETA=6:24:39
+[checkpoint] Saved partial results after 450 / 2000 replications.
+[progress] 455/2000 (22.8%) completed | last=Final Conditional Model RMST setting=2 seed=2246 | elapsed=1:52:55 ETA=6:23:26
+[progress] 460/2000 (23.0%) completed | last=Final Conditional Model RMST setting=2 seed=2251 | elapsed=1:54:09 ETA=6:22:11
+[checkpoint] Saved partial results after 460 / 2000 replications.
+[progress] 465/2000 (23.2%) completed | last=Final Conditional Model RMST setting=2 seed=2256 | elapsed=1:55:25 ETA=6:21:00
+[progress] 470/2000 (23.5%) completed | last=Final Conditional Model RMST setting=2 seed=2261 | elapsed=1:56:40 ETA=6:19:48
+[checkpoint] Saved partial results after 470 / 2000 replications.
+[progress] 475/2000 (23.8%) completed | last=Final Conditional Model RMST setting=2 seed=2266 | elapsed=1:57:53 ETA=6:18:31
+[progress] 480/2000 (24.0%) completed | last=Final Conditional Model RMST setting=2 seed=2271 | elapsed=1:59:07 ETA=6:17:12
+[checkpoint] Saved partial results after 480 / 2000 replications.
+[progress] 485/2000 (24.2%) completed | last=Final Conditional Model RMST setting=2 seed=2276 | elapsed=2:00:21 ETA=6:15:56
+[progress] 490/2000 (24.5%) completed | last=Final Conditional Model RMST setting=2 seed=2281 | elapsed=2:01:34 ETA=6:14:38
+[checkpoint] Saved partial results after 490 / 2000 replications.
+[progress] 495/2000 (24.8%) completed | last=Final Conditional Model RMST setting=2 seed=2286 | elapsed=2:02:47 ETA=6:13:20
+[progress] 500/2000 (25.0%) completed | last=Final Conditional Model RMST setting=2 seed=2291 | elapsed=2:04:00 ETA=6:12:00
+[checkpoint] Saved partial results after 500 / 2000 replications.
+[progress] 505/2000 (25.2%) completed | last=Final Conditional Model RMST setting=3 seed=3046 | elapsed=2:05:51 ETA=6:12:36
+[progress] 510/2000 (25.5%) completed | last=Final Conditional Model RMST setting=3 seed=3051 | elapsed=2:07:43 ETA=6:13:10
+[checkpoint] Saved partial results after 510 / 2000 replications.
+[progress] 515/2000 (25.8%) completed | last=Final Conditional Model RMST setting=3 seed=3056 | elapsed=2:09:33 ETA=6:13:36
+[progress] 520/2000 (26.0%) completed | last=Final Conditional Model RMST setting=3 seed=3061 | elapsed=2:11:25 ETA=6:14:03
+[checkpoint] Saved partial results after 520 / 2000 replications.
+[progress] 525/2000 (26.2%) completed | last=Final Conditional Model RMST setting=3 seed=3066 | elapsed=2:13:16 ETA=6:14:26
+[progress] 530/2000 (26.5%) completed | last=Final Conditional Model RMST setting=3 seed=3071 | elapsed=2:15:08 ETA=6:14:49
+[checkpoint] Saved partial results after 530 / 2000 replications.
+[progress] 535/2000 (26.8%) completed | last=Final Conditional Model RMST setting=3 seed=3076 | elapsed=2:16:59 ETA=6:15:08
+[progress] 540/2000 (27.0%) completed | last=Final Conditional Model RMST setting=3 seed=3081 | elapsed=2:18:51 ETA=6:15:25
+[checkpoint] Saved partial results after 540 / 2000 replications.
+[progress] 545/2000 (27.2%) completed | last=Final Conditional Model RMST setting=3 seed=3086 | elapsed=2:20:42 ETA=6:15:39
+[progress] 550/2000 (27.5%) completed | last=Final Conditional Model RMST setting=3 seed=3091 | elapsed=2:22:35 ETA=6:15:54
+[checkpoint] Saved partial results after 550 / 2000 replications.
+[progress] 555/2000 (27.8%) completed | last=Final Conditional Model RMST setting=3 seed=3096 | elapsed=2:24:27 ETA=6:16:06
+[progress] 560/2000 (28.0%) completed | last=Final Conditional Model RMST setting=3 seed=3101 | elapsed=2:26:19 ETA=6:16:16
+[checkpoint] Saved partial results after 560 / 2000 replications.
+[progress] 565/2000 (28.2%) completed | last=Final Conditional Model RMST setting=3 seed=3106 | elapsed=2:28:13 ETA=6:16:27
+[progress] 570/2000 (28.5%) completed | last=Final Conditional Model RMST setting=3 seed=3111 | elapsed=2:30:04 ETA=6:16:31
+[checkpoint] Saved partial results after 570 / 2000 replications.
+[progress] 575/2000 (28.8%) completed | last=Final Conditional Model RMST setting=3 seed=3116 | elapsed=2:31:57 ETA=6:16:35
+[progress] 580/2000 (29.0%) completed | last=Final Conditional Model RMST setting=3 seed=3121 | elapsed=2:33:49 ETA=6:16:36
+[checkpoint] Saved partial results after 580 / 2000 replications.
+[progress] 585/2000 (29.2%) completed | last=Final Conditional Model RMST setting=3 seed=3126 | elapsed=2:35:41 ETA=6:16:35
+[progress] 590/2000 (29.5%) completed | last=Final Conditional Model RMST setting=3 seed=3131 | elapsed=2:37:33 ETA=6:16:31
+[checkpoint] Saved partial results after 590 / 2000 replications.
+[progress] 595/2000 (29.8%) completed | last=Final Conditional Model RMST setting=3 seed=3136 | elapsed=2:39:25 ETA=6:16:26
+[progress] 600/2000 (30.0%) completed | last=Final Conditional Model RMST setting=3 seed=3141 | elapsed=2:41:16 ETA=6:16:17
+[checkpoint] Saved partial results after 600 / 2000 replications.
+[progress] 605/2000 (30.2%) completed | last=Final Conditional Model RMST setting=3 seed=3146 | elapsed=2:43:09 ETA=6:16:11
+[progress] 610/2000 (30.5%) completed | last=Final Conditional Model RMST setting=3 seed=3151 | elapsed=2:44:59 ETA=6:15:59
+[checkpoint] Saved partial results after 610 / 2000 replications.
+[progress] 615/2000 (30.8%) completed | last=Final Conditional Model RMST setting=3 seed=3156 | elapsed=2:46:51 ETA=6:15:45
+[progress] 620/2000 (31.0%) completed | last=Final Conditional Model RMST setting=3 seed=3161 | elapsed=2:48:41 ETA=6:15:29
+[checkpoint] Saved partial results after 620 / 2000 replications.
+[progress] 625/2000 (31.2%) completed | last=Final Conditional Model RMST setting=3 seed=3166 | elapsed=2:50:32 ETA=6:15:12
+[progress] 630/2000 (31.5%) completed | last=Final Conditional Model RMST setting=3 seed=3171 | elapsed=2:52:23 ETA=6:14:52
+[checkpoint] Saved partial results after 630 / 2000 replications.
+[progress] 635/2000 (31.8%) completed | last=Final Conditional Model RMST setting=3 seed=3176 | elapsed=2:54:13 ETA=6:14:31
+[progress] 640/2000 (32.0%) completed | last=Final Conditional Model RMST setting=3 seed=3181 | elapsed=2:56:04 ETA=6:14:09
+[checkpoint] Saved partial results after 640 / 2000 replications.
+[progress] 645/2000 (32.2%) completed | last=Final Conditional Model RMST setting=3 seed=3186 | elapsed=2:57:54 ETA=6:13:45
+[progress] 650/2000 (32.5%) completed | last=Final Conditional Model RMST setting=3 seed=3191 | elapsed=2:59:45 ETA=6:13:20
+[checkpoint] Saved partial results after 650 / 2000 replications.
+[progress] 655/2000 (32.8%) completed | last=Final Conditional Model RMST setting=3 seed=3196 | elapsed=3:01:35 ETA=6:12:53
+[progress] 660/2000 (33.0%) completed | last=Final Conditional Model RMST setting=3 seed=3201 | elapsed=3:03:25 ETA=6:12:24
+[checkpoint] Saved partial results after 660 / 2000 replications.
+[progress] 665/2000 (33.2%) completed | last=Final Conditional Model RMST setting=3 seed=3206 | elapsed=3:05:16 ETA=6:11:57
+[progress] 670/2000 (33.5%) completed | last=Final Conditional Model RMST setting=3 seed=3211 | elapsed=3:07:07 ETA=6:11:28
+[checkpoint] Saved partial results after 670 / 2000 replications.
+[progress] 675/2000 (33.8%) completed | last=Final Conditional Model RMST setting=3 seed=3216 | elapsed=3:08:57 ETA=6:10:55
+[progress] 680/2000 (34.0%) completed | last=Final Conditional Model RMST setting=3 seed=3221 | elapsed=3:10:48 ETA=6:10:22
+[checkpoint] Saved partial results after 680 / 2000 replications.
+[progress] 685/2000 (34.2%) completed | last=Final Conditional Model RMST setting=3 seed=3226 | elapsed=3:12:38 ETA=6:09:49
+[progress] 690/2000 (34.5%) completed | last=Final Conditional Model RMST setting=3 seed=3231 | elapsed=3:14:29 ETA=6:09:14
+[checkpoint] Saved partial results after 690 / 2000 replications.
+[progress] 695/2000 (34.8%) completed | last=Final Conditional Model RMST setting=3 seed=3236 | elapsed=3:16:19 ETA=6:08:38
+[progress] 700/2000 (35.0%) completed | last=Final Conditional Model RMST setting=3 seed=3241 | elapsed=3:18:09 ETA=6:07:59
+[checkpoint] Saved partial results after 700 / 2000 replications.
+[progress] 705/2000 (35.2%) completed | last=Final Conditional Model RMST setting=3 seed=3246 | elapsed=3:20:00 ETA=6:07:23
+[progress] 710/2000 (35.5%) completed | last=Final Conditional Model RMST setting=3 seed=3251 | elapsed=3:21:50 ETA=6:06:44
+[checkpoint] Saved partial results after 710 / 2000 replications.
+[progress] 715/2000 (35.8%) completed | last=Final Conditional Model RMST setting=3 seed=3256 | elapsed=3:23:39 ETA=6:06:01
+[progress] 720/2000 (36.0%) completed | last=Final Conditional Model RMST setting=3 seed=3261 | elapsed=3:25:29 ETA=6:05:18
+[checkpoint] Saved partial results after 720 / 2000 replications.
+[progress] 725/2000 (36.2%) completed | last=Final Conditional Model RMST setting=3 seed=3266 | elapsed=3:27:17 ETA=6:04:33
+[progress] 730/2000 (36.5%) completed | last=Final Conditional Model RMST setting=3 seed=3271 | elapsed=3:29:06 ETA=6:03:47
+[checkpoint] Saved partial results after 730 / 2000 replications.
+[progress] 735/2000 (36.8%) completed | last=Final Conditional Model RMST setting=3 seed=3276 | elapsed=3:30:55 ETA=6:03:01
+[progress] 740/2000 (37.0%) completed | last=Final Conditional Model RMST setting=3 seed=3281 | elapsed=3:32:44 ETA=6:02:14
+[checkpoint] Saved partial results after 740 / 2000 replications.
+[progress] 745/2000 (37.2%) completed | last=Final Conditional Model RMST setting=3 seed=3286 | elapsed=3:34:32 ETA=6:01:24
+[progress] 750/2000 (37.5%) completed | last=Final Conditional Model RMST setting=3 seed=3291 | elapsed=3:36:21 ETA=6:00:36
+[checkpoint] Saved partial results after 750 / 2000 replications.
+[progress] 755/2000 (37.8%) completed | last=Final Conditional Model RMST setting=4 seed=4046 | elapsed=3:37:51 ETA=5:59:14
+[progress] 760/2000 (38.0%) completed | last=Final Conditional Model RMST setting=4 seed=4051 | elapsed=3:39:20 ETA=5:57:52
+[checkpoint] Saved partial results after 760 / 2000 replications.
+[progress] 765/2000 (38.2%) completed | last=Final Conditional Model RMST setting=4 seed=4056 | elapsed=3:40:49 ETA=5:56:29
+[progress] 770/2000 (38.5%) completed | last=Final Conditional Model RMST setting=4 seed=4061 | elapsed=3:42:18 ETA=5:55:07
+[checkpoint] Saved partial results after 770 / 2000 replications.
+[progress] 775/2000 (38.8%) completed | last=Final Conditional Model RMST setting=4 seed=4066 | elapsed=3:43:47 ETA=5:53:44
+[progress] 780/2000 (39.0%) completed | last=Final Conditional Model RMST setting=4 seed=4071 | elapsed=3:45:17 ETA=5:52:22
+[checkpoint] Saved partial results after 780 / 2000 replications.
+[progress] 785/2000 (39.2%) completed | last=Final Conditional Model RMST setting=4 seed=4076 | elapsed=3:46:47 ETA=5:51:01
+[progress] 790/2000 (39.5%) completed | last=Final Conditional Model RMST setting=4 seed=4081 | elapsed=3:48:17 ETA=5:49:39
+[checkpoint] Saved partial results after 790 / 2000 replications.
+[progress] 795/2000 (39.8%) completed | last=Final Conditional Model RMST setting=4 seed=4086 | elapsed=3:49:46 ETA=5:48:16
+[progress] 800/2000 (40.0%) completed | last=Final Conditional Model RMST setting=4 seed=4091 | elapsed=3:51:15 ETA=5:46:53
+[checkpoint] Saved partial results after 800 / 2000 replications.
+[progress] 805/2000 (40.2%) completed | last=Final Conditional Model RMST setting=4 seed=4096 | elapsed=3:52:45 ETA=5:45:30
+[progress] 810/2000 (40.5%) completed | last=Final Conditional Model RMST setting=4 seed=4101 | elapsed=3:54:14 ETA=5:44:07
+[checkpoint] Saved partial results after 810 / 2000 replications.
+[progress] 815/2000 (40.8%) completed | last=Final Conditional Model RMST setting=4 seed=4106 | elapsed=3:55:44 ETA=5:42:46
+[progress] 820/2000 (41.0%) completed | last=Final Conditional Model RMST setting=4 seed=4111 | elapsed=3:57:13 ETA=5:41:22
+[checkpoint] Saved partial results after 820 / 2000 replications.
+[progress] 825/2000 (41.2%) completed | last=Final Conditional Model RMST setting=4 seed=4116 | elapsed=3:58:43 ETA=5:39:59
+[progress] 830/2000 (41.5%) completed | last=Final Conditional Model RMST setting=4 seed=4121 | elapsed=4:00:12 ETA=5:38:35
+[checkpoint] Saved partial results after 830 / 2000 replications.
+[progress] 835/2000 (41.8%) completed | last=Final Conditional Model RMST setting=4 seed=4126 | elapsed=4:01:42 ETA=5:37:13
+[progress] 840/2000 (42.0%) completed | last=Final Conditional Model RMST setting=4 seed=4131 | elapsed=4:03:12 ETA=5:35:51
+[checkpoint] Saved partial results after 840 / 2000 replications.
+[progress] 845/2000 (42.2%) completed | last=Final Conditional Model RMST setting=4 seed=4136 | elapsed=4:04:42 ETA=5:34:29
+[progress] 850/2000 (42.5%) completed | last=Final Conditional Model RMST setting=4 seed=4141 | elapsed=4:06:12 ETA=5:33:06
+[checkpoint] Saved partial results after 850 / 2000 replications.
+[progress] 855/2000 (42.8%) completed | last=Final Conditional Model RMST setting=4 seed=4146 | elapsed=4:07:41 ETA=5:31:42
+[progress] 860/2000 (43.0%) completed | last=Final Conditional Model RMST setting=4 seed=4151 | elapsed=4:09:10 ETA=5:30:18
+[checkpoint] Saved partial results after 860 / 2000 replications.
+[progress] 865/2000 (43.2%) completed | last=Final Conditional Model RMST setting=4 seed=4156 | elapsed=4:10:39 ETA=5:28:53
+[progress] 870/2000 (43.5%) completed | last=Final Conditional Model RMST setting=4 seed=4161 | elapsed=4:12:08 ETA=5:27:30
+[checkpoint] Saved partial results after 870 / 2000 replications.
+[progress] 875/2000 (43.8%) completed | last=Final Conditional Model RMST setting=4 seed=4166 | elapsed=4:13:38 ETA=5:26:06
+[progress] 880/2000 (44.0%) completed | last=Final Conditional Model RMST setting=4 seed=4171 | elapsed=4:15:07 ETA=5:24:42
+[checkpoint] Saved partial results after 880 / 2000 replications.
+[progress] 885/2000 (44.2%) completed | last=Final Conditional Model RMST setting=4 seed=4176 | elapsed=4:16:36 ETA=5:23:18
+[progress] 890/2000 (44.5%) completed | last=Final Conditional Model RMST setting=4 seed=4181 | elapsed=4:18:06 ETA=5:21:54
+[checkpoint] Saved partial results after 890 / 2000 replications.
+[progress] 895/2000 (44.8%) completed | last=Final Conditional Model RMST setting=4 seed=4186 | elapsed=4:19:36 ETA=5:20:31
+[progress] 900/2000 (45.0%) completed | last=Final Conditional Model RMST setting=4 seed=4191 | elapsed=4:21:06 ETA=5:19:08
+[checkpoint] Saved partial results after 900 / 2000 replications.
+[progress] 905/2000 (45.2%) completed | last=Final Conditional Model RMST setting=4 seed=4196 | elapsed=4:22:36 ETA=5:17:44
+[progress] 910/2000 (45.5%) completed | last=Final Conditional Model RMST setting=4 seed=4201 | elapsed=4:24:06 ETA=5:16:20
+[checkpoint] Saved partial results after 910 / 2000 replications.
+[progress] 915/2000 (45.8%) completed | last=Final Conditional Model RMST setting=4 seed=4206 | elapsed=4:25:35 ETA=5:14:56
+[progress] 920/2000 (46.0%) completed | last=Final Conditional Model RMST setting=4 seed=4211 | elapsed=4:27:05 ETA=5:13:33
+[checkpoint] Saved partial results after 920 / 2000 replications.
+[progress] 925/2000 (46.2%) completed | last=Final Conditional Model RMST setting=4 seed=4216 | elapsed=4:28:35 ETA=5:12:08
+[progress] 930/2000 (46.5%) completed | last=Final Conditional Model RMST setting=4 seed=4221 | elapsed=4:30:04 ETA=5:10:44
+[checkpoint] Saved partial results after 930 / 2000 replications.
+[progress] 935/2000 (46.8%) completed | last=Final Conditional Model RMST setting=4 seed=4226 | elapsed=4:31:34 ETA=5:09:20
+[progress] 940/2000 (47.0%) completed | last=Final Conditional Model RMST setting=4 seed=4231 | elapsed=4:33:03 ETA=5:07:54
+[checkpoint] Saved partial results after 940 / 2000 replications.
+[progress] 945/2000 (47.2%) completed | last=Final Conditional Model RMST setting=4 seed=4236 | elapsed=4:34:33 ETA=5:06:30
+[progress] 950/2000 (47.5%) completed | last=Final Conditional Model RMST setting=4 seed=4241 | elapsed=4:36:03 ETA=5:05:06
+[checkpoint] Saved partial results after 950 / 2000 replications.
+[progress] 955/2000 (47.8%) completed | last=Final Conditional Model RMST setting=4 seed=4246 | elapsed=4:37:32 ETA=5:03:42
+[progress] 960/2000 (48.0%) completed | last=Final Conditional Model RMST setting=4 seed=4251 | elapsed=4:39:03 ETA=5:02:18
+[checkpoint] Saved partial results after 960 / 2000 replications.
+[progress] 965/2000 (48.2%) completed | last=Final Conditional Model RMST setting=4 seed=4256 | elapsed=4:40:33 ETA=5:00:54
+[progress] 970/2000 (48.5%) completed | last=Final Conditional Model RMST setting=4 seed=4261 | elapsed=4:42:02 ETA=4:59:29
+[checkpoint] Saved partial results after 970 / 2000 replications.
+[progress] 975/2000 (48.8%) completed | last=Final Conditional Model RMST setting=4 seed=4266 | elapsed=4:43:32 ETA=4:58:04
+[progress] 980/2000 (49.0%) completed | last=Final Conditional Model RMST setting=4 seed=4271 | elapsed=4:45:02 ETA=4:56:40
+[checkpoint] Saved partial results after 980 / 2000 replications.
+[progress] 985/2000 (49.2%) completed | last=Final Conditional Model RMST setting=4 seed=4276 | elapsed=4:46:31 ETA=4:55:14
+[progress] 990/2000 (49.5%) completed | last=Final Conditional Model RMST setting=4 seed=4281 | elapsed=4:48:01 ETA=4:53:50
+[checkpoint] Saved partial results after 990 / 2000 replications.
+[progress] 995/2000 (49.8%) completed | last=Final Conditional Model RMST setting=4 seed=4286 | elapsed=4:49:30 ETA=4:52:25
+[progress] 1000/2000 (50.0%) completed | last=Final Conditional Model RMST setting=4 seed=4291 | elapsed=4:50:59 ETA=4:50:59
+[checkpoint] Saved partial results after 1000 / 2000 replications.
+[progress] 1005/2000 (50.2%) completed | last=Final Conditional Model survival.probability setting=1 seed=11046 | elapsed=4:52:06 ETA=4:49:12
+[progress] 1010/2000 (50.5%) completed | last=Final Conditional Model survival.probability setting=1 seed=11051 | elapsed=4:53:13 ETA=4:47:25
+[checkpoint] Saved partial results after 1010 / 2000 replications.
+[progress] 1015/2000 (50.8%) completed | last=Final Conditional Model survival.probability setting=1 seed=11056 | elapsed=4:54:21 ETA=4:45:39
+[progress] 1020/2000 (51.0%) completed | last=Final Conditional Model survival.probability setting=1 seed=11061 | elapsed=4:55:27 ETA=4:43:52
+[checkpoint] Saved partial results after 1020 / 2000 replications.
+[progress] 1025/2000 (51.2%) completed | last=Final Conditional Model survival.probability setting=1 seed=11066 | elapsed=4:56:35 ETA=4:42:07
+[progress] 1030/2000 (51.5%) completed | last=Final Conditional Model survival.probability setting=1 seed=11071 | elapsed=4:57:42 ETA=4:40:21
+[checkpoint] Saved partial results after 1030 / 2000 replications.
+[progress] 1035/2000 (51.8%) completed | last=Final Conditional Model survival.probability setting=1 seed=11076 | elapsed=4:58:49 ETA=4:38:36
+[progress] 1040/2000 (52.0%) completed | last=Final Conditional Model survival.probability setting=1 seed=11081 | elapsed=4:59:56 ETA=4:36:51
+[checkpoint] Saved partial results after 1040 / 2000 replications.
+[progress] 1045/2000 (52.2%) completed | last=Final Conditional Model survival.probability setting=1 seed=11086 | elapsed=5:01:03 ETA=4:35:07
+[progress] 1050/2000 (52.5%) completed | last=Final Conditional Model survival.probability setting=1 seed=11091 | elapsed=5:02:10 ETA=4:33:23
+[checkpoint] Saved partial results after 1050 / 2000 replications.
+[progress] 1055/2000 (52.8%) completed | last=Final Conditional Model survival.probability setting=1 seed=11096 | elapsed=5:03:18 ETA=4:31:41
+[progress] 1060/2000 (53.0%) completed | last=Final Conditional Model survival.probability setting=1 seed=11101 | elapsed=5:04:26 ETA=4:29:58
+[checkpoint] Saved partial results after 1060 / 2000 replications.
+[progress] 1065/2000 (53.2%) completed | last=Final Conditional Model survival.probability setting=1 seed=11106 | elapsed=5:05:33 ETA=4:28:15
+[progress] 1070/2000 (53.5%) completed | last=Final Conditional Model survival.probability setting=1 seed=11111 | elapsed=5:06:40 ETA=4:26:33
+[checkpoint] Saved partial results after 1070 / 2000 replications.
+[progress] 1075/2000 (53.8%) completed | last=Final Conditional Model survival.probability setting=1 seed=11116 | elapsed=5:07:48 ETA=4:24:51
+[progress] 1080/2000 (54.0%) completed | last=Final Conditional Model survival.probability setting=1 seed=11121 | elapsed=5:08:56 ETA=4:23:09
+[checkpoint] Saved partial results after 1080 / 2000 replications.
+[progress] 1085/2000 (54.2%) completed | last=Final Conditional Model survival.probability setting=1 seed=11126 | elapsed=5:10:02 ETA=4:21:28
+[progress] 1090/2000 (54.5%) completed | last=Final Conditional Model survival.probability setting=1 seed=11131 | elapsed=5:11:10 ETA=4:19:47
+[checkpoint] Saved partial results after 1090 / 2000 replications.
+[progress] 1095/2000 (54.8%) completed | last=Final Conditional Model survival.probability setting=1 seed=11136 | elapsed=5:12:18 ETA=4:18:07
+[progress] 1100/2000 (55.0%) completed | last=Final Conditional Model survival.probability setting=1 seed=11141 | elapsed=5:13:26 ETA=4:16:27
+[checkpoint] Saved partial results after 1100 / 2000 replications.
+[progress] 1105/2000 (55.2%) completed | last=Final Conditional Model survival.probability setting=1 seed=11146 | elapsed=5:14:34 ETA=4:14:47
+[progress] 1110/2000 (55.5%) completed | last=Final Conditional Model survival.probability setting=1 seed=11151 | elapsed=5:15:42 ETA=4:13:07
+[checkpoint] Saved partial results after 1110 / 2000 replications.
+[progress] 1115/2000 (55.8%) completed | last=Final Conditional Model survival.probability setting=1 seed=11156 | elapsed=5:16:50 ETA=4:11:29
+[progress] 1120/2000 (56.0%) completed | last=Final Conditional Model survival.probability setting=1 seed=11161 | elapsed=5:17:57 ETA=4:09:49
+[checkpoint] Saved partial results after 1120 / 2000 replications.
+[progress] 1125/2000 (56.2%) completed | last=Final Conditional Model survival.probability setting=1 seed=11166 | elapsed=5:19:04 ETA=4:08:10
+[progress] 1130/2000 (56.5%) completed | last=Final Conditional Model survival.probability setting=1 seed=11171 | elapsed=5:20:12 ETA=4:06:32
+[checkpoint] Saved partial results after 1130 / 2000 replications.
+[progress] 1135/2000 (56.8%) completed | last=Final Conditional Model survival.probability setting=1 seed=11176 | elapsed=5:21:21 ETA=4:04:54
+[progress] 1140/2000 (57.0%) completed | last=Final Conditional Model survival.probability setting=1 seed=11181 | elapsed=5:22:28 ETA=4:03:16
+[checkpoint] Saved partial results after 1140 / 2000 replications.
+[progress] 1145/2000 (57.2%) completed | last=Final Conditional Model survival.probability setting=1 seed=11186 | elapsed=5:23:35 ETA=4:01:38
+[progress] 1150/2000 (57.5%) completed | last=Final Conditional Model survival.probability setting=1 seed=11191 | elapsed=5:24:42 ETA=3:59:59
+[checkpoint] Saved partial results after 1150 / 2000 replications.
+[progress] 1155/2000 (57.8%) completed | last=Final Conditional Model survival.probability setting=1 seed=11196 | elapsed=5:25:50 ETA=3:58:23
+[progress] 1160/2000 (58.0%) completed | last=Final Conditional Model survival.probability setting=1 seed=11201 | elapsed=5:26:57 ETA=3:56:46
+[checkpoint] Saved partial results after 1160 / 2000 replications.
+[progress] 1165/2000 (58.2%) completed | last=Final Conditional Model survival.probability setting=1 seed=11206 | elapsed=5:28:05 ETA=3:55:09
+[progress] 1170/2000 (58.5%) completed | last=Final Conditional Model survival.probability setting=1 seed=11211 | elapsed=5:29:12 ETA=3:53:32
+[checkpoint] Saved partial results after 1170 / 2000 replications.
+[progress] 1175/2000 (58.8%) completed | last=Final Conditional Model survival.probability setting=1 seed=11216 | elapsed=5:30:20 ETA=3:51:56
+[progress] 1180/2000 (59.0%) completed | last=Final Conditional Model survival.probability setting=1 seed=11221 | elapsed=5:31:26 ETA=3:50:19
+[checkpoint] Saved partial results after 1180 / 2000 replications.
+[progress] 1185/2000 (59.2%) completed | last=Final Conditional Model survival.probability setting=1 seed=11226 | elapsed=5:32:33 ETA=3:48:43
+[progress] 1190/2000 (59.5%) completed | last=Final Conditional Model survival.probability setting=1 seed=11231 | elapsed=5:33:40 ETA=3:47:07
+[checkpoint] Saved partial results after 1190 / 2000 replications.
+[progress] 1195/2000 (59.8%) completed | last=Final Conditional Model survival.probability setting=1 seed=11236 | elapsed=5:34:47 ETA=3:45:31
+[progress] 1200/2000 (60.0%) completed | last=Final Conditional Model survival.probability setting=1 seed=11241 | elapsed=5:35:54 ETA=3:43:56
+[checkpoint] Saved partial results after 1200 / 2000 replications.
+[progress] 1205/2000 (60.2%) completed | last=Final Conditional Model survival.probability setting=1 seed=11246 | elapsed=5:37:02 ETA=3:42:21
+[progress] 1210/2000 (60.5%) completed | last=Final Conditional Model survival.probability setting=1 seed=11251 | elapsed=5:38:09 ETA=3:40:46
+[checkpoint] Saved partial results after 1210 / 2000 replications.
+[progress] 1215/2000 (60.8%) completed | last=Final Conditional Model survival.probability setting=1 seed=11256 | elapsed=5:39:17 ETA=3:39:12
+[progress] 1220/2000 (61.0%) completed | last=Final Conditional Model survival.probability setting=1 seed=11261 | elapsed=5:40:24 ETA=3:37:38
+[checkpoint] Saved partial results after 1220 / 2000 replications.
+[progress] 1225/2000 (61.2%) completed | last=Final Conditional Model survival.probability setting=1 seed=11266 | elapsed=5:41:31 ETA=3:36:04
+[progress] 1230/2000 (61.5%) completed | last=Final Conditional Model survival.probability setting=1 seed=11271 | elapsed=5:42:38 ETA=3:34:30
+[checkpoint] Saved partial results after 1230 / 2000 replications.
+[progress] 1235/2000 (61.8%) completed | last=Final Conditional Model survival.probability setting=1 seed=11276 | elapsed=5:43:46 ETA=3:32:56
+[progress] 1240/2000 (62.0%) completed | last=Final Conditional Model survival.probability setting=1 seed=11281 | elapsed=5:44:52 ETA=3:31:22
+[checkpoint] Saved partial results after 1240 / 2000 replications.
+[progress] 1245/2000 (62.2%) completed | last=Final Conditional Model survival.probability setting=1 seed=11286 | elapsed=5:46:00 ETA=3:29:49
+[progress] 1250/2000 (62.5%) completed | last=Final Conditional Model survival.probability setting=1 seed=11291 | elapsed=5:47:07 ETA=3:28:16
+[checkpoint] Saved partial results after 1250 / 2000 replications.
+[progress] 1255/2000 (62.8%) completed | last=Final Conditional Model survival.probability setting=2 seed=12046 | elapsed=5:48:15 ETA=3:26:44
+[progress] 1260/2000 (63.0%) completed | last=Final Conditional Model survival.probability setting=2 seed=12051 | elapsed=5:49:23 ETA=3:25:11
+[checkpoint] Saved partial results after 1260 / 2000 replications.
+[progress] 1265/2000 (63.2%) completed | last=Final Conditional Model survival.probability setting=2 seed=12056 | elapsed=5:50:30 ETA=3:23:39
+[progress] 1270/2000 (63.5%) completed | last=Final Conditional Model survival.probability setting=2 seed=12061 | elapsed=5:51:37 ETA=3:22:07
+[checkpoint] Saved partial results after 1270 / 2000 replications.
+[progress] 1275/2000 (63.8%) completed | last=Final Conditional Model survival.probability setting=2 seed=12066 | elapsed=5:52:44 ETA=3:20:34
+[progress] 1280/2000 (64.0%) completed | last=Final Conditional Model survival.probability setting=2 seed=12071 | elapsed=5:53:52 ETA=3:19:03
+[checkpoint] Saved partial results after 1280 / 2000 replications.
+[progress] 1285/2000 (64.2%) completed | last=Final Conditional Model survival.probability setting=2 seed=12076 | elapsed=5:54:59 ETA=3:17:31
+[progress] 1290/2000 (64.5%) completed | last=Final Conditional Model survival.probability setting=2 seed=12081 | elapsed=5:56:07 ETA=3:16:00
+[checkpoint] Saved partial results after 1290 / 2000 replications.
+[progress] 1295/2000 (64.8%) completed | last=Final Conditional Model survival.probability setting=2 seed=12086 | elapsed=5:57:14 ETA=3:14:29
+[progress] 1300/2000 (65.0%) completed | last=Final Conditional Model survival.probability setting=2 seed=12091 | elapsed=5:58:23 ETA=3:12:58
+[checkpoint] Saved partial results after 1300 / 2000 replications.
+[progress] 1305/2000 (65.2%) completed | last=Final Conditional Model survival.probability setting=2 seed=12096 | elapsed=5:59:30 ETA=3:11:27
+[progress] 1310/2000 (65.5%) completed | last=Final Conditional Model survival.probability setting=2 seed=12101 | elapsed=6:00:38 ETA=3:09:57
+[checkpoint] Saved partial results after 1310 / 2000 replications.
+[progress] 1315/2000 (65.8%) completed | last=Final Conditional Model survival.probability setting=2 seed=12106 | elapsed=6:01:45 ETA=3:08:26
+[progress] 1320/2000 (66.0%) completed | last=Final Conditional Model survival.probability setting=2 seed=12111 | elapsed=6:02:53 ETA=3:06:56
+[checkpoint] Saved partial results after 1320 / 2000 replications.
+[progress] 1325/2000 (66.2%) completed | last=Final Conditional Model survival.probability setting=2 seed=12116 | elapsed=6:04:01 ETA=3:05:26
+[progress] 1330/2000 (66.5%) completed | last=Final Conditional Model survival.probability setting=2 seed=12121 | elapsed=6:05:08 ETA=3:03:56
+[checkpoint] Saved partial results after 1330 / 2000 replications.
+[progress] 1335/2000 (66.8%) completed | last=Final Conditional Model survival.probability setting=2 seed=12126 | elapsed=6:06:16 ETA=3:02:27
+[progress] 1340/2000 (67.0%) completed | last=Final Conditional Model survival.probability setting=2 seed=12131 | elapsed=6:07:23 ETA=3:00:57
+[checkpoint] Saved partial results after 1340 / 2000 replications.
+[progress] 1345/2000 (67.2%) completed | last=Final Conditional Model survival.probability setting=2 seed=12136 | elapsed=6:08:31 ETA=2:59:28
+[progress] 1350/2000 (67.5%) completed | last=Final Conditional Model survival.probability setting=2 seed=12141 | elapsed=6:09:38 ETA=2:57:58
+[checkpoint] Saved partial results after 1350 / 2000 replications.
+[progress] 1355/2000 (67.8%) completed | last=Final Conditional Model survival.probability setting=2 seed=12146 | elapsed=6:10:46 ETA=2:56:29
+[progress] 1360/2000 (68.0%) completed | last=Final Conditional Model survival.probability setting=2 seed=12151 | elapsed=6:11:54 ETA=2:55:00
+[checkpoint] Saved partial results after 1360 / 2000 replications.
+[progress] 1365/2000 (68.2%) completed | last=Final Conditional Model survival.probability setting=2 seed=12156 | elapsed=6:13:02 ETA=2:53:32
+[progress] 1370/2000 (68.5%) completed | last=Final Conditional Model survival.probability setting=2 seed=12161 | elapsed=6:14:10 ETA=2:52:03
+[checkpoint] Saved partial results after 1370 / 2000 replications.
+[progress] 1375/2000 (68.8%) completed | last=Final Conditional Model survival.probability setting=2 seed=12166 | elapsed=6:15:18 ETA=2:50:35
+[progress] 1380/2000 (69.0%) completed | last=Final Conditional Model survival.probability setting=2 seed=12171 | elapsed=6:16:25 ETA=2:49:07
+[checkpoint] Saved partial results after 1380 / 2000 replications.
+[progress] 1385/2000 (69.2%) completed | last=Final Conditional Model survival.probability setting=2 seed=12176 | elapsed=6:17:33 ETA=2:47:39
+[progress] 1390/2000 (69.5%) completed | last=Final Conditional Model survival.probability setting=2 seed=12181 | elapsed=6:18:42 ETA=2:46:11
+[checkpoint] Saved partial results after 1390 / 2000 replications.
+[progress] 1395/2000 (69.8%) completed | last=Final Conditional Model survival.probability setting=2 seed=12186 | elapsed=6:19:51 ETA=2:44:44
+[progress] 1400/2000 (70.0%) completed | last=Final Conditional Model survival.probability setting=2 seed=12191 | elapsed=6:20:58 ETA=2:43:16
+[checkpoint] Saved partial results after 1400 / 2000 replications.
+[progress] 1405/2000 (70.2%) completed | last=Final Conditional Model survival.probability setting=2 seed=12196 | elapsed=6:22:06 ETA=2:41:49
+[progress] 1410/2000 (70.5%) completed | last=Final Conditional Model survival.probability setting=2 seed=12201 | elapsed=6:23:14 ETA=2:40:21
+[checkpoint] Saved partial results after 1410 / 2000 replications.
+[progress] 1415/2000 (70.8%) completed | last=Final Conditional Model survival.probability setting=2 seed=12206 | elapsed=6:24:22 ETA=2:38:54
+[progress] 1420/2000 (71.0%) completed | last=Final Conditional Model survival.probability setting=2 seed=12211 | elapsed=6:25:30 ETA=2:37:27
+[checkpoint] Saved partial results after 1420 / 2000 replications.
+[progress] 1425/2000 (71.2%) completed | last=Final Conditional Model survival.probability setting=2 seed=12216 | elapsed=6:26:37 ETA=2:36:00
+[progress] 1430/2000 (71.5%) completed | last=Final Conditional Model survival.probability setting=2 seed=12221 | elapsed=6:27:44 ETA=2:34:33
+[checkpoint] Saved partial results after 1430 / 2000 replications.
+[progress] 1435/2000 (71.8%) completed | last=Final Conditional Model survival.probability setting=2 seed=12226 | elapsed=6:28:53 ETA=2:33:07
+[progress] 1440/2000 (72.0%) completed | last=Final Conditional Model survival.probability setting=2 seed=12231 | elapsed=6:30:00 ETA=2:31:40
+[checkpoint] Saved partial results after 1440 / 2000 replications.
+[progress] 1445/2000 (72.2%) completed | last=Final Conditional Model survival.probability setting=2 seed=12236 | elapsed=6:31:08 ETA=2:30:13
+[progress] 1450/2000 (72.5%) completed | last=Final Conditional Model survival.probability setting=2 seed=12241 | elapsed=6:32:15 ETA=2:28:47
+[checkpoint] Saved partial results after 1450 / 2000 replications.
+[progress] 1455/2000 (72.8%) completed | last=Final Conditional Model survival.probability setting=2 seed=12246 | elapsed=6:33:22 ETA=2:27:20
+[progress] 1460/2000 (73.0%) completed | last=Final Conditional Model survival.probability setting=2 seed=12251 | elapsed=6:34:29 ETA=2:25:54
+[checkpoint] Saved partial results after 1460 / 2000 replications.
+[progress] 1465/2000 (73.2%) completed | last=Final Conditional Model survival.probability setting=2 seed=12256 | elapsed=6:35:37 ETA=2:24:28
+[progress] 1470/2000 (73.5%) completed | last=Final Conditional Model survival.probability setting=2 seed=12261 | elapsed=6:36:45 ETA=2:23:02
+[checkpoint] Saved partial results after 1470 / 2000 replications.
+[progress] 1475/2000 (73.8%) completed | last=Final Conditional Model survival.probability setting=2 seed=12266 | elapsed=6:37:53 ETA=2:21:37
+[progress] 1480/2000 (74.0%) completed | last=Final Conditional Model survival.probability setting=2 seed=12271 | elapsed=6:39:01 ETA=2:20:11
+[checkpoint] Saved partial results after 1480 / 2000 replications.
+[progress] 1485/2000 (74.2%) completed | last=Final Conditional Model survival.probability setting=2 seed=12276 | elapsed=6:40:09 ETA=2:18:46
+[progress] 1490/2000 (74.5%) completed | last=Final Conditional Model survival.probability setting=2 seed=12281 | elapsed=6:41:16 ETA=2:17:21
+[checkpoint] Saved partial results after 1490 / 2000 replications.
+[progress] 1495/2000 (74.8%) completed | last=Final Conditional Model survival.probability setting=2 seed=12286 | elapsed=6:42:24 ETA=2:15:55
+[progress] 1500/2000 (75.0%) completed | last=Final Conditional Model survival.probability setting=2 seed=12291 | elapsed=6:43:31 ETA=2:14:30
+[checkpoint] Saved partial results after 1500 / 2000 replications.
+[progress] 1505/2000 (75.2%) completed | last=Final Conditional Model survival.probability setting=3 seed=13046 | elapsed=6:45:17 ETA=2:13:18
+[progress] 1510/2000 (75.5%) completed | last=Final Conditional Model survival.probability setting=3 seed=13051 | elapsed=6:47:02 ETA=2:12:05
+[checkpoint] Saved partial results after 1510 / 2000 replications.
+[progress] 1515/2000 (75.8%) completed | last=Final Conditional Model survival.probability setting=3 seed=13056 | elapsed=6:48:48 ETA=2:10:52
+[progress] 1520/2000 (76.0%) completed | last=Final Conditional Model survival.probability setting=3 seed=13061 | elapsed=6:50:34 ETA=2:09:39
+[checkpoint] Saved partial results after 1520 / 2000 replications.
+[progress] 1525/2000 (76.2%) completed | last=Final Conditional Model survival.probability setting=3 seed=13066 | elapsed=6:52:20 ETA=2:08:25
+[progress] 1530/2000 (76.5%) completed | last=Final Conditional Model survival.probability setting=3 seed=13071 | elapsed=6:54:05 ETA=2:07:12
+[checkpoint] Saved partial results after 1530 / 2000 replications.
+[progress] 1535/2000 (76.8%) completed | last=Final Conditional Model survival.probability setting=3 seed=13076 | elapsed=6:55:51 ETA=2:05:58
+[progress] 1540/2000 (77.0%) completed | last=Final Conditional Model survival.probability setting=3 seed=13081 | elapsed=6:57:37 ETA=2:04:44
+[checkpoint] Saved partial results after 1540 / 2000 replications.
+[progress] 1545/2000 (77.2%) completed | last=Final Conditional Model survival.probability setting=3 seed=13086 | elapsed=6:59:22 ETA=2:03:30
+[progress] 1550/2000 (77.5%) completed | last=Final Conditional Model survival.probability setting=3 seed=13091 | elapsed=7:01:09 ETA=2:02:16
+[checkpoint] Saved partial results after 1550 / 2000 replications.
+[progress] 1555/2000 (77.8%) completed | last=Final Conditional Model survival.probability setting=3 seed=13096 | elapsed=7:02:55 ETA=2:01:01
+[progress] 1560/2000 (78.0%) completed | last=Final Conditional Model survival.probability setting=3 seed=13101 | elapsed=7:04:40 ETA=1:59:46
+[checkpoint] Saved partial results after 1560 / 2000 replications.
+[progress] 1565/2000 (78.2%) completed | last=Final Conditional Model survival.probability setting=3 seed=13106 | elapsed=7:06:26 ETA=1:58:31
+[progress] 1570/2000 (78.5%) completed | last=Final Conditional Model survival.probability setting=3 seed=13111 | elapsed=7:08:12 ETA=1:57:16
+[checkpoint] Saved partial results after 1570 / 2000 replications.
+[progress] 1575/2000 (78.8%) completed | last=Final Conditional Model survival.probability setting=3 seed=13116 | elapsed=7:09:58 ETA=1:56:01
+[progress] 1580/2000 (79.0%) completed | last=Final Conditional Model survival.probability setting=3 seed=13121 | elapsed=7:11:43 ETA=1:54:45
+[checkpoint] Saved partial results after 1580 / 2000 replications.
+[progress] 1585/2000 (79.2%) completed | last=Final Conditional Model survival.probability setting=3 seed=13126 | elapsed=7:13:29 ETA=1:53:30
+[progress] 1590/2000 (79.5%) completed | last=Final Conditional Model survival.probability setting=3 seed=13131 | elapsed=7:15:14 ETA=1:52:13
+[checkpoint] Saved partial results after 1590 / 2000 replications.
+[progress] 1595/2000 (79.8%) completed | last=Final Conditional Model survival.probability setting=3 seed=13136 | elapsed=7:16:59 ETA=1:50:57
+[progress] 1600/2000 (80.0%) completed | last=Final Conditional Model survival.probability setting=3 seed=13141 | elapsed=7:18:44 ETA=1:49:41
+[checkpoint] Saved partial results after 1600 / 2000 replications.
+[progress] 1605/2000 (80.2%) completed | last=Final Conditional Model survival.probability setting=3 seed=13146 | elapsed=7:20:29 ETA=1:48:24
+[progress] 1610/2000 (80.5%) completed | last=Final Conditional Model survival.probability setting=3 seed=13151 | elapsed=7:22:15 ETA=1:47:07
+[checkpoint] Saved partial results after 1610 / 2000 replications.
+[progress] 1615/2000 (80.8%) completed | last=Final Conditional Model survival.probability setting=3 seed=13156 | elapsed=7:24:01 ETA=1:45:51
+[progress] 1620/2000 (81.0%) completed | last=Final Conditional Model survival.probability setting=3 seed=13161 | elapsed=7:25:46 ETA=1:44:33
+[checkpoint] Saved partial results after 1620 / 2000 replications.
+[progress] 1625/2000 (81.2%) completed | last=Final Conditional Model survival.probability setting=3 seed=13166 | elapsed=7:27:31 ETA=1:43:16
+[progress] 1630/2000 (81.5%) completed | last=Final Conditional Model survival.probability setting=3 seed=13171 | elapsed=7:29:16 ETA=1:41:58
+[checkpoint] Saved partial results after 1630 / 2000 replications.
+[progress] 1635/2000 (81.8%) completed | last=Final Conditional Model survival.probability setting=3 seed=13176 | elapsed=7:31:01 ETA=1:40:41
+[progress] 1640/2000 (82.0%) completed | last=Final Conditional Model survival.probability setting=3 seed=13181 | elapsed=7:32:46 ETA=1:39:23
+[checkpoint] Saved partial results after 1640 / 2000 replications.
+[progress] 1645/2000 (82.2%) completed | last=Final Conditional Model survival.probability setting=3 seed=13186 | elapsed=7:34:32 ETA=1:38:05
+[progress] 1650/2000 (82.5%) completed | last=Final Conditional Model survival.probability setting=3 seed=13191 | elapsed=7:36:17 ETA=1:36:47
+[checkpoint] Saved partial results after 1650 / 2000 replications.
+[progress] 1655/2000 (82.8%) completed | last=Final Conditional Model survival.probability setting=3 seed=13196 | elapsed=7:38:02 ETA=1:35:28
+[progress] 1660/2000 (83.0%) completed | last=Final Conditional Model survival.probability setting=3 seed=13201 | elapsed=7:39:47 ETA=1:34:10
+[checkpoint] Saved partial results after 1660 / 2000 replications.
+[progress] 1665/2000 (83.2%) completed | last=Final Conditional Model survival.probability setting=3 seed=13206 | elapsed=7:41:32 ETA=1:32:51
+[progress] 1670/2000 (83.5%) completed | last=Final Conditional Model survival.probability setting=3 seed=13211 | elapsed=7:43:17 ETA=1:31:32
+[checkpoint] Saved partial results after 1670 / 2000 replications.
+[progress] 1675/2000 (83.8%) completed | last=Final Conditional Model survival.probability setting=3 seed=13216 | elapsed=7:45:02 ETA=1:30:13
+[progress] 1680/2000 (84.0%) completed | last=Final Conditional Model survival.probability setting=3 seed=13221 | elapsed=7:46:46 ETA=1:28:54
+[checkpoint] Saved partial results after 1680 / 2000 replications.
+[progress] 1685/2000 (84.2%) completed | last=Final Conditional Model survival.probability setting=3 seed=13226 | elapsed=7:48:31 ETA=1:27:35
+[progress] 1690/2000 (84.5%) completed | last=Final Conditional Model survival.probability setting=3 seed=13231 | elapsed=7:50:16 ETA=1:26:15
+[checkpoint] Saved partial results after 1690 / 2000 replications.
+[progress] 1695/2000 (84.8%) completed | last=Final Conditional Model survival.probability setting=3 seed=13236 | elapsed=7:52:01 ETA=1:24:56
+[progress] 1700/2000 (85.0%) completed | last=Final Conditional Model survival.probability setting=3 seed=13241 | elapsed=7:53:46 ETA=1:23:36
+[checkpoint] Saved partial results after 1700 / 2000 replications.
+[progress] 1705/2000 (85.2%) completed | last=Final Conditional Model survival.probability setting=3 seed=13246 | elapsed=7:55:31 ETA=1:22:16
+[progress] 1710/2000 (85.5%) completed | last=Final Conditional Model survival.probability setting=3 seed=13251 | elapsed=7:57:17 ETA=1:20:56
+[checkpoint] Saved partial results after 1710 / 2000 replications.
+[progress] 1715/2000 (85.8%) completed | last=Final Conditional Model survival.probability setting=3 seed=13256 | elapsed=7:59:02 ETA=1:19:36
+[progress] 1720/2000 (86.0%) completed | last=Final Conditional Model survival.probability setting=3 seed=13261 | elapsed=8:00:48 ETA=1:18:16
+[checkpoint] Saved partial results after 1720 / 2000 replications.
+[progress] 1725/2000 (86.2%) completed | last=Final Conditional Model survival.probability setting=3 seed=13266 | elapsed=8:02:34 ETA=1:16:55
+[progress] 1730/2000 (86.5%) completed | last=Final Conditional Model survival.probability setting=3 seed=13271 | elapsed=8:04:19 ETA=1:15:35
+[checkpoint] Saved partial results after 1730 / 2000 replications.
+[progress] 1735/2000 (86.8%) completed | last=Final Conditional Model survival.probability setting=3 seed=13276 | elapsed=8:06:05 ETA=1:14:14
+[progress] 1740/2000 (87.0%) completed | last=Final Conditional Model survival.probability setting=3 seed=13281 | elapsed=8:07:51 ETA=1:12:53
+[checkpoint] Saved partial results after 1740 / 2000 replications.
+[progress] 1745/2000 (87.2%) completed | last=Final Conditional Model survival.probability setting=3 seed=13286 | elapsed=8:09:37 ETA=1:11:32
+[progress] 1750/2000 (87.5%) completed | last=Final Conditional Model survival.probability setting=3 seed=13291 | elapsed=8:11:22 ETA=1:10:11
+[checkpoint] Saved partial results after 1750 / 2000 replications.
+[progress] 1755/2000 (87.8%) completed | last=Final Conditional Model survival.probability setting=4 seed=14046 | elapsed=8:12:44 ETA=1:08:47
+[progress] 1760/2000 (88.0%) completed | last=Final Conditional Model survival.probability setting=4 seed=14051 | elapsed=8:14:06 ETA=1:07:22
+[checkpoint] Saved partial results after 1760 / 2000 replications.
+[progress] 1765/2000 (88.2%) completed | last=Final Conditional Model survival.probability setting=4 seed=14056 | elapsed=8:15:28 ETA=1:05:58
+[progress] 1770/2000 (88.5%) completed | last=Final Conditional Model survival.probability setting=4 seed=14061 | elapsed=8:16:49 ETA=1:04:33
+[checkpoint] Saved partial results after 1770 / 2000 replications.
+[progress] 1775/2000 (88.8%) completed | last=Final Conditional Model survival.probability setting=4 seed=14066 | elapsed=8:18:11 ETA=1:03:09
+[progress] 1780/2000 (89.0%) completed | last=Final Conditional Model survival.probability setting=4 seed=14071 | elapsed=8:19:33 ETA=1:01:44
+[checkpoint] Saved partial results after 1780 / 2000 replications.
+[progress] 1785/2000 (89.2%) completed | last=Final Conditional Model survival.probability setting=4 seed=14076 | elapsed=8:20:54 ETA=1:00:19
+[progress] 1790/2000 (89.5%) completed | last=Final Conditional Model survival.probability setting=4 seed=14081 | elapsed=8:22:15 ETA=58:55
+[checkpoint] Saved partial results after 1790 / 2000 replications.
+[progress] 1795/2000 (89.8%) completed | last=Final Conditional Model survival.probability setting=4 seed=14086 | elapsed=8:23:37 ETA=57:30
+[progress] 1800/2000 (90.0%) completed | last=Final Conditional Model survival.probability setting=4 seed=14091 | elapsed=8:24:59 ETA=56:06
+[checkpoint] Saved partial results after 1800 / 2000 replications.
+[progress] 1805/2000 (90.2%) completed | last=Final Conditional Model survival.probability setting=4 seed=14096 | elapsed=8:26:22 ETA=54:42
+[progress] 1810/2000 (90.5%) completed | last=Final Conditional Model survival.probability setting=4 seed=14101 | elapsed=8:27:44 ETA=53:17
+[checkpoint] Saved partial results after 1810 / 2000 replications.
+[progress] 1815/2000 (90.8%) completed | last=Final Conditional Model survival.probability setting=4 seed=14106 | elapsed=8:29:06 ETA=51:53
+[progress] 1820/2000 (91.0%) completed | last=Final Conditional Model survival.probability setting=4 seed=14111 | elapsed=8:30:28 ETA=50:29
+[checkpoint] Saved partial results after 1820 / 2000 replications.
+[progress] 1825/2000 (91.2%) completed | last=Final Conditional Model survival.probability setting=4 seed=14116 | elapsed=8:31:50 ETA=49:04
+[progress] 1830/2000 (91.5%) completed | last=Final Conditional Model survival.probability setting=4 seed=14121 | elapsed=8:33:12 ETA=47:40
+[checkpoint] Saved partial results after 1830 / 2000 replications.
+[progress] 1835/2000 (91.8%) completed | last=Final Conditional Model survival.probability setting=4 seed=14126 | elapsed=8:34:33 ETA=46:16
+[progress] 1840/2000 (92.0%) completed | last=Final Conditional Model survival.probability setting=4 seed=14131 | elapsed=8:35:53 ETA=44:51
+[checkpoint] Saved partial results after 1840 / 2000 replications.
+[progress] 1845/2000 (92.2%) completed | last=Final Conditional Model survival.probability setting=4 seed=14136 | elapsed=8:37:15 ETA=43:27
+[progress] 1850/2000 (92.5%) completed | last=Final Conditional Model survival.probability setting=4 seed=14141 | elapsed=8:38:37 ETA=42:03
+[checkpoint] Saved partial results after 1850 / 2000 replications.
+[progress] 1855/2000 (92.8%) completed | last=Final Conditional Model survival.probability setting=4 seed=14146 | elapsed=8:39:58 ETA=40:38
+[progress] 1860/2000 (93.0%) completed | last=Final Conditional Model survival.probability setting=4 seed=14151 | elapsed=8:41:19 ETA=39:14
+[checkpoint] Saved partial results after 1860 / 2000 replications.
+[progress] 1865/2000 (93.2%) completed | last=Final Conditional Model survival.probability setting=4 seed=14156 | elapsed=8:42:41 ETA=37:50
+[progress] 1870/2000 (93.5%) completed | last=Final Conditional Model survival.probability setting=4 seed=14161 | elapsed=8:44:02 ETA=36:25
+[checkpoint] Saved partial results after 1870 / 2000 replications.
+[progress] 1875/2000 (93.8%) completed | last=Final Conditional Model survival.probability setting=4 seed=14166 | elapsed=8:45:24 ETA=35:01
+[progress] 1880/2000 (94.0%) completed | last=Final Conditional Model survival.probability setting=4 seed=14171 | elapsed=8:46:45 ETA=33:37
+[checkpoint] Saved partial results after 1880 / 2000 replications.
+[progress] 1885/2000 (94.2%) completed | last=Final Conditional Model survival.probability setting=4 seed=14176 | elapsed=8:48:06 ETA=32:13
+[progress] 1890/2000 (94.5%) completed | last=Final Conditional Model survival.probability setting=4 seed=14181 | elapsed=8:49:27 ETA=30:48
+[checkpoint] Saved partial results after 1890 / 2000 replications.
+[progress] 1895/2000 (94.8%) completed | last=Final Conditional Model survival.probability setting=4 seed=14186 | elapsed=8:50:49 ETA=29:24
+[progress] 1900/2000 (95.0%) completed | last=Final Conditional Model survival.probability setting=4 seed=14191 | elapsed=8:52:11 ETA=28:00
+[checkpoint] Saved partial results after 1900 / 2000 replications.
+[progress] 1905/2000 (95.2%) completed | last=Final Conditional Model survival.probability setting=4 seed=14196 | elapsed=8:53:33 ETA=26:36
+[progress] 1910/2000 (95.5%) completed | last=Final Conditional Model survival.probability setting=4 seed=14201 | elapsed=8:54:54 ETA=25:12
+[checkpoint] Saved partial results after 1910 / 2000 replications.
+[progress] 1915/2000 (95.8%) completed | last=Final Conditional Model survival.probability setting=4 seed=14206 | elapsed=8:56:16 ETA=23:48
+[progress] 1920/2000 (96.0%) completed | last=Final Conditional Model survival.probability setting=4 seed=14211 | elapsed=8:57:37 ETA=22:24
+[checkpoint] Saved partial results after 1920 / 2000 replications.
+[progress] 1925/2000 (96.2%) completed | last=Final Conditional Model survival.probability setting=4 seed=14216 | elapsed=8:58:58 ETA=20:59
+[progress] 1930/2000 (96.5%) completed | last=Final Conditional Model survival.probability setting=4 seed=14221 | elapsed=9:00:19 ETA=19:35
+[checkpoint] Saved partial results after 1930 / 2000 replications.
+[progress] 1935/2000 (96.8%) completed | last=Final Conditional Model survival.probability setting=4 seed=14226 | elapsed=9:01:40 ETA=18:11
+[progress] 1940/2000 (97.0%) completed | last=Final Conditional Model survival.probability setting=4 seed=14231 | elapsed=9:03:01 ETA=16:47
+[checkpoint] Saved partial results after 1940 / 2000 replications.
+[progress] 1945/2000 (97.2%) completed | last=Final Conditional Model survival.probability setting=4 seed=14236 | elapsed=9:04:23 ETA=15:23
+[progress] 1950/2000 (97.5%) completed | last=Final Conditional Model survival.probability setting=4 seed=14241 | elapsed=9:05:46 ETA=13:59
+[checkpoint] Saved partial results after 1950 / 2000 replications.
+[progress] 1955/2000 (97.8%) completed | last=Final Conditional Model survival.probability setting=4 seed=14246 | elapsed=9:07:07 ETA=12:35
+[progress] 1960/2000 (98.0%) completed | last=Final Conditional Model survival.probability setting=4 seed=14251 | elapsed=9:08:28 ETA=11:11
+[checkpoint] Saved partial results after 1960 / 2000 replications.
+[progress] 1965/2000 (98.2%) completed | last=Final Conditional Model survival.probability setting=4 seed=14256 | elapsed=9:09:50 ETA=09:47
+[progress] 1970/2000 (98.5%) completed | last=Final Conditional Model survival.probability setting=4 seed=14261 | elapsed=9:11:11 ETA=08:23
+[checkpoint] Saved partial results after 1970 / 2000 replications.
+[progress] 1975/2000 (98.8%) completed | last=Final Conditional Model survival.probability setting=4 seed=14266 | elapsed=9:12:32 ETA=06:59
+[progress] 1980/2000 (99.0%) completed | last=Final Conditional Model survival.probability setting=4 seed=14271 | elapsed=9:13:53 ETA=05:35
+[checkpoint] Saved partial results after 1980 / 2000 replications.
+[progress] 1985/2000 (99.2%) completed | last=Final Conditional Model survival.probability setting=4 seed=14276 | elapsed=9:15:14 ETA=04:11
+[progress] 1990/2000 (99.5%) completed | last=Final Conditional Model survival.probability setting=4 seed=14281 | elapsed=9:16:36 ETA=02:47
+[checkpoint] Saved partial results after 1990 / 2000 replications.
+[progress] 1995/2000 (99.8%) completed | last=Final Conditional Model survival.probability setting=4 seed=14286 | elapsed=9:17:57 ETA=01:23
+[progress] 2000/2000 (100.0%) completed | last=Final Conditional Model survival.probability setting=4 seed=14291 | elapsed=9:19:19 ETA=00:00
+[checkpoint] Saved partial results after 2000 / 2000 replications.
+Saved replication results: /project2/ruishanl_1185/kyoungeui_project/csf_grf_new/outputs/paper_final_model_simulation/final/paper-exact/split-5-5-5/replication_results.csv
+Saved summary: /project2/ruishanl_1185/kyoungeui_project/csf_grf_new/outputs/paper_final_model_simulation/final/paper-exact/split-5-5-5/summary.csv
+Saved summary PNG: /project2/ruishanl_1185/kyoungeui_project/csf_grf_new/outputs/paper_final_model_simulation/final/paper-exact/split-5-5-5/summary.png
+Saved metadata: /project2/ruishanl_1185/kyoungeui_project/csf_grf_new/outputs/paper_final_model_simulation/final/paper-exact/split-5-5-5/metadata.json
+                  model proxy_layout proxy_layout_label    protocol  setting_id               target  reps  mean_horizon      mse   mse_sd  mse_x100  mse_x100_sd     rmse      mae  class_error  sign_acc      bias  pearson  fit_time_sec  excess_mse
+Final Conditional Model  split-5-5-5      X=5, W=5, Z=5 paper-exact           1                 RMST   250           1.5 0.002520 0.001113  0.251981     0.111261 0.049199 0.038299     0.217626  0.782374 -0.009011 0.852166     14.431095         1.0
+Final Conditional Model  split-5-5-5      X=5, W=5, Z=5 paper-exact           2                 RMST   250           2.0 0.012497 0.004906  1.249709     0.490616 0.109610 0.088957     0.184164  0.815836 -0.000758 0.798469     14.381934         1.0
+Final Conditional Model  split-5-5-5      X=5, W=5, Z=5 paper-exact           3                 RMST   250          15.0 0.147951 0.048707 14.795058     4.870690 0.379380 0.311528     0.088686  0.911314 -0.066367 0.636890     12.984943         1.0
+Final Conditional Model  split-5-5-5      X=5, W=5, Z=5 paper-exact           4                 RMST   250           3.0 0.023347 0.008725  2.334674     0.872462 0.150051 0.122712     0.031521  0.968479 -0.034061 0.707873     12.509570         1.0
+Final Conditional Model  split-5-5-5      X=5, W=5, Z=5 paper-exact           1 survival.probability   250           0.8 0.001568 0.000790  0.156767     0.078992 0.038599 0.029014     0.247044  0.752956 -0.003480 0.839952     12.952224         1.0
+Final Conditional Model  split-5-5-5      X=5, W=5, Z=5 paper-exact           2 survival.probability   250           1.2 0.003834 0.001308  0.383364     0.130807 0.061035 0.048919     0.240434  0.759566 -0.000516 0.708342     13.142375         1.0
+Final Conditional Model  split-5-5-5      X=5, W=5, Z=5 paper-exact           3 survival.probability   250          10.0 0.001614 0.000575  0.161394     0.057491 0.039593 0.032167     0.105488  0.894512 -0.003966 0.455356     12.009673         1.0
+Final Conditional Model  split-5-5-5      X=5, W=5, Z=5 paper-exact           4 survival.probability   250           2.0 0.002825 0.000991  0.282479     0.099111 0.052384 0.039946     0.143516  0.856484 -0.019008 0.471085     10.911537         1.0
+
+Paper-style table
+ Setting  RMST MSE x100  Survival Probability MSE x100  RMST Class Error  Survival Probability Class Error  RMST Pearson  Survival Probability Pearson
+       1       0.251981                       0.156767          0.217626                          0.247044      0.852166                      0.839952
+       2       1.249709                       0.383364          0.184164                          0.240434      0.798469                      0.708342
+       3      14.795058                       0.161394          0.088686                          0.105488      0.636890                      0.455356
+       4       2.334674                       0.282479          0.031521                          0.143516      0.707873                      0.471085

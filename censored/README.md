@@ -1,70 +1,42 @@
-# Censored NC-CSF
+# Censored Models
 
-This folder is the user-facing entrypoint for the survival version of the project.
+This folder contains the canonical censored-model implementations and runners
+for the NC-CSF project.
 
-The implementation lives under `/Users/kyoungeuihong/Desktop/csf_grf_new/python-package/grf`, and the scripts here are thin wrappers around the canonical runners in `/Users/kyoungeuihong/Desktop/csf_grf_new/scripts`. This keeps the runtime behavior identical while exposing a cleaner workflow.
+## Core models
 
-## Default C3
+- `final_censored_model.py`: main Censored NC-CSF implementation. It supports
+  both `censoring_mode="conditional"` and `censoring_mode="marginal"`.
+- `final_censored_oracle.py`: oracle comparator for synthetic experiments with
+  access to the latent confounder `U`.
+- `censored_baseline.py`: matched no-PCI censored baseline.
+- `naive_censored_baseline.py`: naive observed-feature censored baseline.
+- `grf_censored_baseline.py`: direct R `grf` causal survival forest wrapper.
 
-The default censored `C3` is the **New C3**:
+## Main runners
 
-- `BestCurveLocalCensoredPCISurvivalForest`
-- final learner: `econml.grf.CausalForest`
-- final representation: bridge- and survival-derived summary features
-- targets: `RMST` and `survival.probability`
+- `run_5model_benchmark.py`: canonical synthetic benchmark runner for censored
+  model comparisons.
+- `run_synthetic_benchmark.py`: smaller synthetic benchmark entry point.
+- `run_paper_style_horizon_conditional_triplet.py`: paper-style fixed-horizon
+  conditional comparison runner.
+- `run_horizon_sweep_conditional_triplet.py`: horizon sweep runner.
+- `run_final_marginal_rcsf_full22.py`: marginal Final / R-CSF comparison
+  runner.
 
-## Legacy Old C3
+## Using the model on new data
 
-- `EconmlMildShrinkNCSurvivalForest`
-- final learner: `econml.CausalForestDML`
-- final features: `X+W+Z`
-- nuisance: `q(Z,X)`, `h(W,X,A)`, censoring KM, arm-specific Cox
-- targets: `RMST` and `survival.probability`
+For direct use on a user-provided censored dataset, call
+`FinalCensoredModel.fit_components(X, A, time, event, Z, W)` and then
+`effect_from_components(X_test, W_test, Z_test)`.
 
-## Main scripts
+Detailed instructions are in
+[`docs/USING_FINAL_MODELS.md`](/Users/kyoungeuihong/Desktop/csf_grf_new/docs/USING_FINAL_MODELS.md).
 
-- `scripts/run_12case_8variant_benchmark.py`
-- `scripts/run_rhc_b2_vs_c3.py`
-- `scripts/run_c3_bestcurve.py`
+## Paper outputs
 
-## Legacy scripts
+Canonical saved outputs and table-source mappings are documented in
+[`docs/FINAL_REPRODUCIBILITY_NOTE.md`](/Users/kyoungeuihong/Desktop/csf_grf_new/docs/FINAL_REPRODUCIBILITY_NOTE.md).
 
-- `scripts/run_12case_old_c3_8variant_benchmark.py`
-- `scripts/run_rhc_b2_vs_old_c3.py`
-- `scripts/run_c3_econml_mild_shrink.py`
-
-## Run New C3 on a custom survival dataset
-
-```bash
-cd /Users/kyoungeuihong/Desktop/csf_grf_new
-python3 censored/scripts/run_c3_bestcurve.py \
-  --train-csv /path/to/train.csv \
-  --x-cols X0,X1,X2,X3,X4 \
-  --w-cols W \
-  --z-cols Z \
-  --treatment-col A \
-  --time-col time \
-  --event-col event \
-  --output-dir censored/outputs/c3_custom_run
-```
-
-## Run the finalized 12-case 8-variant benchmark
-
-```bash
-cd /Users/kyoungeuihong/Desktop/csf_grf_new
-python3 censored/scripts/run_12case_8variant_benchmark.py
-```
-
-## Run the default B2 vs C3 RHC comparison
-
-```bash
-cd /Users/kyoungeuihong/Desktop/csf_grf_new
-python3 censored/scripts/run_rhc_b2_vs_c3.py
-```
-
-## Targets
-
-- `RMST`: supported
-- `survival.probability`: supported
-
-Use `--target survival.probability --horizon <value>` when you want survival probability at a fixed time horizon.
+The old `single_file_censored_models/` package name has been retired. Import
+from `censored.*` instead.
