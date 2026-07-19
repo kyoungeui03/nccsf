@@ -62,6 +62,7 @@ from sklearn.ensemble import (
     RandomForestRegressor,
 )
 from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import KFold
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import PolynomialFeatures
 
@@ -100,6 +101,41 @@ def _clip_quantile(values, q):
     return np.clip(values, lo, hi)
 
 
+def _clip_quantile_by_arm(values, q, treated_mask, control_mask):
+    """Winsorize WITHIN each treatment arm rather than pooled.
+
+    The treated and control arms have different follow-up, censoring and IPCW-weight
+    distributions, so a single POOLED cutoff removes a different FRACTION of each arm.
+    That shrinks the two arm-specific quantities by different amounts and therefore
+    biases their DIFFERENCE -- which is exactly the estimand. Clipping per arm makes
+    each arm lose the same tail fraction, so the truncation is effect-neutral.
+    """
+    values = np.asarray(values, dtype=float)
+    if q is None:
+        return values
+    out = values.copy()
+    for mask in (treated_mask, control_mask):
+        mask = np.asarray(mask, dtype=bool)
+        if mask.any():
+            out[mask] = _clip_quantile(values[mask], q)
+    return out
+
+
+def _clip_percentile_by_arm(values, percentiles, a):
+    """Percentile-winsorize WITHIN each treatment arm (see _clip_quantile_by_arm)."""
+
+    values = np.asarray(values, dtype=float)
+    if percentiles is None:
+        return values
+    a = np.asarray(a, dtype=float).ravel()
+    out = values.copy()
+    for mask in (a == 1, a == 0):
+        if mask.any():
+            lo, hi = np.percentile(values[mask], percentiles)
+            out[mask] = np.clip(values[mask], lo, hi)
+    return out
+
+
 def _pairwise_products(left, right):
     """Compute all pairwise feature interactions between two matrices."""
 
@@ -134,13 +170,23 @@ def _prepare_target_inputs(y_time, delta, *, target, horizon):
     if target == "survival.probability":
         if horizon is None:
             raise ValueError("horizon is required when target='survival.probability'.")
-        nuisance_time = y_time
-        nuisance_delta = delta
-        eval_time = np.minimum(y_time, float(horizon))
-        eval_delta = delta.copy()
-        eval_delta[y_time > float(horizon)] = 1.0
-        f_y = (y_time > float(horizon)).astype(float)
-        grid_time = y_time
+        # A subject "survives to h" iff they REACH the horizon without an event.
+        # The pipeline SQL caps follow-up at LEAST(<event/censor date>, index+horizon),
+        # so y_time can never EXCEED the horizon: the previous strict `y_time > horizon`
+        # made this indicator identically 0 for every patient and silently killed the
+        # entire survival-probability estimand. Mirror the RMST branch's `>=` (:154).
+        survived = (y_time > float(horizon)) | ((y_time >= float(horizon)) & (delta == 0))
+        # Horizon-completers are ADMINISTRATIVELY complete, not informatively censored.
+        # Previously `nuisance_delta = delta` handed every event-free completer to the
+        # censoring model as a censoring at exactly t=h, which cliffs the censoring
+        # curve and pins the IPCW weights at the 1/clip_min (=100x) cap.
+        nuisance_time = np.minimum(y_time, float(horizon))
+        nuisance_delta = delta.copy()
+        nuisance_delta[y_time >= float(horizon)] = 1.0
+        eval_time = nuisance_time
+        eval_delta = nuisance_delta
+        f_y = survived.astype(float)
+        grid_time = nuisance_time
     elif horizon is None:
         nuisance_time = y_time
         nuisance_delta = delta
@@ -494,24 +540,36 @@ def _compute_survival_probability_q_from_s(s_hat, t_grid, horizon):
 def _build_nuisance_features(raw_x, w, z, feature_mode):
     """Build branch-specific nuisance features.
 
-    The current Final Model defaults to `broad_dup`, which mirrors the
-    non-censored broad-dup logic:
+    The current Final Model defaults to `broad_dup`, which composes the
+    proximal bridge inputs per the identification requirement:
 
-      - start from [X, W, Z]
-      - duplicate Z once more for q
-      - duplicate W once more for h
-      - duplicate both W and Z once more for the survival branch
+      - q (treatment bridge) = [X, Z]   (NC-treatment proxy Z only)
+      - h (outcome bridge)   = [X, W]   (NC-outcome proxy W only)
+      - survival nuisance    = [X, W, Z] (not a bridge; may use both proxies)
+
+    (Historically this branch duplicated/cross-included proxies, giving
+    q=[X,W,Z,Z] and h=[X,W,Z,W], which violated the bridge exclusion
+    structure; that has been corrected.)
     """
 
     raw_x = _ensure_2d(raw_x)
     w = _ensure_2d(w)
     z = _ensure_2d(z)
-    base = np.column_stack([raw_x, w, z])
 
     if feature_mode == "broad_dup":
-        q_features = np.column_stack([base, z])
-        h_features = np.column_stack([base, w])
-        surv_features = np.column_stack([base, w, z])
+        # Proximal identification requires q = q(X, Z) and h = h(X, W): the
+        # treatment bridge q may see ONLY the NC-treatment proxy Z (not the
+        # NC-outcome proxy W), and the outcome bridge h ONLY W (not Z). The
+        # earlier `[base, z]`/`[base, w]` leaked the wrong proxy into each
+        # bridge (q=[X,W,Z,Z], h=[X,W,Z,W]) AND duplicated one proxy, which
+        # violated the bridge exclusion structure. Compose them correctly.
+        q_features = np.column_stack([raw_x, z])
+        h_features = np.column_stack([raw_x, w])
+        # surv is an arm-specific event-survival nuisance (NOT a proximal
+        # bridge), so it may legitimately condition on both observed proxies;
+        # use each once ([X, W, Z]) to avoid literal duplicate columns that
+        # cause collinearity in the Cox event-survival fit.
+        surv_features = np.column_stack([raw_x, w, z])
     elif feature_mode == "dup":
         q_features = np.column_stack([raw_x, z])
         h_features = np.column_stack([raw_x, w])
@@ -628,11 +686,21 @@ def _compute_target_pseudo_outcome_from_sc(
     nuisance_time,
     nuisance_delta,
     sc_at_eval,
+    f_y=None,
 ):
     """Create the IPCW pseudo-outcome used to fit the h nuisance models."""
 
     if target == "survival.probability":
-        return (np.asarray(y_time, dtype=float) > float(horizon)).astype(float) / np.maximum(sc_at_eval, 1e-10)
+        # Consume the survivor indicator prepared upstream. Re-deriving it here as
+        # `y_time > horizon` repeated the boundary bug: pipeline follow-up is capped
+        # at the horizon, so that comparison is never true and the pseudo-outcome
+        # collapsed to 0 for every patient.
+        if f_y is None:
+            raise ValueError(
+                "survival.probability requires the upstream survivor indicator f_y; "
+                "re-deriving it from y_time re-introduces the horizon-boundary bug."
+            )
+        return np.asarray(f_y, dtype=float) / np.maximum(sc_at_eval, 1e-10)
     return np.asarray(nuisance_time, dtype=float) * np.asarray(nuisance_delta, dtype=float) / np.maximum(sc_at_eval, 1e-10)
 
 
@@ -646,6 +714,7 @@ def _compute_ipcw_3term_y_res_from_survival(
     sc_grid,
     *,
     clip_percentiles,
+    a,
 ):
     """Default RMST-without-horizon residual used by the orthogonal score."""
 
@@ -670,8 +739,10 @@ def _compute_ipcw_3term_y_res_from_survival(
     term2 = (integrand * mask).sum(axis=1)
 
     y_res = (term1 - term2) - m_pred
-    lo, hi = np.percentile(y_res, clip_percentiles)
-    return np.clip(y_res, lo, hi)
+    # Winsorize WITHIN arm: a pooled cutoff truncates a different fraction of each
+    # arm (different follow-up/censoring/IPCW tails), which attenuates the R-learner
+    # moment E[y_res * a_res] asymmetrically and biases the effect.
+    return _clip_percentile_by_arm(y_res, clip_percentiles, a)
 
 
 def _compute_target_ipcw_3term_y_res_from_survival(
@@ -685,6 +756,7 @@ def _compute_target_ipcw_3term_y_res_from_survival(
     sc_grid,
     *,
     clip_percentiles,
+    a,
 ):
     """Finite-horizon residual used by the current censored Final Model."""
 
@@ -708,8 +780,10 @@ def _compute_target_ipcw_3term_y_res_from_survival(
     term2 = (integrand * mask).sum(axis=1)
 
     y_res = term1 - term2
-    lo, hi = np.percentile(y_res, clip_percentiles)
-    return np.clip(y_res, lo, hi)
+    # Winsorize WITHIN arm: a pooled cutoff truncates a different fraction of each
+    # arm (different follow-up/censoring/IPCW tails), which attenuates the R-learner
+    # moment E[y_res * a_res] asymmetrically and biases the effect.
+    return _clip_percentile_by_arm(y_res, clip_percentiles, a)
 
 
 # ---------------------------------------------------------------------------
@@ -837,6 +911,29 @@ class _FinalCensoredNuisance:
             ),
         )
 
+    def _bound_h_predictions(self, h1_pred, h0_pred):
+        """Enforce the range constraint the outcome bridges must satisfy.
+
+        For target='survival.probability' the h-bridges estimate S(h | X, W) -- a
+        PROBABILITY, so their predictions must lie in [0, 1]. This clip enforces that
+        known range constraint on the nuisance, and bounds the downstream CATE.
+
+        NOTE ON THE ORIGINAL DIAGNOSIS: the out-of-range estimates first observed
+        (-4.6, -6.4, -17.7) were NOT merely "a regression on a heavy-tailed target".
+        The root cause was a horizon-boundary bug -- the survivor indicator used a
+        strict `y_time > horizon` while the pipeline SQL caps follow-up AT the
+        horizon, so the indicator was identically 0 and the censoring model was fed
+        every completer as a censoring at t=h (pinning IPCW at the 100x cap). That
+        is fixed upstream now (see _prepare_target_inputs / the survival.probability
+        branch). This clip remains as a cheap range guard, not as the fix.
+
+        RMST targets live on the day scale (bounded only by the horizon), so they are
+        deliberately left untouched here.
+        """
+        if self._target == "survival.probability":
+            return np.clip(h1_pred, 0.0, 1.0), np.clip(h0_pred, 0.0, 1.0)
+        return h1_pred, h0_pred
+
     def _compute_m_pred(self, q_pred, h1_pred, h0_pred):
         if self._m_pred_mode != "bridge":
             raise ValueError("This single-file implementation supports m_pred_mode='bridge' only.")
@@ -926,15 +1023,22 @@ class _FinalCensoredNuisance:
             nuisance_time=target_inputs["nuisance_time"],
             nuisance_delta=target_inputs["nuisance_delta"],
             sc_at_eval=sc_for_y_tilde,
+            f_y=target_inputs["f_y"],
         )
-        y_tilde = _clip_quantile(y_tilde, self._y_tilde_clip_quantile)
-
         # Step 3: fit q(X, Z), h1(X, W), h0(X, W).
         self._q_model = clone(self._q_model_template)
         self._q_model.fit(xq, a, **filter_none_kwargs(sample_weight=sample_weight))
 
         treated_mask = a == 1
         control_mask = a == 0
+
+        # Winsorize the IPCW pseudo-outcome WITHIN ARM, not pooled. y_tilde is split
+        # below into the two arm-specific bridge regressions, and the arms have
+        # different follow-up/censoring/IPCW-tail distributions -- so a single POOLED
+        # cutoff truncates a different FRACTION of each arm, shrinking h1 and h0 by
+        # different amounts and biasing their difference (the effect). Clipping per
+        # arm makes each arm lose exactly the same tail fraction.
+        y_tilde = _clip_quantile_by_arm(y_tilde, self._y_tilde_clip_quantile, treated_mask, control_mask)
 
         self._h1_model = clone(self._h_model_template)
         self._h0_model = clone(self._h_model_template)
@@ -987,6 +1091,7 @@ class _FinalCensoredNuisance:
         q_pred = np.clip(q_pred, self._q_clip, 1.0 - self._q_clip)
         h1_pred = self._h1_model.predict(xh)
         h0_pred = self._h0_model.predict(xh)
+        h1_pred, h0_pred = self._bound_h_predictions(h1_pred, h0_pred)
         s_hat_1, s_hat_0 = self._predict_event_survival_curves(surv_features)
         m_pred = self._compute_m_pred(q_pred, h1_pred, h0_pred)
 
@@ -1011,6 +1116,7 @@ class _FinalCensoredNuisance:
                 sc_at_eval,
                 sc_grid,
                 clip_percentiles=self._y_res_clip_percentiles,
+                a=a,
             )
         else:
             sc_at_eval = self._predict_censoring_at_values(censor_features_obs, target_inputs["eval_time"])
@@ -1024,6 +1130,7 @@ class _FinalCensoredNuisance:
                 sc_at_eval,
                 sc_grid,
                 clip_percentiles=self._y_res_clip_percentiles,
+                a=a,
             )
 
         a_res = (a - q_pred).reshape(-1, 1)
@@ -1041,6 +1148,7 @@ class _FinalCensoredNuisance:
         q_pred = np.clip(q_pred, self._q_clip, 1.0 - self._q_clip)
         h1_pred = self._h1_model.predict(xh)
         h0_pred = self._h0_model.predict(xh)
+        h1_pred, h0_pred = self._bound_h_predictions(h1_pred, h0_pred)
         s_hat_1, s_hat_0 = self._predict_event_survival_curves(surv_features)
         m_pred = self._compute_m_pred(q_pred, h1_pred, h0_pred)
 
@@ -1226,6 +1334,7 @@ class _SinglePassBridgeFeatureCensoredSurvivalForest(CausalForestDML):
         m_pred_mode="bridge",
         nuisance_feature_mode="broad_dup",
         final_feature_mode="full",
+        n_jobs=1,
     ):
         self._q_model_template = make_q_model(
             q_kind,
@@ -1233,14 +1342,14 @@ class _SinglePassBridgeFeatureCensoredSurvivalForest(CausalForestDML):
             n_estimators=q_trees,
             min_samples_leaf=q_min_samples_leaf,
             poly_degree=q_poly_degree,
-            n_jobs=1,
+            n_jobs=n_jobs,
         )
         self._h_model_template = make_h_model(
             h_kind,
             random_state=random_state,
             n_estimators=h_n_estimators,
             min_samples_leaf=h_min_samples_leaf,
-            n_jobs=1,
+            n_jobs=n_jobs,
         )
         self._target = target
         self._horizon = horizon
@@ -1263,6 +1372,7 @@ class _SinglePassBridgeFeatureCensoredSurvivalForest(CausalForestDML):
             random_state=random_state,
             discrete_treatment=True,
             criterion="het",
+            n_jobs=n_jobs,
         )
 
     def _raw_proxy_for_final(self, *, X=None, W=None, Z=None):
@@ -1362,6 +1472,7 @@ class FinalCensoredModel:
         prediction_nuisance_mode="full_refit",
         surv_scalar_mode="full",
         observed_only=False,
+        n_jobs=1,
     ):
         if surv_scalar_mode != "full":
             raise ValueError("This single-file implementation reproduces only surv_scalar_mode='full'.")
@@ -1405,6 +1516,7 @@ class FinalCensoredModel:
         self._final_feature_mode = final_feature_mode
         self._prediction_nuisance_mode = prediction_nuisance_mode
         self._observed_only = bool(observed_only)
+        self._n_jobs = int(n_jobs)
 
         self._q_model_template = make_q_model(
             q_kind,
@@ -1412,18 +1524,19 @@ class FinalCensoredModel:
             n_estimators=q_trees,
             min_samples_leaf=q_min_samples_leaf,
             poly_degree=q_poly_degree,
-            n_jobs=1,
+            n_jobs=self._n_jobs,
         )
         self._h_model_template = make_h_model(
             h_kind,
             random_state=random_state,
             n_estimators=h_n_estimators,
             min_samples_leaf=h_min_samples_leaf,
-            n_jobs=1,
+            n_jobs=self._n_jobs,
         )
 
         self._dml_model = None
         self._feature_nuisance = None
+        self._feature_nuisance_folds = None
         self._train_x = None
         self._train_w = None
         self._train_z = None
@@ -1504,6 +1617,7 @@ class FinalCensoredModel:
             m_pred_mode=self._m_pred_mode,
             nuisance_feature_mode=self._nuisance_feature_mode,
             final_feature_mode=self._final_feature_mode,
+            n_jobs=self._n_jobs,
         )
         # Save the raw proxy blocks so the custom final-model wrapper can
         # rebuild `x_final` inside EconML after cross-fitting the nuisances.
@@ -1516,23 +1630,63 @@ class FinalCensoredModel:
         self._train_z = np.asarray(raw_z, dtype=float).copy()
         self._train_x_final = self._dml_model.training_x_final()
 
-        # Refit nuisances on the full training sample for prediction-time
-        # reconstruction of `x_final`.
+        # Prediction-time nuisances must be CROSS-FITTED, matching the ones the final
+        # forest was actually trained on. Refitting a single model on the FULL sample
+        # (the previous behaviour) produced IN-SAMPLE bridge columns at predict time
+        # while the forest's splits were calibrated on OUT-OF-FOLD ones -- a
+        # train/serve skew that measurably shifted per-patient tau. We therefore fit a
+        # K-fold ensemble and AVERAGE its bridge outputs at prediction time, which is
+        # how cross-fitted nuisances are normally served.
         y_packed = np.column_stack([np.asarray(time, dtype=float).ravel(), np.asarray(event, dtype=float).ravel()])
+        a_arr = np.asarray(A, dtype=float).ravel()
+        n_rows = len(a_arr)
+        n_splits = max(2, min(int(self._cv), n_rows))
+        folds = KFold(n_splits=n_splits, shuffle=True, random_state=self._random_state)
+        self._feature_nuisance_folds = []
+        for train_idx, _ in folds.split(np.arange(n_rows)):
+            nu = self._make_feature_nuisance()
+            nu.train(
+                False,
+                None,
+                y_packed[train_idx],
+                a_arr[train_idx],
+                X=x[train_idx],
+                W=w_nuis[train_idx],
+                Z=z_nuis[train_idx],
+            )
+            self._feature_nuisance_folds.append(nu)
+
+        # Keep a full-sample fit for callers that need a single nuisance object
+        # (e.g. the light-bootstrap final-stage score). NOT used for effects.
         self._feature_nuisance = self._make_feature_nuisance()
         self._feature_nuisance.train(
             False,
             None,
             y_packed,
-            np.asarray(A, dtype=float).ravel(),
+            a_arr,
             X=x,
             W=w_nuis,
             Z=z_nuis,
         )
         return self
 
+    def _predict_bridge_outputs_crossfit(self, x, w_nuis, z_nuis):
+        """Average the K fold-fitted nuisances' bridge outputs.
+
+        Serves the SAME kind of (cross-fitted) bridge columns the final forest was
+        trained on, instead of the in-sample columns a single full-data refit gives.
+        """
+        models = getattr(self, "_feature_nuisance_folds", None) or [self._feature_nuisance]
+        preds = [m.predict_bridge_outputs(X=x, W=w_nuis, Z=z_nuis) for m in models]
+        if len(preds) == 1:
+            return preds[0]
+        return {
+            key: np.mean([np.asarray(p[key], dtype=float) for p in preds], axis=0)
+            for key in preds[0]
+        }
+
     def effect_from_components(self, X, W, Z):
-        """Predict treatment effects by rebuilding x_final from full-data nuisances."""
+        """Predict treatment effects by rebuilding x_final from CROSS-FITTED nuisances."""
 
         if self._dml_model is None or self._feature_nuisance is None:
             raise RuntimeError("Model must be fit before calling effect_from_components.")
@@ -1544,13 +1698,16 @@ class FinalCensoredModel:
 
         # Recompute the nuisance summaries at the new point, then rebuild the
         # same `x_final` representation used during training.
-        bridge = self._feature_nuisance.predict_bridge_outputs(
-            X=x,
-            W=w_nuis,
-            Z=z_nuis,
-        )
+        bridge = self._predict_bridge_outputs_crossfit(x, w_nuis, z_nuis)
         x_final = _build_final_features(self._final_feature_mode, x, raw_w, raw_z, bridge)
-        return self._dml_model.effect_on_final_features(x_final)
+        tau = self._dml_model.effect_on_final_features(x_final)
+        if self._target == "survival.probability":
+            # Final guarantee: a survival-probability CATE is a DIFFERENCE OF
+            # PROBABILITIES and cannot leave [-1, +1]. _bound_h_predictions already
+            # constrains the bridges; this catches any residual forest extrapolation
+            # on rare x_final rows so the reported estimand is always in range.
+            tau = np.clip(tau, -1.0, 1.0)
+        return tau
 
 
 class FinalPCISurvOnlyCensoredModel(FinalCensoredModel):
