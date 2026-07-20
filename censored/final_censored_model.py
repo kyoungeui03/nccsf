@@ -187,6 +187,14 @@ def _prepare_target_inputs(y_time, delta, *, target, horizon):
         eval_delta = nuisance_delta
         f_y = survived.astype(float)
         grid_time = nuisance_time
+        # EVENT-model delta (separate from the censoring-relabeled nuisance_delta): the
+        # arm-specific event Cox must treat horizon-reachers as CENSORED at h (event-free),
+        # NOT as events. Reusing nuisance_delta (=1 for reachers) injects a spurious event
+        # mass at t=h that collapses the fitted S(h) nuisance toward 0. The =1 relabel is
+        # correct ONLY for the censoring model (admin completion is not informative censoring).
+        event_time = nuisance_time
+        event_delta = delta.copy()
+        event_delta[y_time >= float(horizon)] = 0.0
     elif horizon is None:
         nuisance_time = y_time
         nuisance_delta = delta
@@ -194,6 +202,8 @@ def _prepare_target_inputs(y_time, delta, *, target, horizon):
         eval_delta = delta
         f_y = y_time
         grid_time = y_time
+        event_time = y_time
+        event_delta = delta
     else:
         nuisance_time = np.minimum(y_time, float(horizon))
         nuisance_delta = delta.copy()
@@ -202,6 +212,9 @@ def _prepare_target_inputs(y_time, delta, *, target, horizon):
         eval_delta = nuisance_delta
         f_y = nuisance_time
         grid_time = np.concatenate([nuisance_time, np.asarray([float(horizon)], dtype=float)])
+        event_time = nuisance_time
+        event_delta = delta.copy()
+        event_delta[y_time >= float(horizon)] = 0.0
 
     return {
         "nuisance_time": nuisance_time,
@@ -210,6 +223,8 @@ def _prepare_target_inputs(y_time, delta, *, target, horizon):
         "eval_delta": eval_delta,
         "f_y": f_y,
         "grid_time": grid_time,
+        "event_time": event_time,
+        "event_delta": event_delta,
     }
 
 
@@ -1057,10 +1072,12 @@ class _FinalCensoredNuisance:
             **filter_none_kwargs(sample_weight=None if sample_weight is None else sample_weight[control_mask]),
         )
 
-        # Step 4: fit arm-specific event survival curves.
+        # Step 4: fit arm-specific event survival curves. Use event_time/event_delta
+        # (horizon-reachers censored at h), NOT the censoring-relabeled nuisance_delta,
+        # so the fitted S(h) nuisance is not collapsed by a spurious event mass at t=h.
         self._fit_event_survival_models(
-            target_inputs["nuisance_time"],
-            target_inputs["nuisance_delta"],
+            target_inputs["event_time"],
+            target_inputs["event_delta"],
             surv_features,
             a,
         )

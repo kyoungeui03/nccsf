@@ -124,6 +124,15 @@ def _prepare_target_inputs(y_time, delta, *, target, horizon):
         eval_delta = nuisance_delta
         f_y = ((y_time > float(horizon)) | ((y_time >= float(horizon)) & (delta == 0))).astype(float)
         grid_time = nuisance_time
+        # EVENT-model delta (separate from the censoring-relabeled nuisance_delta above):
+        # horizon-reachers are event-FREE at h, so the arm-specific event Cox must treat
+        # them as CENSORED at h (delta=0), NOT as events. Reusing the censoring-relabeled
+        # nuisance_delta here injected a spurious event mass at t=h and collapsed the fitted
+        # S(h) nuisance ~3x toward 0 (m_pred 0.10 vs true 0.29). The =1 relabel is correct
+        # ONLY for the censoring model (admin completion is not informative censoring).
+        event_time = nuisance_time
+        event_delta = delta.copy()
+        event_delta[y_time >= float(horizon)] = 0.0
     elif horizon is None:
         nuisance_time = y_time
         nuisance_delta = delta
@@ -131,6 +140,8 @@ def _prepare_target_inputs(y_time, delta, *, target, horizon):
         eval_delta = delta
         f_y = y_time
         grid_time = y_time
+        event_time = y_time
+        event_delta = delta
     else:
         nuisance_time = np.minimum(y_time, float(horizon))
         nuisance_delta = delta.copy()
@@ -139,6 +150,10 @@ def _prepare_target_inputs(y_time, delta, *, target, horizon):
         eval_delta = nuisance_delta
         f_y = nuisance_time
         grid_time = np.concatenate([nuisance_time, np.asarray([float(horizon)], dtype=float)])
+        # Same event/censoring separation as the survival.probability branch.
+        event_time = nuisance_time
+        event_delta = delta.copy()
+        event_delta[y_time >= float(horizon)] = 0.0
 
     return {
         "nuisance_time": nuisance_time,
@@ -147,6 +162,8 @@ def _prepare_target_inputs(y_time, delta, *, target, horizon):
         "eval_delta": eval_delta,
         "f_y": f_y,
         "grid_time": grid_time,
+        "event_time": event_time,
+        "event_delta": event_delta,
     }
 
 
@@ -516,7 +533,7 @@ class _RevisedBaselineNuisance:
         censoring_estimator,
         event_survival_estimator="cox",
         y_res_clip_percentiles=None,
-        censoring_clip_min=0.01,
+        censoring_clip_min=0.05,
         n_jobs=1,
     ):
         self._propensity_model_template = propensity_model
@@ -646,8 +663,8 @@ class _RevisedBaselineNuisance:
         self._propensity_model.fit(x_full, a, **filter_none_kwargs(sample_weight=sample_weight))
 
         self._fit_event_survival_models(
-            target_inputs["nuisance_time"],
-            target_inputs["nuisance_delta"],
+            target_inputs["event_time"],
+            target_inputs["event_delta"],
             x_full,
             a,
         )
@@ -789,7 +806,7 @@ class _RevisedBaselineCensoredDML(CausalForestDML):
         censoring_estimator="nelson-aalen",
         event_survival_estimator="cox",
         y_res_clip_percentiles=None,
-        censoring_clip_min=0.01,
+        censoring_clip_min=0.05,
         n_jobs=1,
     ):
         self._propensity_model_template = make_propensity_model(
@@ -858,7 +875,7 @@ class CensoredBaselineCensoredSurvivalForest:
         min_samples_leaf=20,
         censoring_estimator="nelson-aalen",
         event_survival_estimator="cox",
-        censoring_clip_min=0.01,
+        censoring_clip_min=0.05,
         n_jobs=1,
     ):
         if event_survival_estimator != "cox":
@@ -929,7 +946,17 @@ class CensoredBaselineCensoredSurvivalForest:
         raw_w = _ensure_2d(W).astype(float)
         raw_z = _ensure_2d(Z).astype(float)
         x_full = _stack_observed_features(x, raw_w, raw_z)
-        return self._model.effect(x_full)
+        tau = np.asarray(self._model.effect(x_full), dtype=float)
+        # Range guard: a survival.probability CATE is a difference of two probabilities
+        # and MUST lie in [-1, 1]; an RMST CATE is bounded by [-horizon, horizon]. Under
+        # heavy censoring the IPCW residual can still blow up past the clip_min floor and
+        # push a forest leaf out of range (we observed +2.2). Clip to the known bound so a
+        # degenerate leaf cannot emit an impossible value that pollutes the ATE / bootstrap.
+        if self._target == "survival.probability":
+            tau = np.clip(tau, -1.0, 1.0)
+        elif self._horizon is not None:
+            tau = np.clip(tau, -float(self._horizon), float(self._horizon))
+        return tau
 
 
 CensoredBaseline = CensoredBaselineCensoredSurvivalForest
