@@ -1506,6 +1506,16 @@ class FinalCensoredModel:
         self._h_min_samples_leaf = int(h_min_samples_leaf)
         self._y_tilde_clip_quantile = y_tilde_clip_quantile
         self._y_res_clip_percentiles = y_res_clip_percentiles
+        # survival.probability's IPCW pseudo-outcome is f_y / S_c on a 0/1 survivor
+        # indicator, so its 1/S_c tails are far heavier than the day-scale RMST
+        # target. The default (2, 98) arm-wise winsor truncates the treatment signal
+        # that lives in those tails and OVER-SHRINKS the survival-probability CATE
+        # toward 0 -- which collapses the E-value (RR -> 1). Empirically (MIMIC
+        # warfarin+amiodarone), relaxing the survival-probability winsor to
+        # (0.5, 99.5) recovers ~70% of the effect (tau -0.046 -> -0.079, vs naive/
+        # AIPW -0.11) at negligible variance cost; RMST keeps the tighter default.
+        if self._target == "survival.probability" and tuple(y_res_clip_percentiles) == (2.0, 98.0):
+            self._y_res_clip_percentiles = (0.5, 99.5)
         self._n_estimators = int(n_estimators)
         self._min_samples_leaf = int(min_samples_leaf)
         self._censoring_mode = censoring_mode

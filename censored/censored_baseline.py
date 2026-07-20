@@ -112,13 +112,18 @@ def _prepare_target_inputs(y_time, delta, *, target, horizon):
     if target == "survival.probability":
         if horizon is None:
             raise ValueError("horizon is required when target='survival.probability'.")
-        nuisance_time = y_time
-        nuisance_delta = delta
-        eval_time = np.minimum(y_time, float(horizon))
-        eval_delta = delta.copy()
-        eval_delta[y_time > float(horizon)] = 1.0
-        f_y = (y_time > float(horizon)).astype(float)
-        grid_time = y_time
+        # Mirror the main model's horizon-boundary fix. The old strict
+        # `f_y = (y_time > horizon)` was identically 0 whenever follow-up is capped
+        # AT the horizon (SQL LEAST(...)), so the survival-probability estimand was
+        # DEAD. Cap the nuisance at h, treat horizon-completers as administratively
+        # complete (not informative censoring), and flag "survived to h event-free".
+        nuisance_time = np.minimum(y_time, float(horizon))
+        nuisance_delta = delta.copy()
+        nuisance_delta[y_time >= float(horizon)] = 1.0
+        eval_time = nuisance_time
+        eval_delta = nuisance_delta
+        f_y = ((y_time > float(horizon)) | ((y_time >= float(horizon)) & (delta == 0))).astype(float)
+        grid_time = nuisance_time
     elif horizon is None:
         nuisance_time = y_time
         nuisance_delta = delta
@@ -512,6 +517,7 @@ class _RevisedBaselineNuisance:
         event_survival_estimator="cox",
         y_res_clip_percentiles=None,
         censoring_clip_min=0.01,
+        n_jobs=1,
     ):
         self._propensity_model_template = propensity_model
         self._target = target
@@ -784,6 +790,7 @@ class _RevisedBaselineCensoredDML(CausalForestDML):
         event_survival_estimator="cox",
         y_res_clip_percentiles=None,
         censoring_clip_min=0.01,
+        n_jobs=1,
     ):
         self._propensity_model_template = make_propensity_model(
             propensity_kind,
@@ -806,6 +813,7 @@ class _RevisedBaselineCensoredDML(CausalForestDML):
             random_state=random_state,
             discrete_treatment=True,
             criterion="het",
+            n_jobs=n_jobs,
         )
 
     def _gen_ortho_learner_model_nuisance(self):
@@ -851,6 +859,7 @@ class CensoredBaselineCensoredSurvivalForest:
         censoring_estimator="nelson-aalen",
         event_survival_estimator="cox",
         censoring_clip_min=0.01,
+        n_jobs=1,
     ):
         if event_survival_estimator != "cox":
             raise ValueError("This single-file revised baseline supports event_survival_estimator='cox' only.")
@@ -869,6 +878,7 @@ class CensoredBaselineCensoredSurvivalForest:
         self._censoring_estimator = censoring_estimator
         self._event_survival_estimator = event_survival_estimator
         self._censoring_clip_min = float(censoring_clip_min)
+        self._n_jobs = int(n_jobs)
 
         self._model = None
 
@@ -905,6 +915,7 @@ class CensoredBaselineCensoredSurvivalForest:
             event_survival_estimator=self._event_survival_estimator,
             y_res_clip_percentiles=self._y_res_clip_percentiles,
             censoring_clip_min=self._censoring_clip_min,
+            n_jobs=self._n_jobs,
         )
         self._model.fit_survival(x_full, A, time, event)
         return self
