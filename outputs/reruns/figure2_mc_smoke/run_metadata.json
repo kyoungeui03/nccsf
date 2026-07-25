@@ -1,0 +1,25 @@
+{
+  "base_seed": 20260725,
+  "case_ids": [
+    1
+  ],
+  "horizon_quantile": 0.9,
+  "models": [
+    "final_conditional",
+    "final_conditional_oracle",
+    "censored_baseline"
+  ],
+  "num_trees": 200,
+  "replications": 2,
+  "rmst_horizon": 3.0,
+  "runner_version": 1,
+  "script": "run_figure2_monte_carlo.py",
+  "seed_design": "Independent DGP seed per replication/case/setting; identical DGP and learner seeds across methods and targets within a matched cell.",
+  "setting_ids": [
+    "S01"
+  ],
+  "targets": [
+    "RMST"
+  ],
+  "workers_requested": 2
+}

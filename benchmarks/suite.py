@@ -130,23 +130,30 @@ def _rsf(feat, y, seed, max_features="sqrt", n_estimators=500):
                                 random_state=seed, n_jobs=1).fit(feat, y)
 
 
-def est_rsf_t(df, cols, h, adjust, seed=0, predict_df=None):
-    """T-learner: a separate RSF per arm; predict BOTH counterfactuals for everyone."""
+def predict_rsf_t_cate(df, cols, h, adjust="xwz", seed=0, predict_df=None):
+    """Return subject-level RSF T-learner contrasts on both supported scales."""
     pdf = df if predict_df is None else predict_df
     F = _feat(df, cols, adjust); A = df["A"].to_numpy(float)
-    Fp = _feat(pdf, cols, adjust); Ap = pdf["A"].to_numpy(float)
+    Fp = _feat(pdf, cols, adjust)
     y = _y_struct(df["time"], df["event"])
     tr, ct = A == 1, A == 0
     if tr.sum() < 20 or ct.sum() < 20:
-        return _reduce(None, None, Ap)
+        raise ValueError("RSF-T requires at least 20 observations in each treatment arm")
     m1 = _rsf(F[tr], y[tr], seed); m0 = _rsf(F[ct], y[ct], seed + 1)
     S1, R1 = _curve_arr(m1, Fp, h)     # each arm's model on ITS OWN time grid
     S0, R0 = _curve_arr(m0, Fp, h)
-    return _reduce(S1 - S0, R1 - R0, Ap)
+    return {"survival.probability": S1 - S0, "RMST": R1 - R0}
 
 
-def est_rsf_s(df, cols, h, adjust, seed=0, predict_df=None):
-    """S-learner: one RSF on [features, A]; predict with A forced to 1 and to 0.
+def est_rsf_t(df, cols, h, adjust, seed=0, predict_df=None):
+    """T-learner: a separate RSF per arm; predict BOTH counterfactuals for everyone."""
+    pdf = df if predict_df is None else predict_df
+    unit = predict_rsf_t_cate(df, cols, h, adjust, seed=seed, predict_df=pdf)
+    return _reduce(unit["survival.probability"], unit["RMST"], pdf["A"].to_numpy(float))
+
+
+def predict_rsf_s_cate(df, cols, h, adjust="xwz", seed=0, predict_df=None):
+    """Return subject-level RSF S-learner contrasts on both supported scales.
 
     max_features="sqrt" leaves the single treatment column rarely eligible at a split among
     ~60 covariates, so the forest can largely ignore A -- the classic S-learner
@@ -157,13 +164,20 @@ def est_rsf_s(df, cols, h, adjust, seed=0, predict_df=None):
     """
     pdf = df if predict_df is None else predict_df
     F = _feat(df, cols, adjust); A = df["A"].to_numpy(float)
-    Fp = _feat(pdf, cols, adjust); Ap = pdf["A"].to_numpy(float)
+    Fp = _feat(pdf, cols, adjust)
     y = _y_struct(df["time"], df["event"])
     m = _rsf(np.hstack([F, A.reshape(-1, 1)]), y, seed, max_features=None)
     F1 = np.hstack([Fp, np.ones((len(pdf), 1))]); F0 = np.hstack([Fp, np.zeros((len(pdf), 1))])
     S1, R1 = _curve_arr(m, F1, h)
     S0, R0 = _curve_arr(m, F0, h)
-    return _reduce(S1 - S0, R1 - R0, Ap)
+    return {"survival.probability": S1 - S0, "RMST": R1 - R0}
+
+
+def est_rsf_s(df, cols, h, adjust, seed=0, predict_df=None):
+    """S-learner: one RSF on [features, A]; predict with A forced to 1 and to 0."""
+    pdf = df if predict_df is None else predict_df
+    unit = predict_rsf_s_cate(df, cols, h, adjust, seed=seed, predict_df=pdf)
+    return _reduce(unit["survival.probability"], unit["RMST"], pdf["A"].to_numpy(float))
 
 
 DR_FAILURES: list[str] = []       # module-level so failures are visible, never silent
