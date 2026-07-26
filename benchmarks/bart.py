@@ -51,11 +51,8 @@ def main():
     spec = json.load(open(a.spec))
     df = pd.read_csv(a.cohort)
     rng = np.random.default_rng(a.seed)
-    original_row = np.arange(len(df), dtype=int)
     if a.subsample and len(df) > a.subsample:
-        keep = rng.choice(len(df), a.subsample, replace=False)
-        original_row = original_row[keep]
-        df = df.iloc[keep].reset_index(drop=True)
+        df = df.iloc[rng.choice(len(df), a.subsample, replace=False)].reset_index(drop=True)
 
     h = float(spec["horizon"]); adjust = spec.get("adjust", "xwz")
     X = _num(df, spec["x_cols"])
@@ -155,14 +152,7 @@ def main():
 
     out = {"method": "BART", "n": int(n), "n_ev": int(e.sum()), "n_treated": int(tr.sum()),
            "K_bins": int(K), "adjust": adjust, "uncertainty": "posterior (not bootstrap)",
-           "estimands": {},
-           # Posterior-mean subject-level contrasts are used by the simulation HTE runner.
-           # row_index maps back to the input cohort when --subsample is nonzero.
-           "row_index": original_row.tolist(),
-           "unit_effects": {
-               "survival.probability": sp_unit.mean(axis=0).tolist(),
-               "RMST": rm_unit.mean(axis=0).tolist(),
-           }}
+           "estimands": {}}
     for (scale, est), d in draws.items():
         if d is None or not len(d):
             continue
