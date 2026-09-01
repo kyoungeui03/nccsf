@@ -1643,8 +1643,18 @@ class FinalCensoredModel:
             censoring_feature_index=self._censoring_feature_index,
         )
 
-    def fit_components(self, X, A, time, event, Z, W):
+    def fit_components(self, X, A, time, event, Z, W, sample_weight=None):
         """Fit the full model in two stages.
+
+        ``sample_weight`` reaches every stage that accepts one: the stage-1 DML
+        cross-fit (through EconML's OrthoLearner) and both stage-2 nuisance fits.
+        It exists for the Bayesian (Dirichlet-weight) bootstrap, where every row is
+        present in every replicate and only its weight varies. That matters because
+        the ordinary bootstrap DUPLICATES rows, and with cross-fitting a duplicated
+        row can land in both the training and the estimation fold -- the propensity
+        model then memorises it, the residual A - q_hat collapses toward zero, and
+        the R-learner target degenerates. Reweighting cannot do that: a row appears
+        once, so it cannot be on both sides of a split.
 
         Stage 1: use a custom CausalForestDML subclass to cross-fit nuisance
         models, compute x_final internally, and fit the final heterogeneity
@@ -1685,13 +1695,25 @@ class FinalCensoredModel:
             m_pred_mode=self._m_pred_mode,
             nuisance_feature_mode=self._nuisance_feature_mode,
             final_feature_mode=self._final_feature_mode,
+            censoring_clip_min=self._censoring_clip_min,
+            censoring_feature_index=self._censoring_feature_index,
             n_jobs=self._n_jobs,
         )
         # Save the raw proxy blocks so the custom final-model wrapper can
         # rebuild `x_final` inside EconML after cross-fitting the nuisances.
         self._dml_model._raw_w_for_final = raw_w
         self._dml_model._raw_z_for_final = raw_z
-        self._dml_model.fit_survival(x, A, time, event, z_nuis, w_nuis)
+        _sw = None if sample_weight is None else np.asarray(sample_weight, dtype=float).ravel()
+        if _sw is not None and len(_sw) != len(np.asarray(A).ravel()):
+            raise ValueError(
+                f'sample_weight has length {len(_sw)} but the cohort has '
+                f'{len(np.asarray(A).ravel())} rows.'
+            )
+        self._sample_weight_ = _sw
+        self._dml_model.fit_survival(
+            x, A, time, event, z_nuis, w_nuis,
+            **({} if _sw is None else {'sample_weight': _sw}),
+        )
 
         self._train_x = np.asarray(x, dtype=float).copy()
         self._train_w = np.asarray(raw_w, dtype=float).copy()
@@ -1721,6 +1743,7 @@ class FinalCensoredModel:
                 X=x[train_idx],
                 W=w_nuis[train_idx],
                 Z=z_nuis[train_idx],
+                sample_weight=None if _sw is None else _sw[train_idx],
             )
             self._feature_nuisance_folds.append(nu)
 
@@ -1735,6 +1758,7 @@ class FinalCensoredModel:
             X=x,
             W=w_nuis,
             Z=z_nuis,
+            sample_weight=_sw,
         )
         return self
 
