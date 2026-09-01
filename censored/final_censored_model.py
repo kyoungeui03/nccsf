@@ -839,6 +839,8 @@ class _FinalCensoredNuisance:
         y_res_clip_percentiles,
         event_survival_estimator="cox",
         m_pred_mode="bridge",
+        censoring_clip_min=0.01,
+        censoring_feature_index=None,
     ):
         self._q_model_template = q_model
         self._h_model_template = h_model
@@ -849,6 +851,11 @@ class _FinalCensoredNuisance:
             raise ValueError("censoring_mode must be either 'marginal' or 'conditional'.")
         self._censoring_mode = censoring_mode
         self._censoring_estimator = censoring_estimator
+        self._censoring_clip_min = float(censoring_clip_min)
+        self._censoring_feature_index = (
+            None if censoring_feature_index is None
+            else np.asarray(censoring_feature_index, dtype=int)
+        )
         self._q_clip = float(q_clip)
         self._y_tilde_clip_quantile = y_tilde_clip_quantile
         self._y_res_clip_percentiles = y_res_clip_percentiles
@@ -954,9 +961,15 @@ class _FinalCensoredNuisance:
             raise ValueError("This single-file implementation supports m_pred_mode='bridge' only.")
         return q_pred * h1_pred + (1.0 - q_pred) * h0_pred
 
-    @staticmethod
-    def _build_censor_features(x, w, z):
-        return np.column_stack([_ensure_2d(x), _ensure_2d(w), _ensure_2d(z)])
+    def _build_censor_features(self, x, w, z):
+        # Column subset of [X | W | Z]. None keeps all of it, which is what this did before.
+        # A restricted set sits between the full conditional Cox and marginal KM: it keeps the
+        # covariates that drive loss to follow-up while leaving a bootstrap replicate far less
+        # to memorise on its ~63% unique rows.
+        feats = np.column_stack([_ensure_2d(x), _ensure_2d(w), _ensure_2d(z)])
+        if self._censoring_feature_index is None:
+            return feats
+        return feats[:, self._censoring_feature_index]
 
     @staticmethod
     def _augment_censor_features_with_treatment(features, a):
@@ -978,8 +991,11 @@ class _FinalCensoredNuisance:
                 self._censor_model,
                 censor_features_obs,
                 values,
+                clip_min=self._censoring_clip_min,
             )
-        return _predict_censoring_survival_at_values(self._censor_model, values)
+        return _predict_censoring_survival_at_values(
+            self._censor_model, values, clip_min=self._censoring_clip_min
+        )
 
     def _predict_censoring_on_grid(self, censor_features_obs, n_rows):
         if self._censoring_mode == "conditional":
@@ -987,8 +1003,11 @@ class _FinalCensoredNuisance:
                 self._censor_model,
                 censor_features_obs,
                 self._t_grid,
+                clip_min=self._censoring_clip_min,
             )
-        return _predict_censoring_survival_on_grid(self._censor_model, self._t_grid, n_rows)
+        return _predict_censoring_survival_on_grid(
+            self._censor_model, self._t_grid, n_rows, clip_min=self._censoring_clip_min
+        )
 
     def train(self, is_selecting, folds, Y, T, X=None, W=None, Z=None, sample_weight=None, groups=None):
         """Fit all nuisance components on one fold's training slice."""
@@ -1351,6 +1370,8 @@ class _SinglePassBridgeFeatureCensoredSurvivalForest(CausalForestDML):
         m_pred_mode="bridge",
         nuisance_feature_mode="broad_dup",
         final_feature_mode="full",
+        censoring_clip_min=0.01,
+        censoring_feature_index=None,
         n_jobs=1,
     ):
         self._q_model_template = make_q_model(
@@ -1372,6 +1393,13 @@ class _SinglePassBridgeFeatureCensoredSurvivalForest(CausalForestDML):
         self._horizon = horizon
         self._censoring_mode = censoring_mode
         self._censoring_estimator = censoring_estimator
+        # IPCW weight is 1/S_C, so this floors S_C and thereby caps the weight at
+        # 1/censoring_clip_min. Previously a hardcoded 0.01 -- a 100x cap -- buried in the
+        # module-level predictors and reachable from nowhere. One observation carrying 100x
+        # weight dominates a cohort with a few hundred events, and it does so hardest at the
+        # horizon boundary, which is exactly where S(h) is read.
+        self._censoring_clip_min = float(censoring_clip_min)
+        self._censoring_feature_index = censoring_feature_index
         self._event_survival_estimator = event_survival_estimator
         self._m_pred_mode = m_pred_mode
         self._nuisance_feature_mode = nuisance_feature_mode
@@ -1416,6 +1444,8 @@ class _SinglePassBridgeFeatureCensoredSurvivalForest(CausalForestDML):
             y_res_clip_percentiles=self._custom_y_res_clip_percentiles,
             event_survival_estimator=self._event_survival_estimator,
             m_pred_mode=self._m_pred_mode,
+            censoring_clip_min=self._censoring_clip_min,
+            censoring_feature_index=self._censoring_feature_index,
         )
 
     def _gen_ortho_learner_model_final(self):
@@ -1489,6 +1519,8 @@ class FinalCensoredModel:
         prediction_nuisance_mode="full_refit",
         surv_scalar_mode="full",
         observed_only=False,
+        censoring_clip_min=0.01,
+        censoring_feature_index=None,
         n_jobs=1,
     ):
         if surv_scalar_mode != "full":
@@ -1537,6 +1569,13 @@ class FinalCensoredModel:
         self._min_samples_leaf = int(min_samples_leaf)
         self._censoring_mode = censoring_mode
         self._censoring_estimator = censoring_estimator
+        # IPCW weight is 1/S_C, so this floors S_C and thereby caps the weight at
+        # 1/censoring_clip_min. Previously a hardcoded 0.01 -- a 100x cap -- buried in the
+        # module-level predictors and reachable from nowhere. One observation carrying 100x
+        # weight dominates a cohort with a few hundred events, and it does so hardest at the
+        # horizon boundary, which is exactly where S(h) is read.
+        self._censoring_clip_min = float(censoring_clip_min)
+        self._censoring_feature_index = censoring_feature_index
         self._event_survival_estimator = event_survival_estimator
         self._m_pred_mode = m_pred_mode
         self._nuisance_feature_mode = nuisance_feature_mode
@@ -1600,6 +1639,8 @@ class FinalCensoredModel:
             y_res_clip_percentiles=self._y_res_clip_percentiles,
             event_survival_estimator=self._event_survival_estimator,
             m_pred_mode=self._m_pred_mode,
+            censoring_clip_min=self._censoring_clip_min,
+            censoring_feature_index=self._censoring_feature_index,
         )
 
     def fit_components(self, X, A, time, event, Z, W):
