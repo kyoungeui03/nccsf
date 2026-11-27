@@ -1,14 +1,21 @@
-# Anonymous Submission Codebase
+# Causal Survival Forests with Negative Controls (NC-CSF)
 
-Research workspace for Negative-Control Causal Survival Forests (NC-CSF).
-The repository is organized around two finalized model families:
+Code for
+
+> Z. Gao\*, K. Hong\*, L. Ma\*, Q. Wu\*, Z. Izzo, R. Liu. **Causal Survival Forests with
+> Negative Controls.** Advances in Neural Information Processing Systems (NeurIPS), 2026.
+> [arXiv:2608.19749](https://arxiv.org/abs/2608.19749) (\* equal contribution)
+
+NC-CSF estimates heterogeneous treatment effects on right-censored outcomes when part of the
+confounding is unmeasured. It combines the causal survival forest with proximal causal
+inference, using negative-control (proxy) variables for the unmeasured confounder. The
+repository is organized around two model families:
 
 - `censored/`: right-censored NC-CSF models and censored benchmark runners.
 - `non_censored/`: non-censored NC-CSF models and non-censored benchmark runners.
 
-The refactored layout keeps model code, active runners, canonical data inputs,
-and paper-facing outputs in separate folders so collaborators can reproduce or
-inspect results without chasing pre-refactor paths.
+The layout keeps model code, active runners, canonical data inputs, and paper-facing outputs
+in separate folders, so results can be reproduced or inspected without chasing old paths.
 
 ## Setup
 
@@ -146,3 +153,15 @@ python3 Archive/run_paper_final_model_simulation.py --help
 
 Do not overwrite canonical outputs unless intentionally regenerating paper
 tables. For exploratory reruns, write to `outputs/reruns/...`.
+
+## Citation
+
+```bibtex
+@inproceedings{gao2026nccsf,
+  title     = {Causal Survival Forests with Negative Controls},
+  author    = {Gao, Z. and Hong, K. and Ma, L. and Wu, Q. and Izzo, Z. and Liu, R.},
+  booktitle = {Advances in Neural Information Processing Systems},
+  year      = {2026},
+  note      = {arXiv:2608.19749}
+}
+```
